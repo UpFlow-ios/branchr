@@ -1,4 +1,4 @@
-# Branchr – Social Riding + Live DJ Audio (iOS)
+# Branchr – Social Cycling Community  + Symotainuous Chat + Music Sharing+ Live Voice Chat + Live DJ Audio (iOS)
 
 [![Swift](https://img.shields.io/badge/Swift-6.1-orange.svg)](https://swift.org)
 [![iOS](https://img.shields.io/badge/iOS-18.0%2B-blue.svg)](https://developer.apple.com/ios/)
