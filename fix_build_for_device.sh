@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# 🔧 Fix Branchr Build for Device - MusicKit Entitlements
+# This script helps enable automatic signing in Xcode
+
+echo "🔧 Branchr Build Fix for Device"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "The build fails for device because the provisioning profile"
+echo "doesn't include the new MusicKit entitlements yet."
+echo ""
+echo "📋 Fix Steps (in Xcode):"
+echo ""
+echo "1. Project Navigator → Click 'branchr' (blue icon)"
+echo "2. Select 'branchr' target (under TARGETS)"
+echo "3. Go to 'Signing & Capabilities' tab"
+echo "4. ☑️ Check 'Automatically manage signing'"
+echo "5. Select Team: Joe Dormond (69Y49KN8KD)"
+echo "6. Wait 10-30 seconds for profile to regenerate"
+echo "7. Press Cmd + R to build and run"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "✅ Simulator builds work immediately!"
+echo "   (No provisioning profile needed)"
+echo ""
+echo "🎯 Quick Test:"
+echo "   - Change destination to 'iPhone 16 Pro' (simulator)"
+echo "   - Press Cmd + R"
+echo "   - App runs immediately!"
+echo ""
+echo "📚 Documentation:"
+echo "   See: MUSICKIT_ENTITLEMENTS_FIX.md"
+echo ""
+

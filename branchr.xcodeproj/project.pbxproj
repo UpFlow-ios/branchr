@@ -6,7 +6,23 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		8519B9082EB2E2FA00BDF0E2 /* AuthKey_S8S2CSHCZ7.p8 in Resources */ = {isa = PBXBuildFile; fileRef = 8519B9072EB2E2FA00BDF0E2 /* AuthKey_S8S2CSHCZ7.p8 */; };
+		857365972EAC8E3A00978438 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 857365962EAC8E3800978438 /* WidgetKit.framework */; };
+		857365992EAC8E3B00978438 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 857365982EAC8E3B00978438 /* SwiftUI.framework */; };
+		857365A82EAC8E5600978438 /* BranchrWidgetExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 857365942EAC8E3600978438 /* BranchrWidgetExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		85CAD6762EA87104001D59AD /* branchrApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85CAD6752EA87101001D59AD /* branchrApp.swift */; };
+		85CAD6782EA87210001D59AD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85CAD6772EA8720D001D59AD /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		857365A62EAC8E5600978438 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 85CAD6212EA86042001D59AD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 857365932EAC8E3500978438;
+			remoteInfo = BranchrWidgetExtensionExtension;
+		};
 		85CAD63B2EA8604C001D59AD /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 85CAD6212EA86042001D59AD /* Project object */;
@@ -23,16 +39,57 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		857365AD2EAC8E5600978438 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				857365A82EAC8E5600978438 /* BranchrWidgetExtensionExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		8519B9022EB2ACB000BDF0E2 /* branchrDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = branchrDebug.entitlements; path = branchr/branchrDebug.entitlements; sourceTree = "<group>"; };
+		8519B9072EB2E2FA00BDF0E2 /* AuthKey_S8S2CSHCZ7.p8 */ = {isa = PBXFileReference; lastKnownFileType = text; path = AuthKey_S8S2CSHCZ7.p8; sourceTree = "<group>"; };
+		857365942EAC8E3600978438 /* BranchrWidgetExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BranchrWidgetExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		857365962EAC8E3800978438 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		857365982EAC8E3B00978438 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		857365B42EACC70A00978438 /* BranchrWidgetExtensionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BranchrWidgetExtensionExtension.entitlements; sourceTree = "<group>"; };
 		85CAD6292EA86043001D59AD /* branchr.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = branchr.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		85CAD63A2EA8604C001D59AD /* branchrTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = branchrTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		85CAD6442EA8604C001D59AD /* branchrUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = branchrUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		85CAD6752EA87101001D59AD /* branchrApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = branchrApp.swift; sourceTree = "<group>"; };
+		85CAD6772EA8720D001D59AD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		85FBF33D2EAEF18700EE1D76 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = branchr/Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		857365A92EAC8E5600978438 /* Exceptions for "BranchrWidgetExtension" folder in "BranchrWidgetExtensionExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 857365932EAC8E3500978438 /* BranchrWidgetExtensionExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		85CAD62B2EA86043001D59AD /* branchr */ = {
+		8573659A2EAC8E3B00978438 /* BranchrWidgetExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = branchr;
+			exceptions = (
+				857365A92EAC8E5600978438 /* Exceptions for "BranchrWidgetExtension" folder in "BranchrWidgetExtensionExtension" target */,
+			);
+			path = BranchrWidgetExtension;
+			sourceTree = "<group>";
+		};
+		85CAD62B2EA86043001D59AD /* branchr-ios */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "branchr-ios";
 			sourceTree = "<group>";
 		};
 		85CAD63D2EA8604C001D59AD /* branchrTests */ = {
@@ -45,9 +102,48 @@
 			path = branchrUITests;
 			sourceTree = "<group>";
 		};
+		85CAD66F2EA86B31001D59AD /* App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = App;
+			sourceTree = "<group>";
+		};
+		85CAD6702EA86B3B001D59AD /* Models */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Models;
+			sourceTree = "<group>";
+		};
+		85CAD6712EA86B52001D59AD /* Services */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Services;
+			sourceTree = "<group>";
+		};
+		85CAD6722EA86B67001D59AD /* Utils */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		85CAD6732EA86B72001D59AD /* ViewModels */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		85CAD6742EA86B7C001D59AD /* Views */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Views;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		857365912EAC8E3500978438 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				857365992EAC8E3B00978438 /* SwiftUI.framework in Frameworks */,
+				857365972EAC8E3A00978438 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		85CAD6262EA86043001D59AD /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -72,13 +168,36 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		857365952EAC8E3800978438 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				857365962EAC8E3800978438 /* WidgetKit.framework */,
+				857365982EAC8E3B00978438 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		85CAD6202EA86042001D59AD = {
 			isa = PBXGroup;
 			children = (
-				85CAD62B2EA86043001D59AD /* branchr */,
+				8519B9072EB2E2FA00BDF0E2 /* AuthKey_S8S2CSHCZ7.p8 */,
+				8519B9022EB2ACB000BDF0E2 /* branchrDebug.entitlements */,
+				85FBF33D2EAEF18700EE1D76 /* Info.plist */,
+				857365B42EACC70A00978438 /* BranchrWidgetExtensionExtension.entitlements */,
+				85CAD6752EA87101001D59AD /* branchrApp.swift */,
+				85CAD6772EA8720D001D59AD /* Assets.xcassets */,
+				85CAD62B2EA86043001D59AD /* branchr-ios */,
 				85CAD63D2EA8604C001D59AD /* branchrTests */,
 				85CAD6472EA8604C001D59AD /* branchrUITests */,
+				8573659A2EAC8E3B00978438 /* BranchrWidgetExtension */,
+				857365952EAC8E3800978438 /* Frameworks */,
 				85CAD62A2EA86043001D59AD /* Products */,
+				85CAD66F2EA86B31001D59AD /* App */,
+				85CAD6702EA86B3B001D59AD /* Models */,
+				85CAD6712EA86B52001D59AD /* Services */,
+				85CAD6722EA86B67001D59AD /* Utils */,
+				85CAD6732EA86B72001D59AD /* ViewModels */,
+				85CAD6742EA86B7C001D59AD /* Views */,
 			);
 			sourceTree = "<group>";
 		};
@@ -88,6 +207,7 @@
 				85CAD6292EA86043001D59AD /* branchr.app */,
 				85CAD63A2EA8604C001D59AD /* branchrTests.xctest */,
 				85CAD6442EA8604C001D59AD /* branchrUITests.xctest */,
+				857365942EAC8E3600978438 /* BranchrWidgetExtensionExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,6 +215,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		857365932EAC8E3500978438 /* BranchrWidgetExtensionExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 857365AA2EAC8E5600978438 /* Build configuration list for PBXNativeTarget "BranchrWidgetExtensionExtension" */;
+			buildPhases = (
+				857365902EAC8E3500978438 /* Sources */,
+				857365912EAC8E3500978438 /* Frameworks */,
+				857365922EAC8E3500978438 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				8573659A2EAC8E3B00978438 /* BranchrWidgetExtension */,
+			);
+			name = BranchrWidgetExtensionExtension;
+			packageProductDependencies = (
+			);
+			productName = BranchrWidgetExtensionExtension;
+			productReference = 857365942EAC8E3600978438 /* BranchrWidgetExtensionExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		85CAD6282EA86043001D59AD /* branchr */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 85CAD64E2EA8604C001D59AD /* Build configuration list for PBXNativeTarget "branchr" */;
@@ -102,13 +244,21 @@
 				85CAD6252EA86043001D59AD /* Sources */,
 				85CAD6262EA86043001D59AD /* Frameworks */,
 				85CAD6272EA86043001D59AD /* Resources */,
+				857365AD2EAC8E5600978438 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				857365A72EAC8E5600978438 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				85CAD62B2EA86043001D59AD /* branchr */,
+				85CAD62B2EA86043001D59AD /* branchr-ios */,
+				85CAD66F2EA86B31001D59AD /* App */,
+				85CAD6702EA86B3B001D59AD /* Models */,
+				85CAD6712EA86B52001D59AD /* Services */,
+				85CAD6722EA86B67001D59AD /* Utils */,
+				85CAD6732EA86B72001D59AD /* ViewModels */,
+				85CAD6742EA86B7C001D59AD /* Views */,
 			);
 			name = branchr;
 			packageProductDependencies = (
@@ -173,8 +323,12 @@
 				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
+					857365932EAC8E3500978438 = {
+						CreatedOnToolsVersion = 16.2;
+					};
 					85CAD6282EA86043001D59AD = {
 						CreatedOnToolsVersion = 16.2;
+						LastSwiftMigration = 1620;
 					};
 					85CAD6392EA8604C001D59AD = {
 						CreatedOnToolsVersion = 16.2;
@@ -203,15 +357,25 @@
 				85CAD6282EA86043001D59AD /* branchr */,
 				85CAD6392EA8604C001D59AD /* branchrTests */,
 				85CAD6432EA8604C001D59AD /* branchrUITests */,
+				857365932EAC8E3500978438 /* BranchrWidgetExtensionExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		857365922EAC8E3500978438 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		85CAD6272EA86043001D59AD /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				85CAD6782EA87210001D59AD /* Assets.xcassets in Resources */,
+				8519B9082EB2E2FA00BDF0E2 /* AuthKey_S8S2CSHCZ7.p8 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -232,10 +396,18 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		857365902EAC8E3500978438 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		85CAD6252EA86043001D59AD /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				85CAD6762EA87104001D59AD /* branchrApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -256,6 +428,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		857365A72EAC8E5600978438 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 857365932EAC8E3500978438 /* BranchrWidgetExtensionExtension */;
+			targetProxy = 857365A62EAC8E5600978438 /* PBXContainerItemProxy */;
+		};
 		85CAD63C2EA8604C001D59AD /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 85CAD6282EA86043001D59AD /* branchr */;
@@ -269,6 +446,67 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		857365AB2EAC8E5600978438 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = BranchrWidgetExtensionExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 69Y49KN8KD;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BranchrWidgetExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BranchrWidgetExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.joedormond.branchr.BranchrWidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		857365AC2EAC8E5600978438 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = BranchrWidgetExtensionExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 69Y49KN8KD;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BranchrWidgetExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BranchrWidgetExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.joedormond.branchr.BranchrWidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		85CAD64C2EA8604C001D59AD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -388,14 +626,28 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = branchr/branchr.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = branchr/branchrDebug.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"branchr/Preview Content\"";
-				DEVELOPMENT_TEAM = 69Y49KN8KD;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 69Y49KN8KD;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = branchr/Info.plist;
+				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Branchr requires access to Apple Music for DJ playback and interactive audio experiences.";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Branchr uses Bluetooth to connect with nearby riders for voice chat and music sync.";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Branchr connects to nearby devices for voice chat and synchronized riding experiences.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Branchr uses local network to discover and connect with nearby riders.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Branchr needs your location to track your rides in the background and provide continuous ride tracking.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Branchr needs your location to track your rides and connect with nearby riders.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Branchr needs microphone access for live voice chat with nearby riders and voice commands.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Branchr uses motion data to enable safe, hands-free gesture controls while riding.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Branchr uses voice recognition for hands-free ride commands like \"pause tracking\" and \"resume ride\".";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -404,18 +656,21 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.joedormond.branchr;
+				PRODUCT_BUNDLE_IDENTIFIER = com.joedormond.branchr2025;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Branchr Dev Profile 2025 (Verified)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 2.2;
@@ -427,14 +682,28 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = branchr/branchr.entitlements;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"branchr/Preview Content\"";
-				DEVELOPMENT_TEAM = 69Y49KN8KD;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 69Y49KN8KD;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = branchr/Info.plist;
+				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Branchr requires access to Apple Music for DJ playback and interactive audio experiences.";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Branchr uses Bluetooth to connect with nearby riders for voice chat and music sync.";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Branchr connects to nearby devices for voice chat and synchronized riding experiences.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Branchr uses local network to discover and connect with nearby riders.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Branchr needs your location to track your rides in the background and provide continuous ride tracking.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Branchr needs your location to track your rides and connect with nearby riders.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Branchr needs microphone access for live voice chat with nearby riders and voice commands.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Branchr uses motion data to enable safe, hands-free gesture controls while riding.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Branchr uses voice recognition for hands-free ride commands like \"pause tracking\" and \"resume ride\".";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -443,15 +712,17 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.joedormond.branchr;
+				PRODUCT_BUNDLE_IDENTIFIER = com.joedormond.branchr2025;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Branchr Dev Profile 2025 (Verified)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -554,6 +825,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		857365AA2EAC8E5600978438 /* Build configuration list for PBXNativeTarget "BranchrWidgetExtensionExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				857365AB2EAC8E5600978438 /* Debug */,
+				857365AC2EAC8E5600978438 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		85CAD6242EA86043001D59AD /* Build configuration list for PBXProject "branchr" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
