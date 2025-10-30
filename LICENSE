@@ -1,0 +1,65 @@
+Branchr App Proprietary License
+
+Version 1.0 — Effective Date: 2025-10-29
+
+Copyright (c) 2025 Joseph Dormond. All rights reserved.
+
+1. Definitions
+   1.1 "Software" means the Branchr iOS application, source code, object code, project files, configuration files, artwork, documentation, and all associated materials in this repository and any derivatives provided by Licensor.
+   1.2 "Licensor" means Joseph Dormond (and any affiliated entity he designates).
+   1.3 "Licensee" means any individual or entity that downloads, clones, forks, or otherwise uses the Software.
+
+2. License Grant (Limited)
+   Subject to continuous compliance with this License, Licensor grants Licensee a non‑exclusive, non‑transferable, non‑sublicensable, revocable license to:
+   (a) access and internally evaluate the Software solely for development or review; and
+   (b) build and run the Software on Licensee’s own devices for internal testing.
+
+3. Restrictions
+   Licensee shall NOT, and shall not permit any third party to:
+   (a) distribute, publish, host, sell, rent, lease, sublicense, or otherwise make the Software or derivative works available to any third party;
+   (b) use the Software to provide services to third parties, including as part of a hosted, SaaS, or multi‑tenant offering;
+   (c) remove or alter proprietary notices or license terms;
+   (d) reverse engineer, decompile, disassemble, or attempt to derive source code from any compiled portions except to the extent expressly permitted by applicable law that cannot be contractually waived;
+   (e) use any names, logos, trademarks, or branding of Licensor without prior written permission;
+   (f) use, store, or transmit any keys, tokens, or credentials (e.g., MusicKit keys or developer tokens) outside of Licensee’s own secure environment, or commit such credentials to public repositories;
+   (g) violate any third‑party terms (including but not limited to Apple Developer Program License Agreement, MusicKit terms, or applicable API terms).
+
+4. Ownership
+   The Software is licensed, not sold. Licensor and its licensors retain all right, title, and interest in and to the Software, including all intellectual property rights. No rights are granted by implication or estoppel.
+
+5. Third‑Party Components
+   The Software may incorporate third‑party libraries or assets subject to their own licenses. Such licenses govern the respective components. Nothing in this License limits Licensee’s rights under those third‑party licenses.
+
+6. Confidentiality & Security
+   6.1 Certain files (e.g., *.p8, *.p12, *.mobileprovision) contain sensitive information and must not be disclosed or committed to public repositories.
+   6.2 Licensee must implement reasonable security measures to protect credentials, tokens, and user data, and comply with all applicable privacy laws.
+
+7. Feedback
+   Licensee may submit comments or suggestions ("Feedback"). Licensor is free to use Feedback without restriction or obligation to Licensee.
+
+8. Warranty Disclaimer
+   THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTY OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, INCLUDING WITHOUT LIMITATION WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON‑INFRINGEMENT. LICENSOR DOES NOT WARRANT THAT THE SOFTWARE WILL BE ERROR‑FREE OR SECURE.
+
+9. Limitation of Liability
+   TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR FOR ANY LOSS OF PROFITS, REVENUE, DATA, OR BUSINESS, ARISING OUT OF OR RELATED TO THIS LICENSE OR THE SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. LICENSOR’S TOTAL LIABILITY FOR ALL CLAIMS SHALL NOT EXCEED ONE HUNDRED U.S. DOLLARS (US$100).
+
+10. Indemnity
+   Licensee shall indemnify, defend, and hold harmless Licensor from and against any claims, damages, liabilities, and costs arising from: (a) Licensee’s use of the Software; (b) breach of this License; or (c) violation of third‑party rights.
+
+11. Termination
+   11.1 This License terminates automatically if Licensee breaches any term. Upon termination, Licensee must cease all use, destroy local copies (excluding standard Git history backups required by policy), and certify destruction upon request.
+   11.2 Licensor may modify, suspend, or discontinue access to the Software at any time without liability.
+
+12. Export & Compliance
+   Licensee shall comply with all applicable laws and regulations, including export control, sanctions, and data protection laws.
+
+13. Governing Law & Venue
+   This License is governed by the laws of the State of California, USA, excluding conflict‑of‑law rules. Exclusive jurisdiction and venue shall lie in the state or federal courts located in Santa Clara County, California.
+
+14. Entire Agreement; Changes
+   This License constitutes the entire agreement regarding the Software. Licensor may update this License by posting a new version in the repository. Continued use constitutes acceptance of the updated terms.
+
+15. Contact
+   For licensing inquiries, contact: joedormond@stryvr.app
+
+BY ACCESSING OR USING THE SOFTWARE, LICENSEE ACKNOWLEDGES THAT LICENSEE HAS READ, UNDERSTOOD, AND AGREES TO BE BOUND BY THIS LICENSE.
