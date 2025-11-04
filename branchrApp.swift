@@ -15,13 +15,33 @@ struct branchrApp: App {
     @Environment(\.scenePhase) private var scenePhase
     
     init() {
-        // Phase 22: Initialize Firebase
-        FirebaseApp.configure()
-        print("☁️ Firebase initialized successfully")
+        // Phase 22: Initialize Firebase with explicit configuration
+        configureFirebase()
         
         // Validate MusicKit access on app launch
         // This will configure MusicKit and request user authorization
         MusicKitService.validateMusicKitAccess()
+    }
+    
+    // MARK: - Firebase Configuration
+    
+    private func configureFirebase() {
+        // Prevent multiple configs
+        guard FirebaseApp.app() == nil else {
+            print("☁️ Firebase already configured")
+            return
+        }
+        
+        // Try to find the plist file with explicit path
+        if let filePath = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+           let options = FirebaseOptions(contentsOfFile: filePath) {
+            FirebaseApp.configure(options: options)
+            print("☁️ Firebase initialized successfully with explicit plist path: \(filePath)")
+        } else {
+            // Fallback to default configuration
+            FirebaseApp.configure()
+            print("☁️ Firebase initialized with default configuration (plist auto-detected)")
+        }
     }
     
     var body: some Scene {
