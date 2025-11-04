@@ -56,6 +56,7 @@ struct RideHistoryView: View {
             }
             .navigationTitle("Ride History")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") {
@@ -78,6 +79,7 @@ struct RideHistoryView: View {
         }
         .sheet(isPresented: $showingSummary) {
             if let ride = selectedRide {
+                // Using the legacy RideSummaryView signature for ride history
                 RideSummaryView(
                     ride: ride,
                     rideDataManager: rideDataManager,

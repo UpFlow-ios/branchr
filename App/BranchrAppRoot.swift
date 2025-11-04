@@ -56,7 +56,17 @@ struct BranchrAppRoot: View {
                 }
                 .tag(2)
                 
-                // Tab 4: Settings
+                // Tab 4: Profile (Phase 21)
+                NavigationStack {
+                    ProfileView()
+                }
+                .tabItem {
+                    Image(systemName: "person.circle.fill")
+                    Text("Profile")
+                }
+                .tag(3)
+                
+                // Tab 5: Settings
                 NavigationStack {
                     SettingsView()
                 }
@@ -64,7 +74,7 @@ struct BranchrAppRoot: View {
                     Image(systemName: "gearshape.fill")
                     Text("Settings")
                 }
-                .tag(3)
+                .tag(4)
             }
             .tint(theme.primaryButton)
             .preferredColorScheme(theme.isDarkMode ? .dark : .light)

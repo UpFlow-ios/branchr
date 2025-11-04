@@ -22,7 +22,7 @@ class GroupSessionManager: NSObject, ObservableObject {
     @Published var maxPeersReached = false
     
     // MARK: - Private Properties
-    private let maxPeers = 4
+    private let maxPeers = 10 // Phase 21: Support up to 10 riders
     private let serviceType = "branchr-group"
     private let myPeerID: MCPeerID
     private var session: MCSession
@@ -67,7 +67,14 @@ class GroupSessionManager: NSObject, ObservableObject {
         advertiser?.delegate = self
         advertiser?.startAdvertisingPeer()
         
-        print("Branchr: Started hosting group session")
+        // Phase 21: Also start browsing to connect with nearby riders
+        if browser == nil {
+            browser = MCNearbyServiceBrowser(peer: myPeerID, serviceType: serviceType)
+            browser?.delegate = self
+            browser?.startBrowsingForPeers()
+        }
+        
+        print("Branchr: Started hosting group session (up to \(maxPeers) riders)")
     }
     
     /// Join an existing group ride session
@@ -77,9 +84,24 @@ class GroupSessionManager: NSObject, ObservableObject {
         isHost = false
         sessionActive = true
         
-        browser = MCNearbyServiceBrowser(peer: myPeerID, serviceType: serviceType)
-        browser?.delegate = self
-        browser?.startBrowsingForPeers()
+        // Phase 21: Start browsing and advertising to connect
+        if browser == nil {
+            browser = MCNearbyServiceBrowser(peer: myPeerID, serviceType: serviceType)
+            browser?.delegate = self
+            browser?.startBrowsingForPeers()
+        }
+        
+        // Also advertise to allow others to find us
+        if advertiser == nil {
+            let discoveryInfo = [
+                "app": "branchr",
+                "version": "1.0",
+                "mode": "group"
+            ]
+            advertiser = MCNearbyServiceAdvertiser(peer: myPeerID, discoveryInfo: discoveryInfo, serviceType: serviceType)
+            advertiser?.delegate = self
+            advertiser?.startAdvertisingPeer()
+        }
         
         print("Branchr: Started browsing for group sessions")
     }
@@ -144,6 +166,54 @@ class GroupSessionManager: NSObject, ObservableObject {
     /// Get available slots
     var availableSlots: Int {
         return max(0, maxPeers - groupSize)
+    }
+    
+    // MARK: - Phase 20: Host Controls & Broadcasts
+    
+    /// Broadcast mute all voices command (host only)
+    func broadcastMuteAllVoices() {
+        guard isHost else { return }
+        let command = ["action": "muteAllVoices"]
+        if let data = try? JSONSerialization.data(withJSONObject: command) {
+            broadcastToPeers(data)
+            print("Branchr: Host broadcasted mute all voices")
+        }
+    }
+    
+    /// Broadcast mute all music command (host only)
+    func broadcastMusicMuteAll() {
+        guard isHost else { return }
+        let command = ["action": "muteAllMusic"]
+        if let data = try? JSONSerialization.data(withJSONObject: command) {
+            broadcastToPeers(data)
+            print("Branchr: Host broadcasted mute all music")
+        }
+    }
+    
+    /// Trigger SOS emergency (host only)
+    func triggerSOS() {
+        guard isHost else { return }
+        let command = ["action": "sos"]
+        if let data = try? JSONSerialization.data(withJSONObject: command) {
+            broadcastToPeers(data)
+            print("Branchr: Host triggered SOS")
+            
+            // Also call emergency services
+            if let url = URL(string: "tel://911") {
+                UIApplication.shared.open(url)
+            }
+        }
+    }
+    
+    /// End group session
+    func endGroupSession() {
+        let command = ["action": "endSession"]
+        if let data = try? JSONSerialization.data(withJSONObject: command) {
+            broadcastToPeers(data)
+        }
+        
+        leaveGroupSession()
+        print("Branchr: Group session ended")
     }
 }
 
@@ -242,6 +312,12 @@ extension GroupSessionManager: MCNearbyServiceBrowserDelegate {
     
     nonisolated func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
         DispatchQueue.main.async {
+            // Phase 21: Check if we have room and auto-invite
+            guard self.groupSize < self.maxPeers else {
+                print("Branchr: Found \(peerID.displayName) but group is full")
+                return
+            }
+            
             print("Branchr: Found group host: \(peerID.displayName)")
             
             // Auto-invite to group session

@@ -22,6 +22,8 @@ class VoiceChatService: NSObject, ObservableObject {
     @Published var isMuted = false
     @Published var audioLevel: Float = 0.0
     @Published var connectionQuality: ConnectionQuality = .excellent
+    @Published var speakingPeers: [String: Bool] = [:] // peerID : isSpeaking
+    @Published var mutedPeers: [String: Bool] = [:] // peerID : isMuted
 #if canImport(UIKit)
     @Published var microphonePermissionStatus: AVAudioSession.RecordPermission = .undetermined
 #else
@@ -338,6 +340,62 @@ class VoiceChatService: NSObject, ObservableObject {
         }
         
         print("Branchr: Microphone \(isMuted ? "muted" : "unmuted")")
+    }
+    
+    // MARK: - Per-User Mute & Speaking Detection (Phase 20)
+    
+    /// Toggle mute for a specific peer
+    func toggleUserMute(peerID: String) {
+        mutedPeers[peerID] = !(mutedPeers[peerID] ?? false)
+        print("Branchr: User \(peerID) \(mutedPeers[peerID] ?? false ? "muted" : "unmuted")")
+    }
+    
+    /// Check if a specific peer is muted
+    func isUserMuted(peerID: String) -> Bool {
+        return mutedPeers[peerID] ?? false
+    }
+    
+    /// Check if a specific peer is currently speaking
+    func isSpeaking(peerID: String) -> Bool {
+        return speakingPeers[peerID] ?? false
+    }
+    
+    /// Start monitoring audio levels for speaking detection
+    func startMonitoringAudioLevels(for peers: [String]) {
+        // Initialize speaking state for all peers
+        for peer in peers {
+            if speakingPeers[peer] == nil {
+                speakingPeers[peer] = false
+            }
+        }
+        
+        // Monitor audio levels every 200ms
+        Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] timer in
+            guard let self = self, self.isVoiceChatActive else {
+                timer.invalidate()
+                return
+            }
+            
+            // Update speaking state for self
+            let selfIsSpeaking = self.audioLevel > 0.3
+            let selfID = UIDevice.current.name
+            self.speakingPeers[selfID] = selfIsSpeaking
+            
+            // For other peers, simulate based on audio level threshold
+            // TODO: Replace with actual peer audio level data from Bluetooth
+            for peer in peers {
+                if peer != selfID {
+                    // Simulate speaking detection (replace with real data)
+                    let simulatedLevel = Float.random(in: 0...1)
+                    self.speakingPeers[peer] = simulatedLevel > 0.4 && !self.isUserMuted(peerID: peer)
+                }
+            }
+        }
+    }
+    
+    /// Stop monitoring audio levels
+    func stopMonitoringAudioLevels() {
+        speakingPeers.removeAll()
     }
     
     /// Mute the microphone

@@ -21,6 +21,7 @@ struct RideTrackingButton: View {
     
     // MARK: - Properties
     
+    @ObservedObject var rideService: RideTrackingService
     let action: () -> Void
     @ObservedObject private var theme = ThemeManager.shared
     @State private var isPressed = false
@@ -43,8 +44,8 @@ struct RideTrackingButton: View {
                         .font(.headline)
                 }
                 
-                // Button Text
-                Text(isLoading ? "Starting..." : "Start Ride Tracking")
+                // Button Text (Dynamic based on ride state)
+                Text(buttonText)
                     .font(.headline.bold())
                     .lineLimit(1)
             }
@@ -79,6 +80,25 @@ struct RideTrackingButton: View {
         .disabled(isLoading)
         .onAppear {
             startIdleAnimation()
+        }
+    }
+    
+    // MARK: - Computed Properties
+    
+    private var buttonText: String {
+        if isLoading {
+            return "Starting..."
+        }
+        
+        switch rideService.rideState {
+        case .idle:
+            return "Start Ride Tracking"
+        case .active:
+            return "Stop Ride Tracking"
+        case .paused:
+            return "Resume Ride"
+        case .ended:
+            return "Start New Ride"
         }
     }
     
@@ -135,7 +155,7 @@ struct RideTrackingButton: View {
 
 #Preview {
     VStack(spacing: 20) {
-        RideTrackingButton {
+        RideTrackingButton(rideService: RideTrackingService()) {
             print("🚴‍♂️ Ride tracking started…")
         }
         .padding()

@@ -66,6 +66,7 @@ final class MusicSyncService: NSObject, ObservableObject {
     @Published var currentTrack: NowPlayingInfo?
     @Published var isHostDJ: Bool = false
     @Published var isPolling: Bool = false
+    @Published var isMusicMuted: Bool = false // Phase 20: Per-user music mute
     
     private var pollingTimer: Timer?
     private var groupSessionManager: GroupSessionManager?
@@ -94,6 +95,27 @@ final class MusicSyncService: NSObject, ObservableObject {
         stopPolling()
         currentTrack = nil
         print("Branchr: User resigned as Host DJ")
+    }
+    
+    // MARK: - Phase 20: Music Mute Controls
+    
+    /// Toggle music mute state
+    func toggleMusicMute() {
+        isMusicMuted.toggle()
+        // TODO: Adjust local playback volume when muted
+        // When muted, playback continues silently (maintaining sync timestamps)
+        print("Branchr: Music \(isMusicMuted ? "muted" : "unmuted")")
+    }
+    
+    /// Mute all music (host control)
+    @MainActor
+    func muteAllMusic() {
+        isMusicMuted = true
+        // Broadcast mute all command to group
+        Task { @MainActor in
+            groupSessionManager?.broadcastMusicMuteAll()
+        }
+        print("Branchr: Host muted all music")
     }
     
     /// Start polling MPNowPlayingInfoCenter for updates

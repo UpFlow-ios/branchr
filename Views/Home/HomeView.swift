@@ -14,16 +14,22 @@ struct HomeView: View {
     @StateObject private var peerService = PeerConnectionService()
     @StateObject private var voiceService = VoiceChatService()
     @StateObject private var locationService = LocationTrackingService()
+    @StateObject private var rideService = RideTrackingService()
+    @StateObject private var groupManager = GroupSessionManager() // Phase 20
+    @StateObject private var musicSync = MusicSyncService() // Phase 20
     @ObservedObject private var theme = ThemeManager.shared
     
     // MARK: - State Variables
     @State private var showingGroupRide = false
+    @State private var showingConnectedRiders = false // Phase 20
     @State private var showingVoiceSettings = false
     @State private var showingSafetySettings = false
     @State private var showingDJControls = false
     @State private var showDJSheet = false
     @State private var isMusicMuted: Bool = false
     @State private var isVoiceMuted: Bool = false
+    @State private var showRideOptions = false
+    @State private var showRideSummary = false
     
     var body: some View {
         NavigationView {
@@ -106,13 +112,18 @@ struct HomeView: View {
                 
                 // MARK: - Main Actions
                 VStack(spacing: 14) {
-                    // Enhanced Ride Tracking Button (Phase 19.1)
-                    RideTrackingButton {
-                        startRideTracking()
+                    // Enhanced Ride Tracking Button (Phase 19.1 & 20)
+                    RideTrackingButton(rideService: rideService) {
+                        handleRideButtonPress()
                     }
+                    .disabled(rideService.rideState == .paused) // Disable when paused (use modal instead)
                     
                     BranchrButton(title: "Start Group Ride", icon: "person.3.fill") {
-                        showingGroupRide = true
+                        if !groupManager.sessionActive {
+                            groupManager.startGroupSession()
+                            musicSync.setGroupSessionManager(groupManager)
+                        }
+                        showingConnectedRiders = true
                     }
                     
                     BranchrButton(title: peerService.connectionStatus == .disconnected ? "Start Connection" : "Stop Connection", 
@@ -159,6 +170,13 @@ struct HomeView: View {
         .sheet(isPresented: $showingGroupRide) {
             GroupRideView()
         }
+        .sheet(isPresented: $showingConnectedRiders) {
+            ConnectedRidersSheet(
+                groupManager: groupManager,
+                voiceService: voiceService,
+                musicSync: musicSync
+            )
+        }
         .sheet(isPresented: $showingVoiceSettings) {
             VoiceSettingsView()
         }
@@ -174,6 +192,12 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showDJSheet) {
             DJControlSheetView()
+        }
+        .sheet(isPresented: $showRideOptions) {
+            RideOptionsSheet(rideService: rideService, showSummary: $showRideSummary, dismiss: $showRideOptions)
+        }
+        .fullScreenCover(isPresented: $showRideSummary) {
+            Phase20RideSummaryView(rideService: rideService)
         }
     }
     
@@ -208,20 +232,28 @@ struct HomeView: View {
     // MARK: - Ride Tracking
     
     /**
-     * 🚴‍♂️ Start Ride Tracking
+     * 🚴‍♂️ Handle Ride Button Press
      *
-     * Initiates ride tracking functionality.
-     * Phase 19.1: Stub function - will be enhanced in Phase 20 with GPS + Bluetooth integration.
+     * Handles button press based on current ride state.
+     * Phase 20: Full implementation with state management.
      */
-    private func startRideTracking() {
-        print("🚴‍♂️ Ride tracking started…")
-        
-        // TODO: Phase 20 - Add actual GPS tracking
-        // TODO: Phase 20 - Add Bluetooth connection
-        // TODO: Phase 20 - Add live stats (time, distance, speed)
-        
-        if !locationService.isTracking {
-            locationService.startTracking()
+    private func handleRideButtonPress() {
+        switch rideService.rideState {
+        case .idle, .ended:
+            // Start new ride
+            rideService.startRide()
+            // Also start location tracking service if needed
+            if !locationService.isTracking {
+                locationService.startTracking()
+            }
+            
+        case .active:
+            // Show options modal (Pause, End, SOS)
+            showRideOptions = true
+            
+        case .paused:
+            // Resume ride (should be handled by modal, but fallback)
+            rideService.resumeRide()
         }
     }
 }
