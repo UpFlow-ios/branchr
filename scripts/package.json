@@ -1,0 +1,23 @@
+{
+    "name": "branchr-jwt-generator",
+    "version": "1.0.0",
+    "description": "Apple Music Developer Token (JWT) generator for Branchr",
+    "main": "generateDeveloperToken.js",
+    "scripts": {
+        "generate": "node generateDeveloperToken.js"
+    },
+    "keywords": [
+        "musickit",
+        "apple-music",
+        "jwt",
+        "branchr"
+    ],
+    "author": "Joseph Dormond",
+    "license": "PROPRIETARY",
+    "dependencies": {
+        "jsonwebtoken": "^9.0.2"
+    },
+    "engines": {
+        "node": ">=16.0.0"
+    }
+}

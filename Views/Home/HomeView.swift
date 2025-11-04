@@ -106,10 +106,9 @@ struct HomeView: View {
                 
                 // MARK: - Main Actions
                 VStack(spacing: 14) {
-                    BranchrButton(title: "Start Ride Tracking", icon: "location.fill") {
-                        if !locationService.isTracking {
-                            locationService.startTracking()
-                        }
+                    // Enhanced Ride Tracking Button (Phase 19.1)
+                    RideTrackingButton {
+                        startRideTracking()
                     }
                     
                     BranchrButton(title: "Start Group Ride", icon: "person.3.fill") {
@@ -203,6 +202,26 @@ struct HomeView: View {
             return .gray
         @unknown default:
             return .gray
+        }
+    }
+    
+    // MARK: - Ride Tracking
+    
+    /**
+     * 🚴‍♂️ Start Ride Tracking
+     *
+     * Initiates ride tracking functionality.
+     * Phase 19.1: Stub function - will be enhanced in Phase 20 with GPS + Bluetooth integration.
+     */
+    private func startRideTracking() {
+        print("🚴‍♂️ Ride tracking started…")
+        
+        // TODO: Phase 20 - Add actual GPS tracking
+        // TODO: Phase 20 - Add Bluetooth connection
+        // TODO: Phase 20 - Add live stats (time, distance, speed)
+        
+        if !locationService.isTracking {
+            locationService.startTracking()
         }
     }
 }

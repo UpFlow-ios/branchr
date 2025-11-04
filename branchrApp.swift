@@ -12,15 +12,9 @@ struct branchrApp: App {
     @State private var showLaunchAnimation = true
     
     init() {
-        // Initialize MusicKit JWT token generation
-        Task {
-            do {
-                let token = try MusicKitService.shared.generateDeveloperToken()
-                print("🎵 Developer Token Generated: \(token.prefix(60))...")
-            } catch {
-                print("❌ MusicKit token generation failed:", error.localizedDescription)
-            }
-        }
+        // Validate MusicKit access on app launch
+        // This will configure MusicKit and request user authorization
+        MusicKitService.validateMusicKitAccess()
     }
     
     var body: some Scene {

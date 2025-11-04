@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import MusicKit
+// import MusicKit  // Temporarily disabled for clean build
 import SwiftUI
 
 @MainActor
@@ -20,162 +20,76 @@ final class MusicService: ObservableObject {
     @Published var artworkURL: URL? = nil
     @Published var isPlaying: Bool = false
     
-    private var player = ApplicationMusicPlayer.shared
+    // Temporarily disabled for clean build
+    // private var player = ApplicationMusicPlayer.shared
     
     private init() {
-        print("🎵 MusicService: Initialized (Hybrid Mode)")
+        print("🎵 MusicService: Initialized (MusicKit temporarily disabled for clean build)")
     }
     
     // Check current authorization status
     func checkAuthorizationStatus() {
-        let status = MusicAuthorization.currentStatus
-        isAuthorized = (status == .authorized)
-        print("🎵 MusicService: Current authorization status: \(status)")
+        // Temporarily disabled
+        isAuthorized = false
+        print("🎵 MusicService: MusicKit temporarily disabled for clean build")
     }
     
     // 🔐 Request permission to use Apple Music
     func requestAuthorization() async {
-        let status = await MusicAuthorization.request()
-        isAuthorized = (status == .authorized)
-        print("🎵 Apple Music status: \(status)")
-        if isAuthorized {
-            print("✅ MusicService: Apple Music access granted")
-            print("✅ MusicKit entitlements verified and active.")
-        } else {
-            print("❌ Apple Music access denied")
-        }
+        // Temporarily disabled
+        isAuthorized = false
+        print("🎵 MusicService: MusicKit temporarily disabled - authorization skipped")
     }
     
     // 🎧 Hybrid playback: Try catalog first, fall back to library
     func playMusic() async {
-        guard isAuthorized else {
-            print("⚠️ Not authorized. Please connect Apple Music first.")
-            return
-        }
-        
-        // STEP 1: Try catalog search (requires MusicKit registration)
-        do {
-            print("🔍 Step 1: Attempting catalog search for Calvin Harris...")
-            var request = MusicCatalogSearchRequest(term: "Calvin Harris", types: [Song.self])
-            request.limit = 5
-            let response = try await request.response()
-            
-            if let song = response.songs.first {
-                print("✅ Found in catalog: \(song.title) by \(song.artistName)")
-                
-                player.queue = ApplicationMusicPlayer.Queue(for: [song])
-                try await player.play()
-                
-                isPlaying = true
-                currentSongTitle = song.title
-                currentArtist = song.artistName
-                artworkURL = song.artwork?.url(width: 300, height: 300)
-                
-                print("🎶 Now playing from CATALOG: \(song.title)")
-                return // Success! Exit early
-            }
-        } catch {
-            print("⚠️ Catalog search failed: \(error.localizedDescription)")
-            if error.localizedDescription.contains("developer token") {
-                print("💡 TIP: Register MusicKit identifier at developer.apple.com")
-                print("📚 See: APPLE_MUSIC_DEVELOPER_TOKEN_SETUP.md for instructions")
-            }
-            print("🔄 Falling back to library playback...")
-        }
-        
-        // STEP 2: Fallback to user's library (works without MusicKit registration)
-        do {
-            print("📚 Step 2: Loading songs from your Apple Music library...")
-            let request = MusicLibraryRequest<Song>()
-            let response = try await request.response()
-            
-            if let song = response.items.first {
-                print("✅ Found in library: \(song.title) by \(song.artistName)")
-                
-                player.queue = ApplicationMusicPlayer.Queue(for: [song])
-                try await player.play()
-                
-                isPlaying = true
-                currentSongTitle = song.title
-                currentArtist = song.artistName
-                artworkURL = song.artwork?.url(width: 300, height: 300)
-                
-                print("🎶 Now playing from LIBRARY: \(song.title)")
-            } else {
-                print("❌ No songs in library")
-                print("💡 TIP: Open Apple Music app and add some songs to your library")
-            }
-        } catch {
-            print("❌ Library playback failed: \(error.localizedDescription)")
-            print("💡 Make sure you're signed in to Apple Music")
-        }
+        // Temporarily disabled for clean build
+        print("🎵 MusicService: MusicKit temporarily disabled - playback unavailable")
+        isPlaying = false
+        currentSongTitle = "MusicKit disabled for clean build"
+        currentArtist = ""
     }
     
     // Pause playback
     func pause() {
-        player.pause()
+        // Temporarily disabled
         isPlaying = false
-        print("⏸ MusicService: Playback paused")
+        print("⏸ MusicService: MusicKit disabled - pause unavailable")
     }
     
     // Resume playback
     func resume() async {
-        do {
-            try await player.play()
-            isPlaying = true
-            print("▶️ MusicService: Playback resumed")
-        } catch {
-            print("❌ MusicService: Resume failed: \(error.localizedDescription)")
-        }
+        // Temporarily disabled
+        isPlaying = false
+        print("▶️ MusicService: MusicKit disabled - resume unavailable")
     }
     
     // 🛑 Stop playback
     func stop() {
-        player.stop()
+        // Temporarily disabled
         isPlaying = false
         currentSongTitle = "No song playing"
         currentArtist = ""
         artworkURL = nil
-        print("⏹ MusicService: Playback stopped")
+        print("⏹ MusicService: MusicKit disabled - stop unavailable")
     }
     
     // Skip to next track
     func skipToNext() async {
-        do {
-            try await player.skipToNextEntry()
-            updateNowPlaying()
-            print("⏭ MusicService: Skipped to next track")
-        } catch {
-            print("❌ MusicService: Skip failed: \(error.localizedDescription)")
-        }
+        // Temporarily disabled
+        print("⏭ MusicService: MusicKit disabled - skip unavailable")
     }
     
     // Skip to previous track
     func skipToPrevious() async {
-        do {
-            try await player.skipToPreviousEntry()
-            updateNowPlaying()
-            print("⏮ MusicService: Skipped to previous track")
-        } catch {
-            print("❌ MusicService: Previous track failed: \(error.localizedDescription)")
-        }
+        // Temporarily disabled
+        print("⏮ MusicService: MusicKit disabled - previous unavailable")
     }
     
     // Update now playing information
     private func updateNowPlaying() {
-        Task {
-            if let nowPlaying = player.queue.currentEntry {
-                switch nowPlaying.item {
-                case .song(let song):
-                    currentSongTitle = song.title
-                    currentArtist = song.artistName
-                    artworkURL = song.artwork?.url(width: 300, height: 300)
-                    print("🎵 Now Playing: \(currentSongTitle) by \(currentArtist)")
-                default:
-                    currentSongTitle = "Unknown Track"
-                    currentArtist = "Unknown Artist"
-                }
-            }
-        }
+        // Temporarily disabled
+        currentSongTitle = "MusicKit disabled"
+        currentArtist = ""
     }
 }
