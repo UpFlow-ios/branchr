@@ -8,7 +8,7 @@
 
 import SwiftUI
 import PhotosUI
-// import FirebaseAuth // Phase 22: Uncomment after adding Firebase Swift Package
+import FirebaseAuth
 
 /**
  * 👤 Profile View

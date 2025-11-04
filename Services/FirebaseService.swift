@@ -7,10 +7,10 @@
 //
 
 import Foundation
-// Phase 22: Uncomment after adding Firebase Swift Packages
-// import FirebaseCore
-// import FirebaseFirestore
-// import FirebaseStorage
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseStorage
+import FirebaseAuth
 import UIKit
 
 /**
@@ -25,12 +25,11 @@ import UIKit
 class FirebaseService: ObservableObject {
     static let shared = FirebaseService()
     
-    // Phase 22: Uncomment after adding Firebase packages
-    // private let db = Firestore.firestore()
-    // private let storage = Storage.storage().reference()
+    private let db = Firestore.firestore()
+    private let storage = Storage.storage().reference()
     
     private init() {
-        print("☁️ FirebaseService initialized (packages not yet added)")
+        print("☁️ FirebaseService initialized")
     }
     
     // MARK: - Upload Profile Photo
@@ -41,11 +40,6 @@ class FirebaseService: ObservableObject {
     ///   - userID: Firebase user ID
     ///   - completion: Callback with photo URL string or nil on error
     func uploadProfilePhoto(_ image: UIImage, userID: String, completion: @escaping (String?) -> Void) {
-        // Phase 22: Uncomment after adding Firebase packages
-        print("⚠️ Firebase: Packages not yet added - upload skipped")
-        completion(nil)
-        
-        /*
         guard let data = image.jpegData(compressionQuality: 0.8) else {
             print("❌ Firebase: Failed to convert image to JPEG")
             completion(nil)
@@ -73,7 +67,6 @@ class FirebaseService: ObservableObject {
                 }
             }
         }
-        */
     }
     
     // MARK: - Save Profile Data
@@ -85,10 +78,6 @@ class FirebaseService: ObservableObject {
     ///   - bio: User's bio
     ///   - photoURL: Optional photo URL from Storage
     func saveUserProfile(userID: String, name: String, bio: String, photoURL: String?) {
-        // Phase 22: Uncomment after adding Firebase packages
-        print("⚠️ Firebase: Packages not yet added - save skipped")
-        
-        /*
         let data: [String: Any] = [
             "name": name,
             "bio": bio,
@@ -103,7 +92,6 @@ class FirebaseService: ObservableObject {
                 print("✅ Firebase: Profile saved successfully for user: \(userID)")
             }
         }
-        */
     }
     
     // MARK: - Fetch Profiles
@@ -111,11 +99,6 @@ class FirebaseService: ObservableObject {
     /// Fetch all user profiles from Firestore
     /// - Parameter completion: Callback with array of UserProfile objects
     func fetchAllProfiles(completion: @escaping ([UserProfile]) -> Void) {
-        // Phase 22: Uncomment after adding Firebase packages
-        print("⚠️ Firebase: Packages not yet added - fetch skipped")
-        completion([])
-        
-        /*
         db.collection("users").getDocuments { snapshot, error in
             if let error = error {
                 print("❌ Firebase: Failed to fetch profiles: \(error.localizedDescription)")
@@ -130,13 +113,20 @@ class FirebaseService: ObservableObject {
             }
             
             let profiles = documents.compactMap { doc -> UserProfile? in
-                try? doc.data(as: UserProfile.self)
+                let data = doc.data()
+                return UserProfile(
+                    id: doc.documentID,
+                    name: data["name"] as? String ?? "",
+                    bio: data["bio"] as? String ?? "",
+                    photoURL: data["photoURL"] as? String ?? "",
+                    isOnline: data["isOnline"] as? Bool ?? false,
+                    updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue()
+                )
             }
             
             print("✅ Firebase: Fetched \(profiles.count) profiles")
             completion(profiles)
         }
-        */
     }
     
     /// Fetch a specific user's profile
@@ -144,11 +134,6 @@ class FirebaseService: ObservableObject {
     ///   - userID: Firebase user ID
     ///   - completion: Callback with UserProfile or nil
     func fetchUserProfile(userID: String, completion: @escaping (UserProfile?) -> Void) {
-        // Phase 22: Uncomment after adding Firebase packages
-        print("⚠️ Firebase: Packages not yet added - fetch skipped")
-        completion(nil)
-        
-        /*
         db.collection("users").document(userID).getDocument { snapshot, error in
             if let error = error {
                 print("❌ Firebase: Failed to fetch profile for \(userID): \(error.localizedDescription)")
@@ -162,29 +147,85 @@ class FirebaseService: ObservableObject {
                 return
             }
             
-            do {
-                let profile = try snapshot.data(as: UserProfile.self)
-                completion(profile)
-            } catch {
-                print("❌ Firebase: Failed to decode profile: \(error.localizedDescription)")
-                completion(nil)
+            let data = snapshot.data() ?? [:]
+            let profile = UserProfile(
+                id: snapshot.documentID,
+                name: data["name"] as? String ?? "",
+                bio: data["bio"] as? String ?? "",
+                photoURL: data["photoURL"] as? String ?? "",
+                isOnline: data["isOnline"] as? Bool ?? false,
+                updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue()
+            )
+            completion(profile)
+        }
+    }
+    
+    // MARK: - Phase 23: Online Presence
+    
+    /// Set user's online/offline status
+    func setUserOnlineStatus(isOnline: Bool) {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            print("⚠️ Firebase: Cannot set online status - no user signed in")
+            return
+        }
+        
+        let data: [String: Any] = [
+            "isOnline": isOnline,
+            "lastSeen": Timestamp(date: Date())
+        ]
+        
+        db.collection("users").document(uid).setData(data, merge: true) { error in
+            if let error = error {
+                print("❌ Firebase: Failed to set online status: \(error.localizedDescription)")
+            } else {
+                print("\(isOnline ? "🟢" : "⚫") Firebase: User \(isOnline ? "is online" : "went offline")")
             }
         }
-        */
+    }
+    
+    /// Listen for real-time presence updates from all users
+    /// - Parameter completion: Callback with array of online/offline user profiles
+    /// - Returns: ListenerRegistration to stop listening when needed
+    func observeOnlineUsers(completion: @escaping ([UserProfile]) -> Void) -> ListenerRegistration {
+        print("☁️ Firebase: Presence listener active")
+        
+        return db.collection("users").addSnapshotListener { snapshot, error in
+            if let error = error {
+                print("❌ Firebase: Presence listener error: \(error.localizedDescription)")
+                completion([])
+                return
+            }
+            
+            guard let docs = snapshot?.documents else {
+                completion([])
+                return
+            }
+            
+            let users = docs.compactMap { doc -> UserProfile? in
+                let data = doc.data()
+                return UserProfile(
+                    id: doc.documentID,
+                    name: data["name"] as? String ?? "",
+                    bio: data["bio"] as? String ?? "",
+                    photoURL: data["photoURL"] as? String ?? "",
+                    isOnline: data["isOnline"] as? Bool ?? false,
+                    updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue()
+                )
+            }
+            
+            completion(users)
+        }
     }
 }
 
 // MARK: - User Profile Model
 
 struct UserProfile: Codable, Identifiable {
-    // Phase 22: Uncomment @DocumentID after adding Firebase packages
-    // @DocumentID var id: String?
     var id: String?
     let name: String
     let bio: String
     let photoURL: String
-    // Phase 22: Uncomment Timestamp after adding Firebase packages
-    // let updatedAt: Timestamp?
+    var isOnline: Bool = false // Phase 23: Online presence
     let updatedAt: Date?
     
     enum CodingKeys: String, CodingKey {
@@ -192,6 +233,7 @@ struct UserProfile: Codable, Identifiable {
         case name
         case bio
         case photoURL
+        case isOnline
         case updatedAt
     }
 }

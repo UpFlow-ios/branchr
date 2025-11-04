@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		8519B9082EB2E2FA00BDF0E2 /* AuthKey_S8S2CSHCZ7.p8 in Resources */ = {isa = PBXBuildFile; fileRef = 8519B9072EB2E2FA00BDF0E2 /* AuthKey_S8S2CSHCZ7.p8 */; };
+		8556E90D2EBA23CF00205C50 /* GoogleService-Info-2.plist in Resources */ = {isa = PBXBuildFile; fileRef = 8556E90C2EBA23CE00205C50 /* GoogleService-Info-2.plist */; };
 		857365972EAC8E3A00978438 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 857365962EAC8E3800978438 /* WidgetKit.framework */; };
 		857365992EAC8E3B00978438 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 857365982EAC8E3B00978438 /* SwiftUI.framework */; };
 		857365A82EAC8E5600978438 /* BranchrWidgetExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 857365942EAC8E3600978438 /* BranchrWidgetExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -60,6 +61,7 @@
 /* Begin PBXFileReference section */
 		8519B9022EB2ACB000BDF0E2 /* branchrDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = branchrDebug.entitlements; path = branchr/branchrDebug.entitlements; sourceTree = "<group>"; };
 		8519B9072EB2E2FA00BDF0E2 /* AuthKey_S8S2CSHCZ7.p8 */ = {isa = PBXFileReference; lastKnownFileType = text; path = AuthKey_S8S2CSHCZ7.p8; sourceTree = "<group>"; };
+		8556E90C2EBA23CE00205C50 /* GoogleService-Info-2.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info-2.plist"; sourceTree = "<group>"; };
 		857365942EAC8E3600978438 /* BranchrWidgetExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BranchrWidgetExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		857365962EAC8E3800978438 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		857365982EAC8E3B00978438 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -188,6 +190,7 @@
 		85CAD6202EA86042001D59AD = {
 			isa = PBXGroup;
 			children = (
+				8556E90C2EBA23CE00205C50 /* GoogleService-Info-2.plist */,
 				8519B9072EB2E2FA00BDF0E2 /* AuthKey_S8S2CSHCZ7.p8 */,
 				8519B9022EB2ACB000BDF0E2 /* branchrDebug.entitlements */,
 				85FBF33D2EAEF18700EE1D76 /* Info.plist */,
@@ -389,6 +392,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8556E90D2EBA23CF00205C50 /* GoogleService-Info-2.plist in Resources */,
 				85CAD6782EA87210001D59AD /* Assets.xcassets in Resources */,
 				8519B9082EB2E2FA00BDF0E2 /* AuthKey_S8S2CSHCZ7.p8 in Resources */,
 			);

@@ -43,45 +43,91 @@ struct ConnectedRidersSheet: View {
                                 .font(.system(size: 28, weight: .bold, design: .rounded))
                                 .foregroundColor(theme.primaryText)
                             
-                            Text("\(groupManager.groupSize) rider\(groupManager.groupSize == 1 ? "" : "s") connected")
-                                .font(.subheadline)
-                                .foregroundColor(theme.primaryText.opacity(0.7))
+                            HStack(spacing: 8) {
+                                Text("\(groupManager.groupSize) rider\(groupManager.groupSize == 1 ? "" : "s") connected")
+                                    .font(.subheadline)
+                                    .foregroundColor(theme.primaryText.opacity(0.7))
+                                
+                                // Phase 23: Show Firebase online count
+                                if !groupManager.onlineRiders.isEmpty {
+                                    Text("•")
+                                        .foregroundColor(theme.primaryText.opacity(0.5))
+                                    Text("\(groupManager.onlineRiders.filter { $0.isOnline }.count) online")
+                                        .font(.subheadline)
+                                        .foregroundColor(.green)
+                                }
+                            }
                         }
                         .padding(.top, 20)
                         
-                        // Riders Grid (Phase 21B: Using Profile Data)
-                        LazyVGrid(columns: [
-                            GridItem(.flexible(), spacing: 12),
-                            GridItem(.flexible(), spacing: 12)
-                        ], spacing: 16) {
-                            // Host (Self) - Use profile data
-                            RiderTile(
-                                riderID: groupManager.myDisplayName,
-                                profile: groupManager.myProfile,
-                                isHost: groupManager.isHost,
-                                isSelf: true,
-                                voiceService: voiceService,
-                                musicSync: musicSync,
-                                groupManager: groupManager
-                            )
+                        // Phase 23: Firebase Online Riders Section
+                        if !groupManager.onlineRiders.isEmpty {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Online Riders")
+                                    .font(.headline)
+                                    .foregroundColor(theme.primaryText)
+                                    .padding(.horizontal, 20)
+                                
+                                LazyVGrid(columns: [
+                                    GridItem(.flexible(), spacing: 12),
+                                    GridItem(.flexible(), spacing: 12)
+                                ], spacing: 16) {
+                                    ForEach(groupManager.onlineRiders) { rider in
+                                        RiderCard(profile: rider, theme: theme)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                            }
+                            .padding(.top, 10)
+                        }
+                        
+                        // Riders Grid (Phase 21B: Using Profile Data - Local Multipeer)
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Nearby Riders (Bluetooth)")
+                                .font(.headline)
+                                .foregroundColor(theme.primaryText)
+                                .padding(.horizontal, 20)
                             
-                            // Connected Peers - Use profile data
-                            ForEach(groupManager.connectedPeers, id: \.displayName) { peer in
+                            LazyVGrid(columns: [
+                                GridItem(.flexible(), spacing: 12),
+                                GridItem(.flexible(), spacing: 12)
+                            ], spacing: 16) {
+                                // Host (Self) - Use profile data
                                 RiderTile(
-                                    riderID: peer.displayName,
-                                    profile: groupManager.getProfile(for: peer),
-                                    isHost: false,
-                                    isSelf: false,
+                                    riderID: groupManager.myDisplayName,
+                                    profile: groupManager.myProfile,
+                                    isHost: groupManager.isHost,
+                                    isSelf: true,
                                     voiceService: voiceService,
                                     musicSync: musicSync,
                                     groupManager: groupManager
                                 )
+                                
+                                // Connected Peers - Use profile data
+                                ForEach(groupManager.connectedPeers, id: \.displayName) { peer in
+                                    RiderTile(
+                                        riderID: peer.displayName,
+                                        profile: groupManager.getProfile(for: peer),
+                                        isHost: false,
+                                        isSelf: false,
+                                        voiceService: voiceService,
+                                        musicSync: musicSync,
+                                        groupManager: groupManager
+                                    )
+                                }
                             }
+                            .padding(.horizontal, 20)
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.top, 10)
                         .onAppear {
                             // Broadcast profile when sheet appears
                             groupManager.broadcastProfile()
+                            // Phase 23: Start listening for Firebase presence
+                            groupManager.startListeningForPresence()
+                        }
+                        .onDisappear {
+                            // Phase 23: Stop listening when sheet closes
+                            // Note: Don't stop here if group session is still active
                         }
                         
                         // Audio Mode Switcher
@@ -365,6 +411,87 @@ struct HostControlsSection: View {
         .padding()
         .background(theme.cardBackground)
         .cornerRadius(16)
+    }
+}
+
+// MARK: - Phase 23: Rider Card Component (Firebase Online Presence)
+
+struct RiderCard: View {
+    let profile: UserProfile
+    @ObservedObject var theme: ThemeManager
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            // Profile Photo with Online Indicator
+            ZStack(alignment: .bottomTrailing) {
+                // Profile Photo
+                if let photoURL = profile.photoURL, !photoURL.isEmpty, let url = URL(string: photoURL) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        case .failure, .empty:
+                            Circle()
+                                .fill(theme.accentColor.opacity(0.3))
+                                .overlay(
+                                    Text(String(profile.name.prefix(1).uppercased()))
+                                        .font(.system(size: 24, weight: .bold))
+                                        .foregroundColor(theme.accentColor)
+                                )
+                        @unknown default:
+                            Circle()
+                                .fill(theme.accentColor.opacity(0.3))
+                        }
+                    }
+                    .frame(width: 60, height: 60)
+                    .clipShape(Circle())
+                } else {
+                    // Default avatar with initials
+                    Circle()
+                        .fill(theme.accentColor.opacity(0.3))
+                        .frame(width: 60, height: 60)
+                        .overlay(
+                            Text(String(profile.name.prefix(1).uppercased()))
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(theme.accentColor)
+                        )
+                }
+                
+                // Online Status Indicator
+                Circle()
+                    .fill(profile.isOnline ? Color.green : Color.gray)
+                    .frame(width: 12, height: 12)
+                    .overlay(
+                        Circle()
+                            .stroke(theme.primaryBackground, lineWidth: 2)
+                    )
+                    .offset(x: -4, y: -4)
+            }
+            
+            // Rider Name
+            Text(profile.name)
+                .font(.caption.bold())
+                .foregroundColor(theme.primaryText)
+                .lineLimit(1)
+            
+            // Bio (if available)
+            if !profile.bio.isEmpty {
+                Text(profile.bio)
+                    .font(.caption2)
+                    .foregroundColor(theme.primaryText.opacity(0.6))
+                    .lineLimit(1)
+            }
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity)
+        .background(theme.cardBackground)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(profile.isOnline ? Color.green.opacity(0.3) : Color.gray.opacity(0.2), lineWidth: 1)
+        )
     }
 }
 

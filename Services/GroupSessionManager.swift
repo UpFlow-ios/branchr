@@ -9,6 +9,7 @@ import Foundation
 import MultipeerConnectivity
 import SwiftUI
 import UIKit
+import FirebaseFirestore
 
 // MARK: - Rider Profile Model (Phase 21B)
 
@@ -35,6 +36,8 @@ class GroupSessionManager: NSObject, ObservableObject {
     @Published var sessionActive = false
     @Published var maxPeersReached = false
     @Published var peerProfiles: [MCPeerID: RiderProfile] = [:] // Phase 21B: Peer profile data
+    @Published var onlineRiders: [UserProfile] = [] // Phase 23: Firebase online presence
+    private var presenceListener: ListenerRegistration? // Phase 23: Firestore listener
     
     // MARK: - Private Properties
     private let maxPeers = 10 // Phase 21: Support up to 10 riders
@@ -73,6 +76,9 @@ class GroupSessionManager: NSObject, ObservableObject {
         
         // Phase 21C: Start services with retry logic
         startServices()
+        
+        // Phase 23: Start listening for Firebase presence
+        startListeningForPresence()
         
         print("Branchr: Started hosting group session (up to \(maxPeers) riders)")
     }
@@ -134,6 +140,9 @@ class GroupSessionManager: NSObject, ObservableObject {
         isHost = false
         groupSize = 0
         connectedPeers.removeAll()
+        
+        // Phase 23: Stop listening for presence
+        stopListeningForPresence()
         maxPeersReached = false
         
         advertiser?.stopAdvertisingPeer()
@@ -288,6 +297,32 @@ class GroupSessionManager: NSObject, ObservableObject {
         let image = imageData.flatMap { UIImage(data: $0) }
         
         return RiderProfile(name: userName, bio: userBio, image: image)
+    }
+    
+    // MARK: - Phase 23: Firebase Presence
+    
+    /// Start listening for real-time online presence updates
+    func startListeningForPresence() {
+        guard presenceListener == nil else {
+            print("Branchr: Presence listener already active")
+            return
+        }
+        
+        presenceListener = FirebaseService.shared.observeOnlineUsers { [weak self] profiles in
+            DispatchQueue.main.async {
+                self?.onlineRiders = profiles
+                print("Branchr: Updated online riders: \(profiles.count) online")
+            }
+        }
+        print("Branchr: Started listening for online presence")
+    }
+    
+    /// Stop listening for presence updates
+    func stopListeningForPresence() {
+        presenceListener?.remove()
+        presenceListener = nil
+        onlineRiders.removeAll()
+        print("Branchr: Stopped listening for online presence")
     }
 }
 
