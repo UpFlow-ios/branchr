@@ -63,29 +63,25 @@ class AuthService: NSObject, ObservableObject {
             return
         }
         
-        let firebaseCredential = OAuthProvider.credential(
-            withProviderID: "apple.com",
-            idToken: tokenString,
-            rawNonce: nil
-        )
-        
-        Auth.auth().signIn(with: firebaseCredential) { [weak self] result, error in
-            DispatchQueue.main.async {
-                if let error = error {
+        // Create OAuth credential for Apple Sign-In using async/await
+        Task {
+            do {
+                let provider = OAuthProvider(providerID: "apple.com")
+                let firebaseCredential = try await provider.credential(withIDToken: tokenString, rawNonce: nil)
+                
+                let result = try await Auth.auth().signIn(with: firebaseCredential)
+                
+                await MainActor.run {
+                    self.user = result.user
+                    self.isAuthenticated = true
+                    print("✅ AuthService: Signed in successfully as: \(result.user.uid)")
+                    print("   Email: \(result.user.email ?? "no email")")
+                    print("   Display Name: \(result.user.displayName ?? "no name")")
+                }
+            } catch {
+                await MainActor.run {
                     print("❌ AuthService: Sign-in error: \(error.localizedDescription)")
-                    return
                 }
-                
-                guard let user = result?.user else {
-                    print("❌ AuthService: No user returned from sign-in")
-                    return
-                }
-                
-                self?.user = user
-                self?.isAuthenticated = true
-                print("✅ AuthService: Signed in successfully as: \(user.uid)")
-                print("   Email: \(user.email ?? "no email")")
-                print("   Display Name: \(user.displayName ?? "no name")")
             }
         }
     }
