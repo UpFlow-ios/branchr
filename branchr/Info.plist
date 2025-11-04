@@ -13,5 +13,14 @@
 		<string>fetch</string>
 		<string>bluetooth-peripheral</string>
 	</array>
+	<!-- Phase 21C: MultipeerConnectivity Network Permissions -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Branchr uses your local network to connect with nearby riders for group rides.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_branchr-group._tcp</string>
+	</array>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Branchr uses Bluetooth to connect and sync ride data with other riders.</string>
 </dict>
 </plist>

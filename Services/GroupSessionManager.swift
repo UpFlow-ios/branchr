@@ -71,6 +71,20 @@ class GroupSessionManager: NSObject, ObservableObject {
         sessionActive = true
         groupSize = 1
         
+        // Phase 21C: Start services with retry logic
+        startServices()
+        
+        print("Branchr: Started hosting group session (up to \(maxPeers) riders)")
+    }
+    
+    // MARK: - Phase 21C: Network Services with Retry
+    
+    /// Start advertising and browsing services
+    private func startServices() {
+        // Stop existing services first
+        advertiser?.stopAdvertisingPeer()
+        browser?.stopBrowsingForPeers()
+        
         let discoveryInfo = [
             "app": "branchr",
             "version": "1.0",
@@ -78,18 +92,27 @@ class GroupSessionManager: NSObject, ObservableObject {
             "host": myPeerID.displayName
         ]
         
+        // Start advertiser
         advertiser = MCNearbyServiceAdvertiser(peer: myPeerID, discoveryInfo: discoveryInfo, serviceType: serviceType)
         advertiser?.delegate = self
         advertiser?.startAdvertisingPeer()
         
-        // Phase 21: Also start browsing to connect with nearby riders
-        if browser == nil {
-            browser = MCNearbyServiceBrowser(peer: myPeerID, serviceType: serviceType)
-            browser?.delegate = self
-            browser?.startBrowsingForPeers()
-        }
+        // Start browser
+        browser = MCNearbyServiceBrowser(peer: myPeerID, serviceType: serviceType)
+        browser?.delegate = self
+        browser?.startBrowsingForPeers()
         
-        print("Branchr: Started hosting group session (up to \(maxPeers) riders)")
+        print("Branchr: Advertising and browsing restarted successfully")
+    }
+    
+    /// Handle network errors with retry logic
+    private func handleNetworkError(_ error: Error) {
+        print("Branchr: Network error \(error.localizedDescription). Retrying in 5s...")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            if self.sessionActive {
+                self.startServices()
+            }
+        }
     }
     
     /// Join an existing group ride session
@@ -99,24 +122,8 @@ class GroupSessionManager: NSObject, ObservableObject {
         isHost = false
         sessionActive = true
         
-        // Phase 21: Start browsing and advertising to connect
-        if browser == nil {
-            browser = MCNearbyServiceBrowser(peer: myPeerID, serviceType: serviceType)
-            browser?.delegate = self
-            browser?.startBrowsingForPeers()
-        }
-        
-        // Also advertise to allow others to find us
-        if advertiser == nil {
-            let discoveryInfo = [
-                "app": "branchr",
-                "version": "1.0",
-                "mode": "group"
-            ]
-            advertiser = MCNearbyServiceAdvertiser(peer: myPeerID, discoveryInfo: discoveryInfo, serviceType: serviceType)
-            advertiser?.delegate = self
-            advertiser?.startAdvertisingPeer()
-        }
+        // Phase 21C: Use startServices() for consistency
+        startServices()
         
         print("Branchr: Started browsing for group sessions")
     }
@@ -388,8 +395,8 @@ extension GroupSessionManager: MCNearbyServiceAdvertiserDelegate {
     nonisolated func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didNotStartAdvertisingPeer error: Error) {
         DispatchQueue.main.async {
             print("Branchr: Failed to start group advertising: \(error)")
-            self.sessionActive = false
-            self.isHost = false
+            // Phase 21C: Retry on network errors
+            self.handleNetworkError(error)
         }
     }
 }
@@ -421,7 +428,8 @@ extension GroupSessionManager: MCNearbyServiceBrowserDelegate {
     nonisolated func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
         DispatchQueue.main.async {
             print("Branchr: Failed to start group browsing: \(error)")
-            self.sessionActive = false
+            // Phase 21C: Retry on network errors
+            self.handleNetworkError(error)
         }
     }
 }

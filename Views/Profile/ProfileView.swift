@@ -8,6 +8,7 @@
 
 import SwiftUI
 import PhotosUI
+import FirebaseAuth
 
 /**
  * 👤 Profile View
@@ -29,6 +30,8 @@ struct ProfileView: View {
     @FocusState private var isNameFieldFocused: Bool
     @FocusState private var isBioFieldFocused: Bool
     @ObservedObject private var theme = ThemeManager.shared
+    @ObservedObject private var authService = AuthService.shared
+    @State private var uploadInProgress = false
     
     var body: some View {
         NavigationView {
@@ -172,9 +175,51 @@ struct ProfileView: View {
             )
             .onChange(of: selectedPhoto) { newItem in
                 Task {
-                    if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                    if let data = try? await newItem?.loadTransferable(type: Data.self),
+                       let uiImage = UIImage(data: data) {
                         profileImageData = data
+                        
+                        // Phase 22: Upload to Firebase if user is signed in
+                        if let userID = authService.currentUserID {
+                            uploadInProgress = true
+                            FirebaseService.shared.uploadProfilePhoto(uiImage, userID: userID) { url in
+                                DispatchQueue.main.async {
+                                    uploadInProgress = false
+                                    if let url = url {
+                                        // Save profile with photo URL
+                                        FirebaseService.shared.saveUserProfile(
+                                            userID: userID,
+                                            name: userName,
+                                            bio: userBio,
+                                            photoURL: url
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
+                }
+            }
+            .onChange(of: userName) { newName in
+                // Phase 22: Sync name changes to Firebase
+                if let userID = authService.currentUserID {
+                    FirebaseService.shared.saveUserProfile(
+                        userID: userID,
+                        name: newName,
+                        bio: userBio,
+                        photoURL: nil // Don't update photo URL on name change
+                    )
+                }
+            }
+            .onChange(of: userBio) { newBio in
+                // Phase 22: Sync bio changes to Firebase
+                if let userID = authService.currentUserID {
+                    FirebaseService.shared.saveUserProfile(
+                        userID: userID,
+                        name: userName,
+                        bio: newBio,
+                        photoURL: nil // Don't update photo URL on bio change
+                    )
                 }
             }
         }
