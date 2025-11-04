@@ -35,16 +35,22 @@ struct branchrApp: App {
             } else {
                 BranchrAppRoot() // ✅ Official app root with tabs, FAB, and theme
                     .onAppear {
-                        // Phase 23: Set user online when app appears
-                        FirebaseService.shared.setUserOnlineStatus(isOnline: true)
+                        // Phase 23: Set user online when app appears (only if signed in)
+                        if Auth.auth().currentUser != nil {
+                            FirebaseService.shared.setUserOnlineStatus(isOnline: true)
+                        }
                     }
                     .onDisappear {
-                        // Phase 23: Set user offline when app disappears
-                        FirebaseService.shared.setUserOnlineStatus(isOnline: false)
+                        // Phase 23: Set user offline when app disappears (only if signed in)
+                        if Auth.auth().currentUser != nil {
+                            FirebaseService.shared.setUserOnlineStatus(isOnline: false)
+                        }
                     }
                     .onChange(of: scenePhase) { phase in
-                        // Phase 23: Update online status based on app state
-                        FirebaseService.shared.setUserOnlineStatus(isOnline: phase == .active)
+                        // Phase 23: Update online status based on app state (only if signed in)
+                        if Auth.auth().currentUser != nil {
+                            FirebaseService.shared.setUserOnlineStatus(isOnline: phase == .active)
+                        }
                     }
             }
         }

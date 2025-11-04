@@ -425,7 +425,7 @@ struct RiderCard: View {
             // Profile Photo with Online Indicator
             ZStack(alignment: .bottomTrailing) {
                 // Profile Photo
-                if let photoURL = profile.photoURL, !photoURL.isEmpty, let url = URL(string: photoURL) {
+                if !profile.photoURL.isEmpty, let url = URL(string: profile.photoURL) {
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .success(let image):

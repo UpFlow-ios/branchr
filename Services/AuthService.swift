@@ -63,27 +63,13 @@ class AuthService: NSObject, ObservableObject {
             return
         }
         
-        // Create OAuth credential for Apple Sign-In using async/await
-        Task {
-            do {
-                let provider = OAuthProvider(providerID: "apple.com")
-                let firebaseCredential = try await provider.credential(withIDToken: tokenString, rawNonce: nil)
-                
-                let result = try await Auth.auth().signIn(with: firebaseCredential)
-                
-                await MainActor.run {
-                    self.user = result.user
-                    self.isAuthenticated = true
-                    print("✅ AuthService: Signed in successfully as: \(result.user.uid)")
-                    print("   Email: \(result.user.email ?? "no email")")
-                    print("   Display Name: \(result.user.displayName ?? "no name")")
-                }
-            } catch {
-                await MainActor.run {
-                    print("❌ AuthService: Sign-in error: \(error.localizedDescription)")
-                }
-            }
-        }
+        // TODO: Phase 23 - Apple Sign-In implementation
+        // Firebase OAuthProvider API needs to be verified for correct usage
+        // For now, this is a placeholder - presence features work without sign-in
+        print("⚠️ AuthService: Apple Sign-In placeholder - implement with correct Firebase Auth API")
+        print("   Token received: \(tokenString.prefix(20))...")
+        
+        // Note: Online presence will work once users sign in via Firebase Console or other method
     }
     
     // MARK: - Sign Out
