@@ -8,6 +8,20 @@
 import Foundation
 import MultipeerConnectivity
 import SwiftUI
+import UIKit
+
+// MARK: - Rider Profile Model (Phase 21B)
+
+struct RiderProfile: Identifiable, Equatable {
+    let id = UUID()
+    let name: String
+    let bio: String
+    let image: UIImage?
+    
+    static func == (lhs: RiderProfile, rhs: RiderProfile) -> Bool {
+        lhs.id == rhs.id
+    }
+}
 
 /// Manager for group ride sessions supporting up to 4 riders
 /// Extends PeerConnectionService to handle multi-peer communication and music sync
@@ -20,6 +34,7 @@ class GroupSessionManager: NSObject, ObservableObject {
     @Published var groupSize: Int = 0
     @Published var sessionActive = false
     @Published var maxPeersReached = false
+    @Published var peerProfiles: [MCPeerID: RiderProfile] = [:] // Phase 21B: Peer profile data
     
     // MARK: - Private Properties
     private let maxPeers = 10 // Phase 21: Support up to 10 riders
@@ -215,6 +230,58 @@ class GroupSessionManager: NSObject, ObservableObject {
         leaveGroupSession()
         print("Branchr: Group session ended")
     }
+    
+    // MARK: - Phase 21B: Profile Broadcasting
+    
+    /// Broadcast current user's profile to all connected peers
+    func broadcastProfile() {
+        guard !connectedPeers.isEmpty else { return }
+        
+        let userName = UserDefaults.standard.string(forKey: "userName") ?? "Rider"
+        let userBio = UserDefaults.standard.string(forKey: "userBio") ?? "Let's ride together!"
+        let imageData = UserDefaults.standard.data(forKey: "profileImageData")
+        
+        var payload: [String: Any] = [
+            "type": "profile",
+            "name": userName,
+            "bio": userBio
+        ]
+        
+        if let data = imageData {
+            payload["imageData"] = data.base64EncodedString()
+        }
+        
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: payload) else {
+            print("Branchr: Failed to serialize profile data")
+            return
+        }
+        
+        do {
+            try session.send(jsonData, toPeers: connectedPeers, with: .reliable)
+            print("Branchr: Broadcasted profile to \(connectedPeers.count) peer(s)")
+        } catch {
+            print("Branchr: Failed to broadcast profile: \(error)")
+        }
+    }
+    
+    /// Get profile for a specific peer (or default if not available)
+    func getProfile(for peerID: MCPeerID) -> RiderProfile {
+        if let profile = peerProfiles[peerID] {
+            return profile
+        }
+        // Return default profile with device name
+        return RiderProfile(name: peerID.displayName, bio: "", image: nil)
+    }
+    
+    /// Get current user's profile
+    var myProfile: RiderProfile {
+        let userName = UserDefaults.standard.string(forKey: "userName") ?? "Rider"
+        let userBio = UserDefaults.standard.string(forKey: "userBio") ?? "Let's ride together!"
+        let imageData = UserDefaults.standard.data(forKey: "profileImageData")
+        let image = imageData.flatMap { UIImage(data: $0) }
+        
+        return RiderProfile(name: userName, bio: userBio, image: image)
+    }
 }
 
 // MARK: - MCSessionDelegate
@@ -228,6 +295,9 @@ extension GroupSessionManager: MCSessionDelegate {
                     self.connectedPeers.append(peerID)
                     self.groupSize = self.connectedPeers.count + 1 // +1 for self
                     self.maxPeersReached = self.groupSize >= self.maxPeers
+                    
+                    // Phase 21B: Broadcast our profile when peer connects
+                    self.broadcastProfile()
                 }
                 print("Branchr: \(peerID.displayName) joined group session")
                 
@@ -248,15 +318,32 @@ extension GroupSessionManager: MCSessionDelegate {
     
     nonisolated func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
         DispatchQueue.main.async {
-            // Handle received data - this will be processed by MusicSyncService
-            print("Branchr: Received data from \(peerID.displayName)")
-            
-            // Notify observers about received data
-            NotificationCenter.default.post(
-                name: .groupSessionDataReceived,
-                object: nil,
-                userInfo: ["data": data, "peerID": peerID]
-            )
+            // Phase 21B: Handle profile data
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let type = json["type"] as? String, type == "profile" {
+                // Profile data received
+                let name = json["name"] as? String ?? peerID.displayName
+                let bio = json["bio"] as? String ?? ""
+                var image: UIImage? = nil
+                
+                if let base64String = json["imageData"] as? String,
+                   let imageData = Data(base64Encoded: base64String) {
+                    image = UIImage(data: imageData)
+                }
+                
+                self.peerProfiles[peerID] = RiderProfile(name: name, bio: bio, image: image)
+                print("Branchr: Received profile from \(peerID.displayName): \(name)")
+            } else {
+                // Other data (music sync, etc.)
+                print("Branchr: Received data from \(peerID.displayName)")
+                
+                // Notify observers about received data
+                NotificationCenter.default.post(
+                    name: .groupSessionDataReceived,
+                    object: nil,
+                    userInfo: ["data": data, "peerID": peerID]
+                )
+            }
         }
     }
     

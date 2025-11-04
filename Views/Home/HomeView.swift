@@ -122,6 +122,10 @@ struct HomeView: View {
                         if !groupManager.sessionActive {
                             groupManager.startGroupSession()
                             musicSync.setGroupSessionManager(groupManager)
+                            // Phase 21B: Broadcast profile when starting group
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                groupManager.broadcastProfile()
+                            }
                         }
                         showingConnectedRiders = true
                     }

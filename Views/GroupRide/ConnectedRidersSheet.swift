@@ -49,15 +49,15 @@ struct ConnectedRidersSheet: View {
                         }
                         .padding(.top, 20)
                         
-                        // Riders Grid
+                        // Riders Grid (Phase 21B: Using Profile Data)
                         LazyVGrid(columns: [
                             GridItem(.flexible(), spacing: 12),
                             GridItem(.flexible(), spacing: 12)
                         ], spacing: 16) {
-                            // Host (Self)
+                            // Host (Self) - Use profile data
                             RiderTile(
                                 riderID: groupManager.myDisplayName,
-                                name: groupManager.myDisplayName,
+                                profile: groupManager.myProfile,
                                 isHost: groupManager.isHost,
                                 isSelf: true,
                                 voiceService: voiceService,
@@ -65,11 +65,11 @@ struct ConnectedRidersSheet: View {
                                 groupManager: groupManager
                             )
                             
-                            // Connected Peers
+                            // Connected Peers - Use profile data
                             ForEach(groupManager.connectedPeers, id: \.displayName) { peer in
                                 RiderTile(
                                     riderID: peer.displayName,
-                                    name: peer.displayName,
+                                    profile: groupManager.getProfile(for: peer),
                                     isHost: false,
                                     isSelf: false,
                                     voiceService: voiceService,
@@ -79,6 +79,10 @@ struct ConnectedRidersSheet: View {
                             }
                         }
                         .padding(.horizontal, 20)
+                        .onAppear {
+                            // Broadcast profile when sheet appears
+                            groupManager.broadcastProfile()
+                        }
                         
                         // Audio Mode Switcher
                         VStack(spacing: 12) {
@@ -156,7 +160,7 @@ struct ConnectedRidersSheet: View {
 
 struct RiderTile: View {
     let riderID: String
-    let name: String
+    let profile: RiderProfile // Phase 21B: Use profile data
     let isHost: Bool
     let isSelf: Bool
     @ObservedObject var voiceService: VoiceChatService
@@ -166,19 +170,45 @@ struct RiderTile: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            // Avatar with Sound Indicator
+            // Avatar with Sound Indicator (Phase 21B: Profile Photo)
             ZStack {
-                // Avatar
-                Image(systemName: isHost ? "crown.fill" : "person.fill")
-                    .font(.system(size: 32))
-                    .foregroundColor(theme.accentColor)
-                    .frame(width: 60, height: 60)
-                    .background(theme.cardBackground)
-                    .clipShape(Circle())
-                    .overlay(
-                        Circle()
-                            .strokeBorder(theme.accentColor.opacity(0.3), lineWidth: 2)
-                    )
+                // Profile Photo or Initials
+                if let image = profile.image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 60, height: 60)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .strokeBorder(theme.accentColor, lineWidth: isHost ? 3 : 2)
+                        )
+                        .shadow(color: theme.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
+                } else {
+                    // Default avatar with initials
+                    Circle()
+                        .fill(theme.accentColor.opacity(0.3))
+                        .frame(width: 60, height: 60)
+                        .overlay(
+                            Text(String(profile.name.prefix(1).uppercased()))
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(theme.accentColor)
+                        )
+                        .overlay(
+                            Circle()
+                                .strokeBorder(theme.accentColor, lineWidth: isHost ? 3 : 2)
+                        )
+                        .shadow(color: theme.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+                
+                // Host crown indicator
+                if isHost {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(theme.accentColor)
+                        .offset(x: 25, y: -25)
+                        .shadow(color: theme.accentColor.opacity(0.5), radius: 4)
+                }
                 
                 // Animated Sound Indicator
                 if voiceService.isSpeaking(peerID: riderID) {
@@ -191,11 +221,21 @@ struct RiderTile: View {
                 }
             }
             
-            // Rider Name
-            Text(name)
-                .font(.subheadline.bold())
-                .foregroundColor(theme.primaryText)
-                .lineLimit(1)
+            // Rider Name (from profile)
+            VStack(spacing: 2) {
+                Text(profile.name)
+                    .font(.subheadline.bold())
+                    .foregroundColor(theme.primaryText)
+                    .lineLimit(1)
+                
+                // Bio preview (if available)
+                if !profile.bio.isEmpty {
+                    Text(profile.bio)
+                        .font(.caption2)
+                        .foregroundColor(theme.primaryText.opacity(0.6))
+                        .lineLimit(1)
+                }
+            }
             
             // Status Dot
             HStack(spacing: 4) {

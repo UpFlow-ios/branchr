@@ -26,6 +26,8 @@ struct ProfileView: View {
     
     @State private var showingImagePicker = false
     @State private var selectedPhoto: PhotosPickerItem?
+    @FocusState private var isNameFieldFocused: Bool
+    @FocusState private var isBioFieldFocused: Bool
     @ObservedObject private var theme = ThemeManager.shared
     
     var body: some View {
@@ -89,6 +91,7 @@ struct ProfileView: View {
                                 RoundedRectangle(cornerRadius: 12)
                                     .strokeBorder(theme.accentColor.opacity(0.3), lineWidth: 1)
                             )
+                            .focused($isNameFieldFocused)
                     }
                     .padding(.horizontal, 20)
                     
@@ -113,6 +116,7 @@ struct ProfileView: View {
                                 .frame(height: 120)
                                 .scrollContentBackground(.hidden)
                                 .padding(8)
+                                .focused($isBioFieldFocused)
                         }
                         .background(theme.cardBackground)
                         .cornerRadius(12)
@@ -145,6 +149,21 @@ struct ProfileView: View {
             .background(theme.primaryBackground.ignoresSafeArea())
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        isNameFieldFocused = false
+                        isBioFieldFocused = false
+                    }
+                    .foregroundColor(theme.accentColor)
+                }
+            }
+            .onTapGesture {
+                // Dismiss keyboard when tapping outside
+                isNameFieldFocused = false
+                isBioFieldFocused = false
+            }
             .photosPicker(
                 isPresented: $showingImagePicker,
                 selection: $selectedPhoto,
