@@ -7,7 +7,9 @@
 
 import SwiftUI
 import FirebaseCore
-import FirebaseAuth
+import FirebaseAuth // Phase 22: For Auth.auth().currentUser
+import FirebaseMessaging // Phase 28: For FCM
+import UserNotifications // Phase 28: For push notifications
 
 @main
 struct branchrApp: App {
@@ -17,6 +19,10 @@ struct branchrApp: App {
     init() {
         // Phase 22: Initialize Firebase with explicit configuration
         configureFirebase()
+        
+        // Phase 28: Configure FCM notifications
+        FCMService.shared.configureNotifications()
+        print("☁️ Firebase + FCM configured")
         
         // Validate MusicKit access on app launch
         // This will configure MusicKit and request user authorization

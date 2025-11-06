@@ -22,5 +22,12 @@
 	</array>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Branchr uses Bluetooth to connect and sync ride data with other riders.</string>
+	<!-- Phase 27: Safety & SOS Permissions -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Branchr needs your location to share it during emergencies.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Branchr uses your location to send SOS alerts.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Branchr may access contacts to send emergency messages.</string>
 </dict>
 </plist>

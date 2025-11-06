@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		8519B9082EB2E2FA00BDF0E2 /* AuthKey_S8S2CSHCZ7.p8 in Resources */ = {isa = PBXBuildFile; fileRef = 8519B9072EB2E2FA00BDF0E2 /* AuthKey_S8S2CSHCZ7.p8 */; };
 		8556E90D2EBA23CF00205C50 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 8556E90C2EBA23CE00205C50 /* GoogleService-Info.plist */; };
+		856225982EBBF49B009E6720 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 856225972EBBF49B009E6720 /* FirebaseMessaging */; };
 		857365972EAC8E3A00978438 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 857365962EAC8E3800978438 /* WidgetKit.framework */; };
 		857365992EAC8E3B00978438 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 857365982EAC8E3B00978438 /* SwiftUI.framework */; };
 		857365A82EAC8E5600978438 /* BranchrWidgetExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 857365942EAC8E3600978438 /* BranchrWidgetExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -156,6 +157,7 @@
 			files = (
 				85786DB62EBA0A4E00B1913B /* FirebaseCore in Frameworks */,
 				85786DBA2EBA0A4E00B1913B /* FirebaseStorage in Frameworks */,
+				856225982EBBF49B009E6720 /* FirebaseMessaging in Frameworks */,
 				85786DB42EBA0A4E00B1913B /* FirebaseAuth in Frameworks */,
 				85786DB82EBA0A4E00B1913B /* FirebaseFirestore in Frameworks */,
 			);
@@ -277,6 +279,7 @@
 				85786DB52EBA0A4E00B1913B /* FirebaseCore */,
 				85786DB72EBA0A4E00B1913B /* FirebaseFirestore */,
 				85786DB92EBA0A4E00B1913B /* FirebaseStorage */,
+				856225972EBBF49B009E6720 /* FirebaseMessaging */,
 			);
 			productName = branchr;
 			productReference = 85CAD6292EA86043001D59AD /* branchr.app */;
@@ -907,6 +910,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		856225972EBBF49B009E6720 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 85786DB22EBA0A4D00B1913B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
 		85786DB32EBA0A4E00B1913B /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 85786DB22EBA0A4D00B1913B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
