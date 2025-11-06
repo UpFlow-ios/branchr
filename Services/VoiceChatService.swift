@@ -296,6 +296,9 @@ class VoiceChatService: NSObject, ObservableObject {
     
     // MARK: - Public Methods
     
+    // Phase 29C: Haptic feedback generator
+    private var hapticGenerator = UINotificationFeedbackGenerator()
+    
     /// Start voice chat
     func startVoiceChat() {
         guard !isVoiceChatActive else { return }
@@ -311,6 +314,10 @@ class VoiceChatService: NSObject, ObservableObject {
             try audioEngine.start()
             isVoiceChatActive = true
             
+            // Phase 29C: Haptic feedback on start
+            hapticGenerator.notificationOccurred(.success)
+            
+            print("🎤 Starting voice chat...")
             print("Branchr: Voice chat started successfully")
         } catch {
             print("Branchr: Failed to start voice chat: \(error)")
@@ -326,6 +333,10 @@ class VoiceChatService: NSObject, ObservableObject {
         isVoiceChatActive = false
         audioLevel = 0.0
         
+        // Phase 29C: Haptic feedback on stop
+        hapticGenerator.notificationOccurred(.warning)
+        
+        print("🛑 Stopping voice chat...")
         print("Branchr: Voice chat stopped")
     }
     

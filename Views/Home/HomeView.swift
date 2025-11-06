@@ -293,14 +293,53 @@ struct HomeView: View {
                         .padding(.top, 8)
                     }
                     
-                    BranchrButton(title: voiceService.isVoiceChatActive ? "Stop Voice Chat" : "Start Voice Chat", 
-                                icon: "mic.circle.fill") {
-                    if voiceService.isVoiceChatActive {
-                        voiceService.stopVoiceChat()
-                    } else {
-                        voiceService.startVoiceChat()
+                    // Phase 29C: Dynamic Start/Stop Voice Chat Button with Color States
+                    Button(action: {
+                        if voiceService.isVoiceChatActive {
+                            voiceService.stopVoiceChat()
+                        } else {
+                            voiceService.startVoiceChat()
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill")
+                                .font(.system(size: 18, weight: .medium))
+                            
+                            Text(voiceService.isVoiceChatActive ? "Stop Voice Chat" : "Start Voice Chat")
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(voiceService.isVoiceChatActive ? Color.green : Color.yellow)
+                                .shadow(
+                                    color: voiceService.isVoiceChatActive
+                                    ? .green.opacity(0.5)
+                                    : .yellow.opacity(0.5),
+                                    radius: 8,
+                                    x: 0,
+                                    y: 4
+                                )
+                        )
+                        .overlay(
+                            Group {
+                                if voiceService.isVoiceChatActive {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.green.opacity(0.8), lineWidth: 2)
+                                        .scaleEffect(1.05)
+                                        .opacity(0.8)
+                                        .animation(
+                                            Animation.easeInOut(duration: 1.0)
+                                                .repeatForever(autoreverses: true),
+                                            value: voiceService.isVoiceChatActive
+                                        )
+                                }
+                            }
+                        )
                     }
-                    }
+                    .animation(.easeInOut(duration: 0.3), value: voiceService.isVoiceChatActive)
                     
                     BranchrButton(title: "Safety & SOS", icon: "exclamationmark.triangle.fill") {
                         showingSafetySettings = true
