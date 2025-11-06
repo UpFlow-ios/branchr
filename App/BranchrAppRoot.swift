@@ -36,17 +36,9 @@ struct BranchrAppRoot: View {
                 }
                 .tag(0)
                 
-                // Tab 2: Ride
-                NavigationStack {
-                    RideMapView()
-                }
-                .tabItem {
-                    Image(systemName: "bicycle.circle.fill")
-                    Text("Ride")
-                }
-                .tag(1)
+                // Phase 31: Ride tab removed - functionality moved to HomeView
                 
-                // Tab 3: Voice
+                // Tab 2: Voice
                 NavigationStack {
                     VoiceSettingsView()
                 }
@@ -54,9 +46,9 @@ struct BranchrAppRoot: View {
                     Image(systemName: "waveform.circle.fill")
                     Text("Voice")
                 }
-                .tag(2)
+                .tag(1)
                 
-                // Tab 4: Profile (Phase 21)
+                // Tab 3: Profile (Phase 21)
                 NavigationStack {
                     ProfileView()
                 }
@@ -64,9 +56,9 @@ struct BranchrAppRoot: View {
                     Image(systemName: "person.circle.fill")
                     Text("Profile")
                 }
-                .tag(3)
+                .tag(2)
                 
-                // Tab 5: Settings
+                // Tab 4: Settings
                 NavigationStack {
                     SettingsView()
                 }
@@ -74,7 +66,7 @@ struct BranchrAppRoot: View {
                     Image(systemName: "gearshape.fill")
                     Text("Settings")
                 }
-                .tag(4)
+                .tag(3)
             }
             .tint(theme.primaryButton)
             .preferredColorScheme(theme.isDarkMode ? .dark : .light)

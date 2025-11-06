@@ -26,6 +26,9 @@ struct HomeView: View {
     // MARK: - Phase 28: SOS Alert State
     @State private var showSOSBanner = false
     
+    // MARK: - Phase 31: Ride Tracking State
+    @State private var showRideTracking = false
+    
     // MARK: - State Variables
     @State private var showingGroupRide = false
     @State private var showingConnectedRiders = false // Phase 20
@@ -184,11 +187,26 @@ struct HomeView: View {
                 
                 // MARK: - Main Actions
                 VStack(spacing: 14) {
-                    // Enhanced Ride Tracking Button (Phase 19.1 & 20)
-                    RideTrackingButton(rideService: rideService) {
-                        handleRideButtonPress()
+                    // Phase 31: Unified Ride Tracking Button
+                    Button(action: {
+                        showRideTracking = true
+                        VoiceFeedbackService.shared.speak("Starting ride tracking")
+                    }) {
+                        HStack {
+                            Image(systemName: "location.fill")
+                                .font(.headline)
+                            Text("Start Ride Tracking")
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.yellow)
+                                .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 3)
+                        )
                     }
-                    .disabled(rideService.rideState == .paused) // Disable when paused (use modal instead)
                     
                     BranchrButton(title: "Start Group Ride", icon: "person.3.fill") {
                         if !groupManager.sessionActive {
@@ -406,6 +424,10 @@ struct HomeView: View {
         }
         .fullScreenCover(isPresented: $showRideSummary) {
             Phase20RideSummaryView(rideService: rideService)
+        }
+        // Phase 31: Unified Ride Tracking Sheet
+        .sheet(isPresented: $showRideTracking) {
+            RideTrackingView()
         }
     }
     
