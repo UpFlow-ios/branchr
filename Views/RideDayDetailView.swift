@@ -110,6 +110,33 @@ struct RideDayDetailView: View {
     }
 }
 
+// MARK: - Stat Row View Component
+struct StatRowView: View {
+    let icon: String
+    let title: String
+    let value: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(.green)
+                .frame(width: 30)
+            
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(.gray)
+            
+            Spacer()
+            
+            Text(value)
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+        }
+    }
+}
+
 // MARK: - Day Summary Card
 struct DaySummaryCard: View {
     let stats: DayStats
@@ -130,25 +157,25 @@ struct DaySummaryCard: View {
             }
             
             VStack(spacing: 12) {
-                StatRow(
+                    StatRowView(
                     icon: "figure.walk",
                     title: "Total Distance",
                     value: stats.formattedTotalDistance
                 )
                 
-                StatRow(
+                    StatRowView(
                     icon: "flame.fill",
                     title: "Total Calories",
                     value: stats.formattedTotalCalories
                 )
                 
-                StatRow(
+                    StatRowView(
                     icon: "clock",
                     title: "Total Time",
                     value: stats.formattedTotalDuration
                 )
                 
-                StatRow(
+                    StatRowView(
                     icon: "bicycle",
                     title: "Rides",
                     value: "\(stats.rideCount)"

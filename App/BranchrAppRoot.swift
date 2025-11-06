@@ -23,7 +23,7 @@ struct BranchrAppRoot: View {
     }
     
     var body: some View {
-        // Main TabView with 4 tabs
+        // Phase 30: TabView with Home, Calendar, Settings
         TabView(selection: $selectedTab) {
                 
                 // Tab 1: Home
@@ -36,29 +36,17 @@ struct BranchrAppRoot: View {
                 }
                 .tag(0)
                 
-                // Phase 31: Ride tab removed - functionality moved to HomeView
-                
-                // Tab 2: Voice
+                // Tab 2: Calendar (Phase 30)
                 NavigationStack {
-                    VoiceSettingsView()
+                    RideCalendarView()
                 }
                 .tabItem {
-                    Image(systemName: "waveform.circle.fill")
-                    Text("Voice")
+                    Image(systemName: "calendar")
+                    Text("Calendar")
                 }
                 .tag(1)
                 
-                // Tab 3: Profile (Phase 21)
-                NavigationStack {
-                    ProfileView()
-                }
-                .tabItem {
-                    Image(systemName: "person.circle.fill")
-                    Text("Profile")
-                }
-                .tag(2)
-                
-                // Tab 4: Settings
+                // Tab 3: Settings (Phase 30: Now includes Voice & Profile)
                 NavigationStack {
                     SettingsView()
                 }
@@ -66,7 +54,7 @@ struct BranchrAppRoot: View {
                     Image(systemName: "gearshape.fill")
                     Text("Settings")
                 }
-                .tag(3)
+                .tag(2)
             }
             .tint(theme.primaryButton)
             .preferredColorScheme(theme.isDarkMode ? .dark : .light)

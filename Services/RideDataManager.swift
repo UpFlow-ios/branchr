@@ -59,6 +59,9 @@ struct RideRecord: Identifiable, Codable {
 @MainActor
 class RideDataManager: ObservableObject {
     
+    // MARK: - Shared Instance (Phase 30)
+    static let shared = RideDataManager()
+    
     // MARK: - Published Properties
     @Published var rides: [RideRecord] = []
     

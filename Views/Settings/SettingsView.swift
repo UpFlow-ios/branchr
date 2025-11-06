@@ -14,12 +14,46 @@ struct SettingsView: View {
     @ObservedObject var watchService = WatchConnectivityService.shared
     @State private var showingModeSelection = false
     @State private var showingSafetySettings = false
+    @State private var showingVoiceSettings = false
+    @State private var showingProfile = false
     
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
                 // Header
                 headerSection
+                
+                // Account Section
+                SectionCard(title: "Account") {
+                    Button(action: {
+                        showingProfile = true
+                    }) {
+                        HStack {
+                            Image(systemName: "person.circle.fill")
+                            Text("Profile")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                        }
+                        .foregroundColor(theme.primaryText)
+                    }
+                }
+                
+                // Voice & Audio Section (Phase 30)
+                SectionCard(title: "Voice & Audio") {
+                    Button(action: {
+                        showingVoiceSettings = true
+                    }) {
+                        HStack {
+                            Image(systemName: "waveform.circle.fill")
+                            Text("Voice & Audio Settings")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                        }
+                        .foregroundColor(theme.primaryText)
+                    }
+                }
                 
                 // Theme Settings
                 SectionCard(title: "Appearance") {
@@ -67,6 +101,12 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showingSafetySettings) {
             SafetyControlView()
+        }
+        .sheet(isPresented: $showingVoiceSettings) {
+            VoiceSettingsView()
+        }
+        .sheet(isPresented: $showingProfile) {
+            ProfileView()
         }
     }
     
