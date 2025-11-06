@@ -23,7 +23,7 @@ struct BranchrAppRoot: View {
     }
     
     var body: some View {
-        // Phase 30: TabView with Home, Calendar, Settings
+        // Phase 30: TabView with Home, Calendar, Profile, Settings
         TabView(selection: $selectedTab) {
                 
                 // Tab 1: Home
@@ -46,7 +46,17 @@ struct BranchrAppRoot: View {
                 }
                 .tag(1)
                 
-                // Tab 3: Settings (Phase 30: Now includes Voice & Profile)
+                // Tab 3: Profile (Phase 21)
+                NavigationStack {
+                    ProfileView()
+                }
+                .tabItem {
+                    Image(systemName: "person.circle.fill")
+                    Text("Profile")
+                }
+                .tag(2)
+                
+                // Tab 4: Settings (Phase 30: Now includes Voice & Audio)
                 NavigationStack {
                     SettingsView()
                 }
@@ -54,7 +64,7 @@ struct BranchrAppRoot: View {
                     Image(systemName: "gearshape.fill")
                     Text("Settings")
                 }
-                .tag(2)
+                .tag(3)
             }
             .tint(theme.primaryButton)
             .preferredColorScheme(theme.isDarkMode ? .dark : .light)
