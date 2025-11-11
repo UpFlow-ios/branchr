@@ -8,6 +8,7 @@
 
 import SwiftUI
 import MapKit
+import FirebaseAuth
 
 /**
  * 🚴‍♂️ Ride Summary View (Phase 20)
@@ -123,10 +124,76 @@ struct Phase20RideSummaryView: View {
                     }
                     .padding(.horizontal, 20)
                     
-                    // Done Button
-                    BranchrButton(title: "Done", icon: "checkmark.circle.fill") {
+                    // Phase 34: Auto-save ride on appear (save is ON by default)
+                    // Save ride automatically when summary appears
+                    .onAppear {
+                        // Create RideRecord from service data
+                        let avgSpeed = rideService.totalDistance > 0 && rideService.duration > 0
+                            ? rideService.totalDistance / rideService.duration // m/s
+                            : 0
+                        
+                        let rideRecord = RideRecord(
+                            distance: rideService.totalDistance,
+                            duration: rideService.duration,
+                            averageSpeed: avgSpeed,
+                            calories: 0, // Calculate if needed
+                            route: rideService.route
+                        )
+                        
+                        // Save locally
+                        RideDataManager.shared.saveRide(rideRecord)
+                        
+                        // Upload to Firebase
+                        FirebaseRideService.shared.uploadRide(rideRecord) { error in
+                            if let error = error {
+                                print("❌ Failed to upload ride: \(error.localizedDescription)")
+                            } else {
+                                print("☁️ Ride synced to Firebase successfully")
+                            }
+                        }
+                        
+                        // Haptic feedback on save
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }
+                    
+                    // Phase 34E: Save Ride Button (theme-aware for light/dark mode)
+                    Button(action: {
                         rideService.resetRide()
                         dismiss()
+                    }) {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("Save Ride")
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundColor(theme.isDarkMode ? .black : theme.accentColor) // Phase 34E: Yellow text in light mode, black in dark
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(theme.isDarkMode ? theme.accentColor : Color.black) // Phase 34E: Black bg in light mode, yellow in dark
+                        )
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    // Phase 34E: Done Button (theme-aware)
+                    Button(action: {
+                        rideService.resetRide()
+                        dismiss()
+                    }) {
+                        HStack {
+                            Image(systemName: "xmark.circle.fill")
+                            Text("Done")
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundColor(theme.isDarkMode ? .black : theme.accentColor) // Phase 34E: Yellow text in light mode, black in dark
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(theme.isDarkMode ? theme.accentColor : Color.black) // Phase 34E: Black bg in light mode, yellow in dark
+                        )
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)

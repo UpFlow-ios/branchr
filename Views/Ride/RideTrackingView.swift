@@ -9,6 +9,8 @@
 import SwiftUI
 import MapKit
 import CoreLocation
+import UIKit
+import Combine
 
 /**
  * 🚴‍♂️ Ride Tracking View
@@ -22,9 +24,21 @@ import CoreLocation
  * - Branchr black/yellow theme
  */
 struct RideTrackingView: View {
-    @StateObject private var rideService = RideTrackingService()
+    @ObservedObject private var rideService = RideTrackingService.shared // Phase 35A: Use shared singleton
     @ObservedObject private var theme = ThemeManager.shared
+    @ObservedObject private var preferences = UserPreferenceManager.shared
+    @StateObject private var speechCommands = SpeechCommandService()
     @Environment(\.dismiss) private var dismiss
+    @State private var showRideSummary = false // Phase 31: Ride summary sheet
+    @State private var lastAnnouncedDistance: Double = 0.0
+    @State private var lastAnnouncedTime: TimeInterval = 0.0
+    
+    // Phase 35B: Rainbow pulse countdown state
+    @State private var countdown = 5
+    @State private var progress: Double = 0
+    @State private var isStopping = false
+    @State private var countdownTimer: Timer?
+    private let haptic = UINotificationFeedbackGenerator()
     
     @State private var region = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
@@ -37,35 +51,31 @@ struct RideTrackingView: View {
                 // Background
                 theme.primaryBackground.ignoresSafeArea()
                 
-                // Map View
-                Map(coordinateRegion: $region, 
-                    interactionModes: [.pan, .zoom],
+                // Map View with custom black polyline
+                RideMapViewRepresentable(
+                    region: $region,
+                    coordinates: rideService.route,
                     showsUserLocation: true,
-                    userTrackingMode: .constant(.none),
-                    annotationItems: rideService.route.isEmpty ? [] : [MapAnnotation(coordinate: rideService.route.last!)]) { _ in
-                    MapPin(coordinate: rideService.route.last!, tint: .red)
-                }
-                .overlay(
-                    // Route polyline overlay (using existing MapPolylineOverlay from MapComponents)
-                    MapPolylineOverlay(coordinates: rideService.route)
+                    riderAnnotations: []
                 )
+                .ignoresSafeArea() // Phase 34D: Map fills entire screen
                 .onChange(of: rideService.route.count) { _ in
                     updateMapRegion()
                 }
                 
                 VStack(spacing: 0) {
-                    // Header
+                    // Phase 34: Header with yellow text
                     HStack {
                         Text("Ride Tracking")
                             .font(.system(size: 24, weight: .bold, design: .rounded))
-                            .foregroundColor(theme.primaryText)
+                            .foregroundColor(Color.branchrAccent)
                         
                         Spacer()
                         
                         Button(action: { dismiss() }) {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.title2)
-                                .foregroundColor(theme.primaryText)
+                                .foregroundColor(Color.branchrAccent)
                                 .padding(8)
                         }
                     }
@@ -74,7 +84,7 @@ struct RideTrackingView: View {
                     
                     Spacer()
                     
-                    // Stats HUD
+                    // Phase 34: Stats HUD with theme colors
                     HStack(spacing: 30) {
                         RideTrackingStatCard(
                             icon: "location.fill",
@@ -97,67 +107,31 @@ struct RideTrackingView: View {
                         )
                     }
                     .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(theme.isDarkMode ? Color.branchrAccent : Color.black)
+                    )
+                    .foregroundColor(theme.isDarkMode ? Color.black : Color.branchrAccent)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 20)
                     
-                    // Controls
-                    HStack(spacing: 40) {
-                        if rideService.rideState == .idle || rideService.rideState == .ended {
-                            Button(action: {
-                                rideService.startRide()
-                                VoiceFeedbackService.shared.speak("Starting ride tracking")
-                            }) {
-                                Image(systemName: "play.circle.fill")
-                                    .font(.system(size: 60))
-                                    .foregroundColor(.green)
-                            }
-                        } else if rideService.rideState == .active {
-                            Button(action: {
-                                rideService.pauseRide()
-                                VoiceFeedbackService.shared.speak("Ride paused")
-                            }) {
-                                Image(systemName: "pause.circle.fill")
-                                    .font(.system(size: 60))
-                                    .foregroundColor(.orange)
-                            }
-                            
-                            Button(action: {
-                                rideService.endRide()
-                                VoiceFeedbackService.shared.speak("Ride ended")
-                                // Show summary after a brief delay
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                                    dismiss()
-                                }
-                            }) {
-                                Image(systemName: "stop.circle.fill")
-                                    .font(.system(size: 60))
-                                    .foregroundColor(.red)
-                            }
-                        } else if rideService.rideState == .paused {
-                            Button(action: {
-                                rideService.resumeRide()
-                                VoiceFeedbackService.shared.speak("Ride resumed")
-                            }) {
-                                Image(systemName: "play.circle.fill")
-                                    .font(.system(size: 60))
-                                    .foregroundColor(.green)
-                            }
-                            
-                            Button(action: {
-                                rideService.endRide()
-                                VoiceFeedbackService.shared.speak("Ride ended")
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                                    dismiss()
-                                }
-                            }) {
-                                Image(systemName: "stop.circle.fill")
-                                    .font(.system(size: 60))
-                                    .foregroundColor(.red)
-                            }
-                        }
-                    }
-                    .padding(.bottom, 50)
+                    // Phase 35A: Unified ride button
+                    rideButton
+                        .padding(.bottom, 50)
+                }
+                
+                // Phase 35B: Rainbow pulse overlay
+                if isStopping {
+                    RainbowPulseView(progress: $progress)
+                        .frame(width: 300, height: 300)
+                        .transition(.opacity)
+                        .onAppear { playCountdown() }
+
+                    Text("Stopping ride in \(countdown)")
+                        .font(.largeTitle.bold())
+                        .foregroundStyle(.white)
+                        .shadow(radius: 8)
+                        .transition(.opacity)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -170,14 +144,95 @@ struct RideTrackingView: View {
                 updateMapRegion()
             }
         }
-        .onChange(of: rideService.totalDistance) { distance in
-            // Announce milestones (every 0.5 miles)
-            let miles = distance / 1609.34
-            let milestone = Int(miles / 0.5)
-            let lastMilestone = Int((distance - 100) / 1609.34 / 0.5)
+        .sheet(isPresented: $showRideSummary) {
+            // Phase 35C: Enhanced ride summary with mini map and charts
+            if let rideRecord = createRideRecord() {
+                EnhancedRideSummaryView(ride: rideRecord)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+            } else {
+                Phase20RideSummaryView(rideService: rideService)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+            }
+        }
+        .onAppear {
+            // Wire up voice commands
+            speechCommands.setEnabled(preferences.voiceCommandsEnabled)
+            if preferences.voiceCommandsEnabled {
+                speechCommands.startListening()
+            }
             
-            if milestone > lastMilestone && milestone > 0 {
-                VoiceFeedbackService.shared.speak("You've ridden \(String(format: "%.1f", miles)) miles")
+            // Phase 35.3: Removed countdown system - instant stop
+        }
+        .onDisappear {
+            speechCommands.stopListening()
+        }
+        .onChange(of: speechCommands.detectedCommand) { command in
+            guard let cmd = command else { return }
+            switch cmd {
+            case .pause:
+                rideService.pauseRide()
+                VoiceFeedbackService.shared.speak("Ride paused")
+                RideHaptics.milestone()
+            case .resume:
+                rideService.resumeRide()
+                VoiceFeedbackService.shared.speak("Ride resumed")
+                RideHaptics.milestone()
+            case .stop:
+                rideService.endRide()
+                VoiceFeedbackService.shared.speak("Ride ended")
+                showRideSummary = true
+                RideHaptics.milestone()
+            case .status:
+                speakStatus()
+            }
+        }
+        .onChange(of: rideService.totalDistance) { distance in
+            // Announce distance milestones (every 0.25 miles) if enabled
+            if preferences.distanceUpdatesEnabled {
+                let miles = distance / 1609.34
+                let milestone = Int(miles / 0.25)
+                let lastMilestone = Int(lastAnnouncedDistance / 1609.34 / 0.25)
+                
+                if milestone > lastMilestone && milestone > 0 {
+                    VoiceFeedbackService.shared.speak("Distance, \(String(format: "%.2f", miles)) miles")
+                    lastAnnouncedDistance = distance
+                    RideHaptics.milestone()
+                }
+            }
+        }
+        .onChange(of: rideService.duration) { duration in
+            // Announce speed updates every 60 seconds if enabled
+            if preferences.paceOrSpeedUpdatesEnabled && rideService.rideState == .active {
+                let timeDiff = duration - lastAnnouncedTime
+                if timeDiff >= 60.0 {
+                    let speed = rideService.averageSpeed * 0.621371 // Convert to mph
+                    VoiceFeedbackService.shared.speak("Average speed, \(String(format: "%.1f", speed)) miles per hour")
+                    lastAnnouncedTime = duration
+                    RideHaptics.milestone()
+                }
+            }
+        }
+        .onChange(of: rideService.rideState) { state in
+            if state == .ended && preferences.completionSummaryEnabled {
+                // Speak completion summary
+                let miles = rideService.totalDistance / 1609.34
+                let hours = Int(rideService.duration) / 3600
+                let minutes = (Int(rideService.duration) % 3600) / 60
+                let speed = rideService.averageSpeed * 0.621371
+                
+                var summary = "Ride complete. "
+                summary += "Total distance, \(String(format: "%.2f", miles)) miles. "
+                if hours > 0 {
+                    summary += "Time, \(hours) hours \(minutes) minutes. "
+                } else {
+                    summary += "Time, \(minutes) minutes. "
+                }
+                summary += "Average speed, \(String(format: "%.1f", speed)) miles per hour."
+                
+                VoiceFeedbackService.shared.speak(summary)
+                RideHaptics.milestone()
             }
         }
     }
@@ -205,6 +260,131 @@ struct RideTrackingView: View {
             return String(format: "%d:%02d", minutes, secs)
         }
     }
+    
+    private func speakStatus() {
+        let miles = rideService.totalDistance / 1609.34
+        let hours = Int(rideService.duration) / 3600
+        let minutes = (Int(rideService.duration) % 3600) / 60
+        let speed = rideService.averageSpeed * 0.621371
+        
+        var status = "Current status. "
+        status += "Distance, \(String(format: "%.2f", miles)) miles. "
+        if hours > 0 {
+            status += "Time, \(hours) hours \(minutes) minutes. "
+        } else {
+            status += "Time, \(minutes) minutes. "
+        }
+        status += "Average speed, \(String(format: "%.1f", speed)) miles per hour."
+        
+        VoiceFeedbackService.shared.speak(status)
+        RideHaptics.milestone()
+    }
+    
+    // MARK: - Phase 35A: Unified Ride Button
+    
+    private var rideButton: some View {
+        Button(action: handleRideButtonTap) {
+            Text(rideService.rideState.buttonTitle)
+                .font(.headline)
+                .foregroundColor(.white)
+                .frame(width: 220, height: 60)
+                .background(rideService.rideState.buttonColor)
+                .cornerRadius(15)
+                .shadow(radius: 8)
+        }
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 2.0)
+                .onEnded { _ in
+                    if rideService.rideState == .paused {
+                        withAnimation { startCountdown() }
+                    }
+                }
+        )
+    }
+    
+    private func handleRideButtonTap() {
+        switch rideService.rideState {
+        case .idle, .ended:
+            rideService.startRide()
+            VoiceFeedbackService.shared.speak("Tracking ride")
+            RideHaptics.milestone()
+            lastAnnouncedDistance = 0.0
+            lastAnnouncedTime = 0.0
+        case .active:
+            rideService.pauseRide()
+            VoiceFeedbackService.shared.speak("Ride paused")
+            RideHaptics.milestone()
+        case .paused:
+            rideService.resumeRide()
+            VoiceFeedbackService.shared.speak("Ride resumed")
+            RideHaptics.milestone()
+        }
+    }
+    
+    // MARK: - Phase 35B: Rainbow Pulse Countdown
+    
+    private func startCountdown() {
+        isStopping = true
+        progress = 0
+        countdown = 5
+    }
+    
+    private func playCountdown() {
+        countdownTimer?.invalidate()
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [self] timer in
+            countdown -= 1
+            progress += 0.2
+            haptic.notificationOccurred(.success)
+            VoiceFeedbackService.shared.speak("Stopping ride in \(countdown)")
+            if countdown == 0 {
+                timer.invalidate()
+                finishStop()
+            }
+        }
+    }
+    
+    private func finishStop() {
+        withAnimation {
+            isStopping = false
+            rideService.endRide()
+            showRideSummary = true
+        }
+        VoiceFeedbackService.shared.speak("Ride ended")
+    }
+    
+    // Phase 35A: Store cancellables for notification subscription
+    @State private var cancellables = Set<AnyCancellable>()
+    
+    // Phase 35C: Create RideRecord from service
+    private func createRideRecord() -> RideRecord? {
+        guard rideService.rideState == .ended else { return nil }
+        
+        let avgSpeed = rideService.totalDistance > 0 && rideService.duration > 0
+            ? rideService.totalDistance / rideService.duration // m/s
+            : 0
+        
+        return RideRecord(
+            distance: rideService.totalDistance,
+            duration: rideService.duration,
+            averageSpeed: avgSpeed,
+            calories: 0,
+            route: rideService.route
+        )
+    }
+}
+
+// MARK: - Ride Haptics Helper
+
+enum RideHaptics {
+    static func milestone() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+    
+    static func warning() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.warning)
+    }
 }
 
 // MARK: - Ride Stat Card Component (Phase 31 - Local to RideTrackingView)
@@ -228,23 +408,23 @@ struct RideTrackingStatCard: View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.title3)
-                .foregroundColor(theme.primaryText)
+                .foregroundColor(theme.isDarkMode ? Color.black : Color.branchrAccent)
             
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(value)
                     .font(.headline.bold())
-                    .foregroundColor(theme.primaryText)
+                    .foregroundColor(theme.isDarkMode ? Color.black : Color.branchrAccent)
                 
                 if let unit = unit {
                     Text(unit)
                         .font(.caption)
-                        .foregroundColor(theme.primaryText.opacity(0.7))
+                        .foregroundColor((theme.isDarkMode ? Color.black : Color.branchrAccent).opacity(0.7))
                 }
             }
             
             Text(label)
                 .font(.caption)
-                .foregroundColor(theme.primaryText.opacity(0.7))
+                .foregroundColor((theme.isDarkMode ? Color.black : Color.branchrAccent).opacity(0.7))
         }
         .frame(width: 100)
     }

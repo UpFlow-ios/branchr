@@ -21,6 +21,23 @@ enum RideState {
     case active    // Ride is currently being tracked
     case paused    // Ride is paused (user can resume or end)
     case ended     // Ride has been completed
+    
+    // Phase 35A: Button title and color
+    var buttonTitle: String {
+        switch self {
+        case .idle, .ended: return "Start Ride Tracking"
+        case .active: return "Pause Ride Tracking"
+        case .paused: return "Resume Ride Tracking"
+        }
+    }
+    
+    var buttonColor: Color {
+        switch self {
+        case .idle, .ended: return .green
+        case .active: return .red
+        case .paused: return .orange
+        }
+    }
 }
 
 /**
@@ -34,6 +51,9 @@ enum RideState {
  */
 @MainActor
 final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDelegate {
+    
+    // MARK: - Phase 35A: Shared Singleton
+    static let shared = RideTrackingService()
     
     // MARK: - Published Properties
     

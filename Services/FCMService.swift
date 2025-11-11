@@ -46,6 +46,16 @@ class FCMService: NSObject, ObservableObject, MessagingDelegate, UNUserNotificat
     // MARK: - Configuration
     
     func configureNotifications() {
+        // Phase 34H: Ensure Firebase is configured before setting up FCM
+        if FirebaseApp.app() == nil {
+            print("⚠️ Firebase not ready – delaying FCM setup…")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                ensureFirebaseConfigured()
+                self.configureNotifications()
+            }
+            return
+        }
+        
         // Set delegates
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
@@ -90,9 +100,8 @@ class FCMService: NSObject, ObservableObject, MessagingDelegate, UNUserNotificat
                     print("✅ FCM token saved to Firestore")
                 }
             }
-        } else {
-            print("⚠️ Cannot save FCM token - user not signed in")
         }
+        // Silently skip if user not signed in (expected until auth is implemented)
     }
     
     // MARK: - Send SOS Alert
@@ -100,7 +109,7 @@ class FCMService: NSObject, ObservableObject, MessagingDelegate, UNUserNotificat
     /// Send SOS alert to all connected riders via FCM
     func sendSOSAlert(senderName: String, location: CLLocationCoordinate2D) {
         guard let senderUID = Auth.auth().currentUser?.uid else {
-            print("⚠️ Cannot send SOS alert - user not signed in")
+            // Silently skip if user not signed in (expected until auth is implemented)
             return
         }
         
@@ -161,7 +170,7 @@ class FCMService: NSObject, ObservableObject, MessagingDelegate, UNUserNotificat
     /// Start listening for real-time SOS alerts from Firestore
     func startListeningForSOSAlerts() {
         guard let currentUID = Auth.auth().currentUser?.uid else {
-            print("⚠️ Cannot listen for SOS alerts - user not signed in")
+            // Silently skip if user not signed in (expected until auth is implemented)
             return
         }
         

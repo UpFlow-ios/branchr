@@ -37,8 +37,11 @@ Built with SwiftUI and modern iOS frameworks, Branchr delivers seamless peer-to-
 | 🚴 **Ride Tracking** | GPS-based route recording with live statistics (distance, speed, elevation) |
 | 📍 **Real-Time Location** | Share your location with group members during active rides |
 | 👥 **Group Management** | Create private rides, invite friends, and manage group settings |
-| 🎯 **Voice Commands** | Hands-free control with natural language processing |
-| 📊 **Ride Analytics** | Detailed performance metrics and ride history |
+| 🎯 **Voice Commands** | Hands-free control with natural language processing (pause, resume, stop, status) |
+| 📊 **Ride Analytics** | Detailed performance metrics and ride history with calendar view |
+| 🔊 **Voice Announcements** | Real-time distance, speed, and progress updates (customizable) |
+| 📳 **Haptic Feedback** | Tactile feedback for ride milestones and events |
+| 💾 **Auto-Save Rides** | Automatic ride saving with Firebase sync |
 | 🌙 **Dark Mode** | Beautiful dark theme optimized for all lighting conditions |
 | 🔒 **Privacy First** | Granular permissions with local-first data processing |
 
@@ -81,11 +84,19 @@ branchr/
 │   ├── MusicService.swift        # Playback and catalog search
 │   ├── VoiceChatService.swift   # Real-time voice communication
 │   ├── LocationTrackingService  # GPS tracking and route recording
+│   ├── RideTrackingService.swift # Ride state management & tracking
+│   ├── RideDataManager.swift    # Ride persistence & calendar data
+│   ├── SpeechCommandService.swift # Voice command recognition
+│   ├── VoiceFeedbackService.swift # Text-to-speech announcements
+│   ├── UserPreferenceManager.swift # User settings & preferences
 │   ├── PeerConnectionService     # Bluetooth/Multipeer discovery
 │   └── ThemeManager.swift       # Unified design system
 ├── Views/
 │   ├── Home/                     # Main dashboard
 │   ├── Ride/                     # Ride tracking interface
+│   │   ├── RideTrackingView.swift # Main ride tracking sheet
+│   │   └── RideMapViewRepresentable.swift # Custom map with black polyline
+│   ├── Calendar/                 # Ride history calendar view
 │   ├── DJ/                       # Music controls and DJ mode
 │   └── Settings/                 # App configuration
 ├── Models/
@@ -268,8 +279,22 @@ service cloud.firestore {
 | **Phase 1** | Core ride tracking & GPS mapping | ✅ Complete |
 | **Phase 2** | Voice chat & Bluetooth connectivity | ✅ Complete |
 | **Phase 3** | Apple Music integration & DJ mode | ✅ Complete |
-| **Phase 4** | Group management & social features | 🚧 In Progress |
+| **Phase 4** | Group management & social features | ✅ Complete |
+| **Phase 30** | Tab bar cleanup & calendar view | ✅ Complete |
+| **Phase 31** | Firebase profile sync & editable profile UI | ✅ Complete |
+| **Phase 32** | Firebase ride sync & cloud storage | ✅ Complete |
+| **Phase 33** | UI polish & theme unification | ✅ Complete |
+| **Phase 34** | Ride tracking flow fixes & enhancements | ✅ Complete |
 | **Phase 5** | Analytics dashboard & ride history | 📋 Planned |
+
+### Recent Updates (Phase 34)
+- ✅ **Ride Persistence** — Rides automatically save and sync to Calendar
+- ✅ **Clean Map Polyline** — Black route lines with custom rendering
+- ✅ **Voice Announcements** — Distance, speed, and progress updates
+- ✅ **Voice Commands** — "Pause tracking", "Resume ride", "Stop ride", "Status update"
+- ✅ **Haptic Feedback** — Tactile feedback for milestones and events
+- ✅ **Dismissible Sheets** — Drag-to-dismiss ride tracking interface
+- ✅ **Auto-Save** — Rides save automatically when completed
 
 ### Future Enhancements
 - 📱 Apple Watch companion app
@@ -303,9 +328,20 @@ For questions or feedback, please contact the project maintainer.
 
 ## 📚 Documentation
 
+### Setup Guides
 - `MUSICKIT_JWT_INTEGRATION_GUIDE.md` — Complete MusicKit setup guide
 - `APPLE_MUSIC_DEVELOPER_TOKEN_SETUP.md` — JWT token generation
 - `backend/README.md` — Backend server documentation
+
+### Phase Documentation
+- `PHASE_34_RIDE_TRACKING_FIXES.md` — Latest ride tracking enhancements
+  - ✅ Ride persistence & calendar integration
+  - ✅ Clean black map polyline rendering
+  - ✅ Voice announcements (distance, speed, progress)
+  - ✅ Voice commands (pause, resume, stop, status)
+  - ✅ Haptic feedback for milestones
+  - ✅ Dismissible ride tracking sheet
+  - ✅ Auto-save ride feature
 
 ---
 

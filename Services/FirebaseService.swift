@@ -224,9 +224,23 @@ struct UserProfile: Codable, Identifiable {
     var id: String?
     let name: String
     let bio: String
-    let photoURL: String
+    let photoURL: String?
     var isOnline: Bool = false // Phase 23: Online presence
     let updatedAt: Date?
+    let uid: String? // Phase 31: Firebase user ID
+    
+    // Phase 31: Placeholder for new users
+    static var placeholder: UserProfile {
+        UserProfile(
+            id: nil,
+            name: "New Rider",
+            bio: "Tap to customize your profile",
+            photoURL: nil,
+            isOnline: false,
+            updatedAt: nil,
+            uid: nil
+        )
+    }
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -235,6 +249,18 @@ struct UserProfile: Codable, Identifiable {
         case photoURL
         case isOnline
         case updatedAt
+        case uid
+    }
+    
+    // Phase 31: Convenience initializer
+    init(id: String? = nil, name: String, bio: String, photoURL: String?, isOnline: Bool = false, updatedAt: Date? = nil, uid: String? = nil) {
+        self.id = id
+        self.name = name
+        self.bio = bio
+        self.photoURL = photoURL
+        self.isOnline = isOnline
+        self.updatedAt = updatedAt
+        self.uid = uid
     }
 }
 

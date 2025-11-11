@@ -160,7 +160,7 @@ class SOSManager: NSObject, ObservableObject {
     /// Save SOS alert to Firebase
     private func saveSOSAlertToFirebase() {
         guard let userID = Auth.auth().currentUser?.uid else {
-            print("⚠️ Cannot save SOS alert - user not signed in")
+            // Silently skip if user not signed in (expected until auth is implemented)
             return
         }
         

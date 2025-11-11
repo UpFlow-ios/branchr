@@ -22,7 +22,7 @@ struct MapPolylineOverlay: View {
     var body: some View {
         if coordinates.count > 1 {
             MapPolyline(coordinates: coordinates)
-                .stroke(Color.blue, lineWidth: 4)
+                .stroke(Color.black, lineWidth: 4)
         }
     }
 }

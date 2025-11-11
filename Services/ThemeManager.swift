@@ -151,3 +151,31 @@ extension View {
             .cornerRadius(16)
     }
 }
+
+// MARK: - Phase 33B: Color Extensions for Better Visibility
+
+extension Color {
+    /// Button background color that adapts to light/dark mode
+    static var branchrButtonBackground: Color {
+        Color(UIColor { trait in
+            trait.userInterfaceStyle == .dark ? .systemYellow : .black
+        })
+    }
+    
+    /// Button text color that adapts to light/dark mode
+    static var branchrButtonText: Color {
+        Color(UIColor { trait in
+            trait.userInterfaceStyle == .dark ? .black : .systemYellow
+        })
+    }
+    
+    /// Primary text color that adapts to light/dark mode
+    static var branchrTextPrimary: Color {
+        Color(UIColor { trait in
+            trait.userInterfaceStyle == .dark ? .white : .black
+        })
+    }
+    
+    /// Accent color (yellow)
+    static var branchrAccent: Color { Color.yellow }
+}

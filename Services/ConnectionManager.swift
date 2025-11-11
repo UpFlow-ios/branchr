@@ -46,6 +46,7 @@ class ConnectionManager: NSObject, ObservableObject {
     }
     
     @Published var state: ConnectionState = .idle
+    @Published var showRainbowGlow: Bool = false // Phase 30B: Rainbow glow animation state
     
     // MARK: - Private Properties
     private let serviceType = "branchr-connect"
@@ -117,6 +118,7 @@ class ConnectionManager: NSObject, ObservableObject {
         isConnecting = false
         isConnected = false
         connectionMethod = .none
+        showRainbowGlow = false // Phase 30B: Disable rainbow glow
         
         triggerHaptic(.warning)
         
@@ -132,6 +134,17 @@ class ConnectionManager: NSObject, ObservableObject {
         firebaseFallbackTimer = nil
         
         print("🔴 Disconnected from all peers")
+    }
+    
+    // MARK: - Phase 33: Toggle Connection
+    
+    /// Toggle connection state (start if idle, stop if connected)
+    func toggleConnection() {
+        if isConnected {
+            stopConnection()
+        } else {
+            startConnection()
+        }
     }
     
     // MARK: - Private Methods
@@ -163,7 +176,7 @@ class ConnectionManager: NSObject, ObservableObject {
         
         print("☁️ No local peers found. Checking Firebase presence...")
         guard let user = Auth.auth().currentUser else {
-            print("⚠️ Cannot connect via Firebase - user not signed in")
+            // Silently skip Firebase connection if user not signed in (expected until auth is implemented)
             isConnecting = false
             return
         }
@@ -194,9 +207,12 @@ class ConnectionManager: NSObject, ObservableObject {
                         self.isConnected = true
                         self.state = .connected // Phase 29C: Update state
                         self.connectionMethod = .firebase
+                        self.showRainbowGlow = true // Phase 30B: Enable rainbow glow
                         self.triggerHapticSuccess()
                         print("✅ Connected via Firebase to \(onlineRiders.count) online rider(s)")
+                        print("🌈 Connection established — rainbow glow active")
                     } else {
+                        self.showRainbowGlow = false // Phase 30B: Ensure glow is off if no connection
                         self.state = .idle // Phase 29C: Reset to idle if no connection
                         print("⚠️ No other online riders found on Firebase")
                     }
@@ -257,9 +273,11 @@ extension ConnectionManager: MCSessionDelegate {
                 self.isConnecting = false
                 self.state = .connected // Phase 29C: Update state
                 self.connectionMethod = .bluetooth
+                self.showRainbowGlow = true // Phase 30B: Enable rainbow glow
                 self.triggerHapticSuccess()
                 self.firebaseFallbackTimer?.invalidate()
                 print("✅ Connected to \(peerID.displayName) via Bluetooth/WiFi")
+                print("🌈 Connection established — rainbow glow active")
                 
             case .connecting:
                 print("⏳ Connecting to \(peerID.displayName)...")
@@ -269,6 +287,7 @@ extension ConnectionManager: MCSessionDelegate {
                 if self.connectedPeers.isEmpty {
                     self.isConnected = false
                     self.connectionMethod = .none
+                    self.showRainbowGlow = false // Phase 30B: Disable rainbow glow
                 }
                 print("🔴 Disconnected from \(peerID.displayName)")
                 
@@ -314,6 +333,13 @@ extension ConnectionManager: MCNearbyServiceAdvertiserDelegate {
     
     nonisolated func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didNotStartAdvertisingPeer error: Error) {
         DispatchQueue.main.async {
+            // Phase 33: Suppress known iOS sandbox warning (error -72008)
+            let nsError = error as NSError
+            if nsError.domain == "NSNetServicesErrorDomain" && nsError.code == -72008 {
+                print("⚠️ Phase 33: Sandbox restriction ignored (-72008) - this is expected in simulator")
+                return
+            }
+            
             print("❌ Failed to start advertising: \(error.localizedDescription)")
             // Try Firebase fallback if advertising fails
             if self.connectedPeers.isEmpty {
@@ -348,6 +374,13 @@ extension ConnectionManager: MCNearbyServiceBrowserDelegate {
     
     nonisolated func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
         DispatchQueue.main.async {
+            // Phase 33: Suppress known iOS sandbox warning (error -72008)
+            let nsError = error as NSError
+            if nsError.domain == "NSNetServicesErrorDomain" && nsError.code == -72008 {
+                print("⚠️ Phase 33: Sandbox restriction ignored (-72008) - this is expected in simulator")
+                return
+            }
+            
             print("❌ Failed to start browsing: \(error.localizedDescription)")
             // Try Firebase fallback if browsing fails
             if self.connectedPeers.isEmpty {

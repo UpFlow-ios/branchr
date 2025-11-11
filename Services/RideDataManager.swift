@@ -9,9 +9,10 @@ import Foundation
 import CoreLocation
 import Combine
 import CloudKit
+import FirebaseAuth
 
 /// Codable wrapper for CLLocationCoordinate2D
-struct CoordinateData: Codable {
+struct CoordinateData: Codable, Equatable {
     let latitude: Double
     let longitude: Double
     
@@ -26,7 +27,7 @@ struct CoordinateData: Codable {
 }
 
 /// Data model for storing ride information
-struct RideRecord: Identifiable, Codable {
+struct RideRecord: Identifiable, Codable, Equatable {
     var id: UUID
     var date: Date
     var distance: Double // meters
@@ -81,6 +82,8 @@ class RideDataManager: ObservableObject {
     init() {
         rides = loadRides()
         setupCloudSync()
+        // Phase 32: Load rides from Firebase on init
+        loadRidesFromFirebase()
         print("Branchr RideDataManager initialized with \(rides.count) rides")
     }
     
@@ -90,6 +93,12 @@ class RideDataManager: ObservableObject {
     func saveRide(_ ride: RideRecord) {
         rides.insert(ride, at: 0) // Add to beginning for newest first
         saveToFile()
+        
+        // Post notification that rides changed
+        NotificationCenter.default.post(
+            name: .branchrRidesDidChange,
+            object: nil
+        )
         
         // Sync to iCloud
         cloudSyncService.uploadRide(
@@ -112,11 +121,15 @@ class RideDataManager: ObservableObject {
         do {
             let data = try Data(contentsOf: fileURL)
             let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
             rides = try decoder.decode([RideRecord].self, from: data)
             print("Branchr: Loaded \(rides.count) rides from storage")
             return rides
         } catch {
             print("Branchr: Failed to load rides - \(error.localizedDescription)")
+            // If decoding fails, start with empty array and let new format take over
+            rides = []
+            saveToFile() // Write empty array in new format
             return []
         }
     }
@@ -148,6 +161,99 @@ class RideDataManager: ObservableObject {
     /// Get number of rides
     var rideCount: Int {
         return rides.count
+    }
+    
+    // MARK: - Phase 34: Calendar Summary
+    
+    /// Get ride summary for a specific day
+    func summary(for date: Date) -> DayRideSummary? {
+        let calendar = Calendar.current
+        let dayRides = rides.filter { calendar.isDate($0.date, inSameDayAs: date) }
+        
+        guard !dayRides.isEmpty else { return nil }
+        
+        let totalDistance = dayRides.reduce(0) { $0 + $1.distance }
+        let totalDuration = dayRides.reduce(0) { $0 + $1.duration }
+        
+        return DayRideSummary(
+            date: date,
+            rides: dayRides,
+            totalDistance: totalDistance,
+            totalDuration: totalDuration
+        )
+    }
+}
+
+// MARK: - Phase 34: Day Ride Summary
+
+struct DayRideSummary {
+    let date: Date
+    let rides: [RideRecord]
+    let totalDistance: Double // meters
+    let totalDuration: TimeInterval
+    
+    var totalDistanceInMiles: Double {
+        totalDistance / 1609.34
+    }
+    
+    var formattedDuration: String {
+        let hours = Int(totalDuration) / 3600
+        let minutes = (Int(totalDuration) % 3600) / 60
+        
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        } else {
+            return "\(minutes)m"
+        }
+    }
+}
+
+// MARK: - Phase 32: Firebase Sync Extension
+extension RideDataManager {
+    
+    /// Load rides from Firebase and merge with local rides
+    func loadRidesFromFirebase() {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("⚠️ RideDataManager: No user logged in, skipping Firebase fetch")
+            return
+        }
+        
+        FirebaseRideService.shared.fetchRides(for: userId) { [weak self] firebaseRides in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                // Convert Firebase RideData to RideRecord
+                let newRides = firebaseRides.compactMap { firebaseRide -> RideRecord? in
+                    // Check if ride already exists locally
+                    let existingIds = Set(self.rides.map { $0.id.uuidString })
+                    if existingIds.contains(firebaseRide.id) {
+                        return nil // Skip duplicates
+                    }
+                    
+                    // Convert route data back to coordinates
+                    let coordinates = firebaseRide.route.compactMap { coordArray -> CLLocationCoordinate2D? in
+                        guard coordArray.count >= 2 else { return nil }
+                        return CLLocationCoordinate2D(latitude: coordArray[0], longitude: coordArray[1])
+                    }
+                    
+                    return RideRecord(
+                        id: UUID(uuidString: firebaseRide.id) ?? UUID(),
+                        date: firebaseRide.date,
+                        distance: firebaseRide.distance,
+                        duration: firebaseRide.duration,
+                        averageSpeed: firebaseRide.avgSpeed / 3.6, // Convert km/h to m/s
+                        calories: 0,
+                        route: coordinates
+                    )
+                }
+                
+                if !newRides.isEmpty {
+                    self.rides.append(contentsOf: newRides)
+                    self.rides.sort { $0.date > $1.date } // Sort by date, newest first
+                    self.saveToFile()
+                    print("✅ RideDataManager: Synced \(newRides.count) rides from Firebase")
+                }
+            }
+        }
     }
     
     // MARK: - Private Methods
@@ -321,4 +427,10 @@ extension RideDataManager {
             print("☁️ Added \(newRides.count) rides from iCloud")
         }
     }
+}
+
+// MARK: - Notification Names
+
+extension Notification.Name {
+    static let branchrRidesDidChange = Notification.Name("branchr.rides.changed")
 }

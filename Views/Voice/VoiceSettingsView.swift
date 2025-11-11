@@ -22,23 +22,30 @@ struct VoiceSettingsView: View {
     @State private var permissionAlertMessage = ""
     
     // MARK: - Body
+    @ObservedObject private var theme = ThemeManager.shared
+    
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    headerSection
-                    voiceAssistantSection
-                    voiceCommandsSection
-                    audioAnnouncementsSection
-                    musicSyncSection
-                    hapticFeedbackSection
-                    resetSection
+            ZStack {
+                // Phase 31: Apply Branchr theme
+                theme.primaryBackground.ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        headerSection
+                        voiceAssistantSection
+                        voiceCommandsSection
+                        audioAnnouncementsSection
+                        musicSyncSection
+                        hapticFeedbackSection
+                        resetSection
+                    }
+                    .padding()
                 }
-                .padding()
             }
             .navigationTitle("Voice & Audio")
             .navigationBarTitleDisplayMode(.large)
-            .background(Color.black.ignoresSafeArea())
+            .foregroundColor(theme.primaryText)
         }
         .alert("Permission Required", isPresented: $showingPermissionAlert) {
             Button("Settings") {
@@ -70,11 +77,11 @@ struct VoiceSettingsView: View {
             Text("Voice Assistant")
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(.white)
+                .foregroundColor(theme.primaryText)
             
             Text("Hear real-time ride updates and use voice commands hands-free")
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(theme.secondaryText)
                 .multilineTextAlignment(.center)
         }
         .padding()

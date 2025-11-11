@@ -28,6 +28,9 @@ struct HomeView: View {
     
     // MARK: - Phase 31: Ride Tracking State
     @State private var showRideTracking = false
+    @State private var rideDetent: PresentationDetent = .large // Phase 34D: Fullscreen sheet
+    @ObservedObject private var rideSession = RideSessionManager.shared
+    @State private var showSmartRideSheet = false
     
     // MARK: - State Variables
     @State private var showingGroupRide = false
@@ -187,106 +190,56 @@ struct HomeView: View {
                 
                 // MARK: - Main Actions
                 VStack(spacing: 14) {
-                    // Phase 31: Unified Ride Tracking Button
-                    Button(action: {
-                        showRideTracking = true
-                        VoiceFeedbackService.shared.speak("Starting ride tracking")
-                    }) {
-                        HStack {
-                            Image(systemName: "location.fill")
-                                .font(.headline)
-                            Text("Start Ride Tracking")
-                                .fontWeight(.semibold)
+                    // Smart Group Ride: Unified Adaptive Button
+                    SmartRideButton(
+                        onStartSolo: {
+                            RideSessionManager.shared.startSoloRide()
+                            withAnimation(.spring()) { showSmartRideSheet = true }
+                        },
+                        onStartGroup: {
+                            // Host pulse sync + start group ride
+                            _ = PulseSyncService.shared.generateHostTimestamp()
+                            RideSessionManager.shared.startGroupRide()
+                            withAnimation(.spring()) { showSmartRideSheet = true }
                         }
-                        .foregroundColor(.black)
+                    )
+                    .sheet(isPresented: $showSmartRideSheet) {
+                        RideSheetView()
+                            .presentationDetents([.large, .fraction(0.3)])
+                    }
+                    .onChange(of: rideSession.rideState) { state in
+                        if state == .active {
+                            withAnimation(.spring()) { showSmartRideSheet = true }
+                        } else if state == .idle {
+                            withAnimation(.spring()) { showSmartRideSheet = false }
+                        }
+                    }
+                    
+                    // Phase 33B: Dynamic Start/Stop Connection Button with Rainbow Glow + Improved Colors
+                    Button(action: {
+                        connectionManager.toggleConnection()
+                    }) {
+                        Text(
+                            connectionManager.state == .connected
+                            ? "Stop Connection"
+                            : connectionManager.state == .connecting
+                              ? "Connecting..."
+                              : "Start Connection"
+                        )
+                        .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.yellow)
-                                .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 3)
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.branchrButtonBackground)
                         )
+                        .foregroundColor(Color.branchrButtonText)
+                        .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 3)
                     }
-                    
-                    BranchrButton(title: "Start Group Ride", icon: "person.3.fill") {
-                        if !groupManager.sessionActive {
-                            groupManager.startGroupSession()
-                            musicSync.setGroupSessionManager(groupManager)
-                            // Phase 21B: Broadcast profile when starting group
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                groupManager.broadcastProfile()
-                            }
-                        }
-                        showingConnectedRiders = true
-                    }
-                    
-                    // Phase 29C: Dynamic Start/Stop Connection Button with Color States
-                    Button(action: {
-                        switch connectionManager.state {
-                        case .idle:
-                            connectionManager.startConnection()
-                        case .connected:
-                            connectionManager.stopConnection()
-                        default:
-                            break
-                        }
-                    }) {
-                        HStack {
-                            Image(systemName: connectionManager.state == .connected
-                                  ? "wifi.slash"
-                                  : connectionManager.state == .connecting
-                                    ? "bolt.horizontal.circle"
-                                    : "antenna.radiowaves.left.and.right")
-                                .font(.system(size: 18, weight: .medium))
-                            
-                            Text(
-                                connectionManager.state == .connected
-                                ? "Stop Connection"
-                                : connectionManager.state == .connecting
-                                  ? "Connecting..."
-                                  : "Start Connection"
-                            )
-                            .fontWeight(.semibold)
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(connectionManager.state == .connected
-                                      ? Color.red
-                                      : connectionManager.state == .connecting
-                                        ? Color.green
-                                        : Color.black)
-                                .shadow(
-                                    color: connectionManager.state == .connected
-                                    ? .red.opacity(0.5)
-                                    : connectionManager.state == .connecting
-                                      ? .green.opacity(0.5)
-                                      : .black.opacity(0.3),
-                                    radius: 8,
-                                    x: 0,
-                                    y: 4
-                                )
-                        )
-                        .overlay(
-                            Group {
-                                if connectionManager.state == .connecting {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.green.opacity(0.8), lineWidth: 2)
-                                        .scaleEffect(1.05)
-                                        .opacity(0.8)
-                                        .animation(
-                                            Animation.easeInOut(duration: 1.0)
-                                                .repeatForever(autoreverses: true),
-                                            value: connectionManager.state
-                                        )
-                                }
-                            }
-                        )
-                    }
+                    .rainbowGlow(active: connectionManager.state == .connecting || connectionManager.state == .connected) // Phase 34D: Show during connecting and connected
                     .disabled(connectionManager.state == .connecting)
-                    .animation(.easeInOut(duration: 0.3), value: connectionManager.state)
+                    .animation(.easeInOut(duration: 0.4), value: connectionManager.state)
+                    .animation(.easeInOut, value: connectionManager.showRainbowGlow)
                     
                     // Show connected peers if any
                     if !connectionManager.connectedPeers.isEmpty {
@@ -311,7 +264,7 @@ struct HomeView: View {
                         .padding(.top, 8)
                     }
                     
-                    // Phase 29C: Dynamic Start/Stop Voice Chat Button with Color States
+                    // Phase 33B: Start Voice Chat Button (red when active, themed for light/dark)
                     Button(action: {
                         if voiceService.isVoiceChatActive {
                             voiceService.stopVoiceChat()
@@ -323,38 +276,21 @@ struct HomeView: View {
                             Image(systemName: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill")
                                 .font(.system(size: 18, weight: .medium))
                             
-                            Text(voiceService.isVoiceChatActive ? "Stop Voice Chat" : "Start Voice Chat")
+                            Text(voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat")
                                 .fontWeight(.semibold)
                         }
-                        .foregroundColor(.black)
+                        .foregroundColor(voiceService.isVoiceChatActive ? .white : Color.branchrButtonText)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(voiceService.isVoiceChatActive ? Color.green : Color.yellow)
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(voiceService.isVoiceChatActive ? Color.red : Color.branchrButtonBackground)
                                 .shadow(
-                                    color: voiceService.isVoiceChatActive
-                                    ? .green.opacity(0.5)
-                                    : .yellow.opacity(0.5),
-                                    radius: 8,
+                                    color: voiceService.isVoiceChatActive ? .red.opacity(0.5) : .black.opacity(0.3),
+                                    radius: 5,
                                     x: 0,
-                                    y: 4
+                                    y: 3
                                 )
-                        )
-                        .overlay(
-                            Group {
-                                if voiceService.isVoiceChatActive {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.green.opacity(0.8), lineWidth: 2)
-                                        .scaleEffect(1.05)
-                                        .opacity(0.8)
-                                        .animation(
-                                            Animation.easeInOut(duration: 1.0)
-                                                .repeatForever(autoreverses: true),
-                                            value: voiceService.isVoiceChatActive
-                                        )
-                                }
-                            }
                         )
                     }
                     .animation(.easeInOut(duration: 0.3), value: voiceService.isVoiceChatActive)
@@ -428,6 +364,13 @@ struct HomeView: View {
         // Phase 31: Unified Ride Tracking Sheet
         .sheet(isPresented: $showRideTracking) {
             RideTrackingView()
+                .ignoresSafeArea() // Phase 34D: Full-screen coverage for map
+                .presentationDetents([.large, .fraction(0.3)], selection: $rideDetent)
+                .presentationDragIndicator(.visible)
+                .onAppear {
+                    // Phase 34D: Start the sheet fully expanded
+                    rideDetent = .large
+                }
         }
     }
     

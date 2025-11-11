@@ -152,12 +152,12 @@ struct ConnectedRidersSheet: View {
                         
                         // Host Controls
                         if groupManager.isHost {
-                            HostControlsSection(
-                                groupManager: groupManager,
-                                voiceService: voiceService,
-                                musicSync: musicSync,
-                                showingEndRideAlert: $showingEndRideAlert
-                            )
+                        LegacyHostControlsSection(
+                            groupManager: groupManager,
+                            voiceService: voiceService,
+                            musicSync: musicSync,
+                            showingEndRideAlert: $showingEndRideAlert
+                        )
                             .padding(.horizontal, 20)
                             .padding(.top, 10)
                         }
@@ -247,14 +247,7 @@ struct RiderTile: View {
                         .shadow(color: theme.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
                 
-                // Host crown indicator
-                if isHost {
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(theme.accentColor)
-                        .offset(x: 25, y: -25)
-                        .shadow(color: theme.accentColor.opacity(0.5), radius: 4)
-                }
+                // Phase 31: Crown icon removed per user request
                 
                 // Animated Sound Indicator
                 if voiceService.isSpeaking(peerID: riderID) {
@@ -369,9 +362,9 @@ struct RiderTile: View {
     }
 }
 
-// MARK: - Host Controls Section
+// MARK: - Legacy Host Controls Section (Phase 35.2: Renamed to avoid conflict)
 
-struct HostControlsSection: View {
+struct LegacyHostControlsSection: View {
     @ObservedObject var groupManager: GroupSessionManager
     @ObservedObject var voiceService: VoiceChatService
     @ObservedObject var musicSync: MusicSyncService
@@ -384,28 +377,61 @@ struct HostControlsSection: View {
                 .font(.headline)
                 .foregroundColor(theme.primaryText)
             
-            HStack(spacing: 12) {
-                // Mute All Voices
-                BranchrButton(title: "Mute All Voices", icon: "mic.slash.fill") {
-                    groupManager.broadcastMuteAllVoices()
-                }
-                
-                // Mute All Music
-                BranchrButton(title: "Mute All Music", icon: "speaker.slash.fill") {
-                    musicSync.muteAllMusic()
-                }
+            // Phase 34: Mute All Voices - Toggle text & color
+            Button(action: {
+                groupManager.toggleMuteVoices()
+            }) {
+                Text(groupManager.isMutingVoices ? "Unmute All Voices" : "Mute All Voices")
+                    .fontWeight(.bold)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(groupManager.isMutingVoices ? Color.red : Color.branchrButtonBackground)
+                    .foregroundColor(groupManager.isMutingVoices ? .white : Color.branchrButtonText)
+                    .cornerRadius(12)
             }
             
-            HStack(spacing: 12) {
-                // SOS
-                BranchrButton(title: "SOS", icon: "exclamationmark.triangle.fill") {
-                    groupManager.triggerSOS()
+            // Phase 34: Mute All Music - Toggle text & color
+            Button(action: {
+                groupManager.toggleMuteMusic()
+                if groupManager.isMutingMusic {
+                    musicSync.muteAllMusic()
+                } else {
+                    musicSync.isMusicMuted = false
                 }
-                
-                // End Ride
-                BranchrButton(title: "End Ride", icon: "flag.checkered") {
-                    showingEndRideAlert = true
-                }
+            }) {
+                Text(groupManager.isMutingMusic ? "Unmute Music" : "Mute All Music")
+                    .fontWeight(.bold)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(groupManager.isMutingMusic ? Color.red : Color.branchrButtonBackground)
+                    .foregroundColor(groupManager.isMutingMusic ? .white : Color.branchrButtonText)
+                    .cornerRadius(12)
+            }
+            
+            // Phase 34: SOS - Always red
+            Button(action: {
+                groupManager.triggerSOS()
+            }) {
+                Text("🆘 SOS")
+                    .fontWeight(.bold)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.red)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+            }
+            
+            // Phase 34: End Ride - Always red
+            Button(action: {
+                showingEndRideAlert = true
+            }) {
+                Text("End Ride")
+                    .fontWeight(.bold)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.red)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
             }
         }
         .padding()
@@ -422,10 +448,17 @@ struct RiderCard: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            // Profile Photo with Online Indicator
-            ZStack(alignment: .bottomTrailing) {
+            // Phase 34: Profile Photo with Green Online Ring
+            ZStack {
+                // Green ring when online
+                if profile.isOnline {
+                    Circle()
+                        .stroke(Color.green, lineWidth: 3)
+                        .frame(width: 60, height: 60)
+                }
+                
                 // Profile Photo
-                if !profile.photoURL.isEmpty, let url = URL(string: profile.photoURL) {
+                if let photoURL = profile.photoURL, !photoURL.isEmpty, let url = URL(string: photoURL) {
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .success(let image):
@@ -445,29 +478,19 @@ struct RiderCard: View {
                                 .fill(theme.accentColor.opacity(0.3))
                         }
                     }
-                    .frame(width: 60, height: 60)
+                    .frame(width: 55, height: 55)
                     .clipShape(Circle())
                 } else {
                     // Default avatar with initials
                     Circle()
                         .fill(theme.accentColor.opacity(0.3))
-                        .frame(width: 60, height: 60)
+                        .frame(width: 55, height: 55)
                         .overlay(
                             Text(String(profile.name.prefix(1).uppercased()))
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundColor(theme.accentColor)
                         )
                 }
-                
-                // Online Status Indicator
-                Circle()
-                    .fill(profile.isOnline ? Color.green : Color.gray)
-                    .frame(width: 12, height: 12)
-                    .overlay(
-                        Circle()
-                            .stroke(theme.primaryBackground, lineWidth: 2)
-                    )
-                    .offset(x: -4, y: -4)
             }
             
             // Rider Name

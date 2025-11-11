@@ -46,12 +46,13 @@ struct BranchrAppRoot: View {
                 }
                 .tag(1)
                 
-                // Tab 3: Profile (Phase 21)
+                // Tab 3: Profile (Phase 31: Shows profile photo on tab bar)
                 NavigationStack {
                     ProfileView()
                 }
                 .tabItem {
-                    Image(systemName: "person.circle.fill")
+                    // Phase 31: Show profile photo on tab bar if available
+                    ProfileTabIconView()
                     Text("Profile")
                 }
                 .tag(2)

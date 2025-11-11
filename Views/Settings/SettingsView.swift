@@ -17,12 +17,15 @@ struct SettingsView: View {
     @State private var showingVoiceSettings = false
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Header
-                headerSection
-                
-                // Voice & Audio Section (Phase 30)
+        // Phase 30: Static Settings View (no ScrollView, no logo)
+        VStack(spacing: 24) {
+            // Title
+            Text("Settings")
+                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .foregroundColor(theme.primaryText)
+                .padding(.top, 50)
+            
+            // Voice & Audio Section (Phase 30)
                 SectionCard(title: "Voice & Audio") {
                     Button(action: {
                         showingVoiceSettings = true
@@ -75,13 +78,19 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal, 16)
                 
-                Spacer(minLength: 100)
-            }
-            .padding(.vertical)
+            Spacer(minLength: 40)
         }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.primaryBackground.ignoresSafeArea())
         .navigationTitle("Settings")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            // Phase 30: Lock tab bar background to yellow
+            UITabBar.appearance().backgroundColor = UIColor(theme.accentColor)
+            UITabBar.appearance().unselectedItemTintColor = UIColor.black
+        }
         .sheet(isPresented: $showingSafetySettings) {
             SafetyControlView()
         }
@@ -90,23 +99,7 @@ struct SettingsView: View {
         }
     }
     
-    // MARK: - Header Section
-    private var headerSection: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 48))
-                .foregroundColor(theme.primaryButton)
-            
-            Text("branchr")
-                .font(.title.bold())
-                .foregroundColor(theme.primaryText)
-            
-            Text("Version 1.0")
-                .font(.caption)
-                .foregroundColor(theme.secondaryText)
-        }
-        .padding(.vertical, 20)
-    }
+    // Phase 30: Header section removed (no logo)
     
     // MARK: - Theme Toggle
     private var themeToggle: some View {

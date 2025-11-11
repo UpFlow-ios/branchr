@@ -10,6 +10,7 @@ import MultipeerConnectivity
 import SwiftUI
 import UIKit
 import FirebaseFirestore
+import FirebaseAuth
 
 // MARK: - Rider Profile Model (Phase 21B)
 
@@ -29,6 +30,9 @@ struct RiderProfile: Identifiable, Equatable {
 @MainActor
 class GroupSessionManager: NSObject, ObservableObject {
     
+    // MARK: - Shared Singleton (Phase 34)
+    static let shared = GroupSessionManager()
+    
     // MARK: - Published Properties
     @Published var connectedPeers: [MCPeerID] = []
     @Published var isHost = false
@@ -37,6 +41,8 @@ class GroupSessionManager: NSObject, ObservableObject {
     @Published var maxPeersReached = false
     @Published var peerProfiles: [MCPeerID: RiderProfile] = [:] // Phase 21B: Peer profile data
     @Published var onlineRiders: [UserProfile] = [] // Phase 23: Firebase online presence
+    @Published var isMutingVoices: Bool = false // Phase 34: Host mute voices state
+    @Published var isMutingMusic: Bool = false // Phase 34: Host mute music state
     private var presenceListener: ListenerRegistration? // Phase 23: Firestore listener
     
     // MARK: - Private Properties
@@ -201,9 +207,21 @@ class GroupSessionManager: NSObject, ObservableObject {
     
     // MARK: - Phase 20: Host Controls & Broadcasts
     
+    /// Toggle mute all voices (host only) - Phase 34
+    func toggleMuteVoices() {
+        guard isHost else { return }
+        isMutingVoices.toggle()
+        let command = ["action": isMutingVoices ? "muteAllVoices" : "unmuteAllVoices"]
+        if let data = try? JSONSerialization.data(withJSONObject: command) {
+            broadcastToPeers(data)
+            print("Branchr: Host \(isMutingVoices ? "muted" : "unmuted") all voices")
+        }
+    }
+    
     /// Broadcast mute all voices command (host only)
     func broadcastMuteAllVoices() {
         guard isHost else { return }
+        isMutingVoices = true
         let command = ["action": "muteAllVoices"]
         if let data = try? JSONSerialization.data(withJSONObject: command) {
             broadcastToPeers(data)
@@ -211,9 +229,21 @@ class GroupSessionManager: NSObject, ObservableObject {
         }
     }
     
+    /// Toggle mute all music (host only) - Phase 34
+    func toggleMuteMusic() {
+        guard isHost else { return }
+        isMutingMusic.toggle()
+        let command = ["action": isMutingMusic ? "muteAllMusic" : "unmuteAllMusic"]
+        if let data = try? JSONSerialization.data(withJSONObject: command) {
+            broadcastToPeers(data)
+            print("Branchr: Host \(isMutingMusic ? "muted" : "unmuted") all music")
+        }
+    }
+    
     /// Broadcast mute all music command (host only)
     func broadcastMusicMuteAll() {
         guard isHost else { return }
+        isMutingMusic = true
         let command = ["action": "muteAllMusic"]
         if let data = try? JSONSerialization.data(withJSONObject: command) {
             broadcastToPeers(data)
@@ -297,6 +327,30 @@ class GroupSessionManager: NSObject, ObservableObject {
         let image = imageData.flatMap { UIImage(data: $0) }
         
         return RiderProfile(name: userName, bio: userBio, image: image)
+    }
+    
+    // MARK: - Phase 34: Profile Update Sync
+    
+    /// Update profile for connected riders (syncs profile changes across group)
+    func updateProfile(profile: RiderProfile) {
+        // Update myPeerID's profile in peerProfiles
+        peerProfiles[myPeerID] = profile
+        
+        // Broadcast updated profile to all connected peers
+        if !connectedPeers.isEmpty {
+            broadcastProfile()
+        }
+        
+        // Update Firebase online presence
+        if let uid = Auth.auth().currentUser?.uid {
+            FirebaseService.shared.setUserOnlineStatus(isOnline: true)
+        }
+        
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+        }
+        
+        print("✅ GroupSessionManager: Profile updated and broadcasted")
     }
     
     // MARK: - Phase 23: Firebase Presence

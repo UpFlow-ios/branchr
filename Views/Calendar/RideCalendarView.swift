@@ -4,6 +4,7 @@
 //
 //  Created by Joseph Dormond on 2025-11-05
 //  Phase 30 - Ride Calendar & History View
+//  Phase 34 - Calendar Grid with Daily Stats
 //
 
 import SwiftUI
@@ -11,252 +12,273 @@ import SwiftUI
 /**
  * 📅 Ride Calendar View
  *
- * Displays ride history in a calendar-like format.
- * Shows all recorded rides with date, distance, duration, and speed.
+ * Phase 34: Monthly calendar grid showing days with rides.
+ * Tap a day to view stats for that day.
  */
 struct RideCalendarView: View {
     @StateObject private var rideDataManager = RideDataManager.shared
     @ObservedObject private var theme = ThemeManager.shared
+    @State private var selectedDay: Date? = nil
+    @State private var showStatsSheet = false
+    @State private var showNoRidesAlert = false
+    @State private var noRidesMessage: String? = nil
+    @State private var refreshTrigger = UUID()
+    
+    let calendar = Calendar.current
+    let columns = Array(repeating: GridItem(.flexible()), count: 7)
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // Header
-                    headerSection
-                    
-                    // Stats Summary
-                    if !rideDataManager.rides.isEmpty {
-                        statsSummarySection
+            VStack(spacing: 20) {
+                // Month/Year Header
+                Text(currentMonthYear)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(theme.primaryText)
+                    .padding(.top, 20)
+                
+                // Calendar Grid
+                LazyVGrid(columns: columns, spacing: 12) {
+                    // Day labels (Sun, Mon, Tue, etc.) - Phase 34E: Fix duplicate IDs
+                    ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { _, day in
+                        Text(day)
+                            .font(.caption.bold())
+                            .foregroundColor(theme.secondaryText)
                     }
                     
-                    // Ride List
-                    if rideDataManager.rides.isEmpty {
-                        emptyStateView
-                    } else {
-                        rideListSection
+                    // Calendar days
+                    ForEach(daysInMonth, id: \.self) { day in
+                        CalendarDayCell(
+                            day: day,
+                            summary: rideDataManager.summary(for: day),
+                            theme: theme
+                        ) {
+                            // Phase 34: Show stats if rides exist, otherwise show "No rides" message
+                            if let summary = rideDataManager.summary(for: day), !summary.rides.isEmpty {
+                                selectedDay = day
+                                showStatsSheet = true
+                            } else {
+                                let formatter = DateFormatter()
+                                formatter.dateFormat = "MMM d"
+                                noRidesMessage = "🚫 No rides on \(formatter.string(from: day))"
+                                showNoRidesAlert = true
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 20)
+                
+                Spacer()
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.primaryBackground.ignoresSafeArea())
-            .navigationTitle("Calendar")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showStatsSheet) {
+                if let day = selectedDay,
+                   let summary = rideDataManager.summary(for: day) {
+                    DayStatsSheet(day: day, summary: summary)
+                        .transition(.opacity)
+                }
+            }
+            .alert("No Rides", isPresented: $showNoRidesAlert) {
+                Button("OK", role: .cancel) {
+                    noRidesMessage = nil
+                }
+            } message: {
+                if let message = noRidesMessage {
+                    Text(message)
+                }
+            }
             .onAppear {
-                // Refresh rides when view appears
                 rideDataManager.rides = rideDataManager.loadRides()
             }
-        }
-    }
-    
-    // MARK: - Header Section
-    
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Ride History")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .foregroundColor(theme.primaryText)
-            
-            Text("Track your rides and progress")
-                .font(.subheadline)
-                .foregroundColor(theme.secondaryText)
-        }
-    }
-    
-    // MARK: - Stats Summary
-    
-    private var statsSummarySection: some View {
-        HStack(spacing: 16) {
-            CalendarStatCard(
-                icon: "bicycle.circle.fill",
-                title: "Total Rides",
-                value: "\(rideDataManager.rideCount)",
-                color: theme.accentColor
-            )
-            
-            CalendarStatCard(
-                icon: "location.fill",
-                title: "Total Distance",
-                value: String(format: "%.1f", rideDataManager.totalDistance / 1609.34),
-                unit: "mi",
-                color: theme.accentColor
-            )
-            
-            CalendarStatCard(
-                icon: "clock.fill",
-                title: "Total Time",
-                value: formatDuration(rideDataManager.totalDuration),
-                color: theme.accentColor
-            )
-        }
-        .padding(.vertical, 8)
-    }
-    
-    // MARK: - Empty State
-    
-    private var emptyStateView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "calendar.badge.exclamationmark")
-                .font(.system(size: 64))
-                .foregroundColor(theme.secondaryText.opacity(0.5))
-            
-            Text("No rides recorded yet")
-                .font(.headline)
-                .foregroundColor(theme.primaryText)
-            
-            Text("Start a ride from the Home tab to begin tracking")
-                .font(.subheadline)
-                .foregroundColor(theme.secondaryText)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 60)
-    }
-    
-    // MARK: - Ride List
-    
-    private var rideListSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Recent Rides")
-                .font(.headline)
-                .foregroundColor(theme.primaryText)
-                .padding(.top, 8)
-            
-            ForEach(rideDataManager.rides) { ride in
-                CalendarRideCard(ride: ride)
+            .onReceive(NotificationCenter.default.publisher(for: .branchrRidesDidChange)) { _ in
+                // Refresh rides when notification is received
+                rideDataManager.rides = rideDataManager.loadRides()
+                refreshTrigger = UUID() // Force view refresh
             }
         }
     }
     
-    // MARK: - Helper Methods
+    // MARK: - Computed Properties
     
-    private func formatDuration(_ seconds: TimeInterval) -> String {
-        let hours = Int(seconds) / 3600
-        let minutes = (Int(seconds) % 3600) / 60
+    private var currentMonthYear: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: Date())
+    }
+    
+    private var daysInMonth: [Date] {
+        let date = Date()
+        guard let range = calendar.range(of: .day, in: .month, for: date),
+              let start = calendar.date(from: calendar.dateComponents([.year, .month], from: date)) else {
+            return []
+        }
         
-        if hours > 0 {
-            return "\(hours)h \(minutes)m"
-        } else {
-            return "\(minutes)m"
-        }
-    }
-}
-
-// MARK: - Calendar Stat Card Component (Phase 30)
-
-struct CalendarStatCard: View {
-    let icon: String
-    let title: String
-    let value: String
-    let unit: String?
-    let color: Color
-    
-    @ObservedObject private var theme = ThemeManager.shared
-    
-    init(icon: String, title: String, value: String, unit: String? = nil, color: Color) {
-        self.icon = icon
-        self.title = title
-        self.value = value
-        self.unit = unit
-        self.color = color
-    }
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(color)
-            
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text(value)
-                    .font(.headline.bold())
-                    .foregroundColor(theme.primaryText)
-                
-                if let unit = unit {
-                    Text(unit)
-                        .font(.caption)
-                        .foregroundColor(theme.secondaryText)
-                }
+        // Add padding for days before month starts
+        let firstWeekday = calendar.component(.weekday, from: start)
+        let paddingDays = (firstWeekday - 1) % 7
+        var days: [Date] = []
+        
+        // Add padding
+        for i in 0..<paddingDays {
+            if let paddingDate = calendar.date(byAdding: .day, value: -paddingDays + i, to: start) {
+                days.append(paddingDate)
             }
-            
-            Text(title)
-                .font(.caption)
-                .foregroundColor(theme.secondaryText)
         }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        
+        // Add actual month days
+        for dayOffset in 0..<range.count {
+            if let day = calendar.date(byAdding: .day, value: dayOffset, to: start) {
+                days.append(day)
+            }
+        }
+        
+        return days
     }
 }
 
-// MARK: - Calendar Ride Card Component (Phase 30)
+// MARK: - Calendar Day Cell
 
-struct CalendarRideCard: View {
-    let ride: RideRecord
+struct CalendarDayCell: View {
+    let day: Date
+    let summary: DayRideSummary?
+    let theme: ThemeManager
+    let action: () -> Void
     
-    @ObservedObject private var theme = ThemeManager.shared
+    private var calendar: Calendar { Calendar.current }
     
     var body: some View {
-        HStack(spacing: 16) {
-            // Calendar Icon
+        Button(action: action) {
             VStack(spacing: 4) {
-                Text(ride.calendarDayOfMonth)
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(theme.accentColor)
-                Text(ride.calendarMonthAbbreviation)
-                    .font(.caption)
-                    .foregroundColor(theme.secondaryText)
-            }
-            .frame(width: 50, height: 50)
-            .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 8))
-            
-            // Ride Details
-            VStack(alignment: .leading, spacing: 6) {
-                Text(ride.displayTitle)
+                Text("\(calendar.component(.day, from: day))")
                     .font(.headline)
-                    .foregroundColor(theme.primaryText)
+                    .foregroundColor(isCurrentMonth ? theme.primaryText : theme.secondaryText.opacity(0.3))
                 
-                HStack(spacing: 16) {
-                    Label(String(format: "%.2f mi", ride.calendarDistanceInMiles), systemImage: "location.fill")
-                        .font(.caption)
-                        .foregroundColor(theme.secondaryText)
-                    
-                    Label(ride.formattedDuration, systemImage: "clock.fill")
-                        .font(.caption)
-                        .foregroundColor(theme.secondaryText)
+                if let summary = summary {
+                    Text(String(format: "%.1f", summary.totalDistanceInMiles))
+                        .font(.caption2.bold())
+                        .foregroundColor(theme.accentColor)
                 }
             }
-            
-            Spacer()
-            
-            // Bike Icon
-            Image(systemName: "bicycle.circle.fill")
-                .font(.title2)
-                .foregroundColor(theme.accentColor)
+            .frame(width: 40, height: 40)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(summary != nil ? theme.accentColor.opacity(0.2) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(summary != nil ? theme.accentColor : Color.clear, lineWidth: 1)
+            )
         }
-        .padding()
-        .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .disabled(!isCurrentMonth)
+    }
+    
+    private var isCurrentMonth: Bool {
+        calendar.isDate(day, equalTo: Date(), toGranularity: .month)
     }
 }
 
-// MARK: - RideRecord Extensions for Calendar View (Phase 30)
+// MARK: - Day Stats Sheet
 
-extension RideRecord {
-    var calendarDayOfMonth: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d"
-        return formatter.string(from: date)
-    }
+struct DayStatsSheet: View {
+    let day: Date
+    let summary: DayRideSummary
+    @ObservedObject private var theme = ThemeManager.shared
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedRide: RideRecord?
+    @State private var showRideSummary = false
     
-    var calendarMonthAbbreviation: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM"
-        return formatter.string(from: date)
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                Text("Rides on \(day.formatted(date: .abbreviated, time: .omitted))")
+                    .font(.title2.bold())
+                    .foregroundColor(theme.primaryText)
+                    .padding(.top, 20)
+                
+                VStack(spacing: 16) {
+                    StatRow(label: "Total Distance", value: String(format: "%.2f mi", summary.totalDistanceInMiles))
+                    StatRow(label: "Total Time", value: summary.formattedDuration)
+                    StatRow(label: "Number of Rides", value: "\(summary.rides.count)")
+                }
+                .padding()
+                .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 20)
+                
+                if summary.rides.count > 0 {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Individual Rides")
+                            .font(.headline)
+                            .foregroundColor(theme.primaryText)
+                            .padding(.horizontal, 20)
+                        
+                        ForEach(summary.rides) { ride in
+                            Button {
+                                selectedRide = ride
+                                showRideSummary = true
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(ride.displayTitle)
+                                            .font(.subheadline.bold())
+                                            .foregroundColor(theme.primaryText)
+                                        Text("\(String(format: "%.2f", ride.distanceInMiles)) mi • \(ride.formattedDuration)")
+                                            .font(.caption)
+                                            .foregroundColor(theme.secondaryText)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption.bold())
+                                        .foregroundColor(theme.secondaryText)
+                                }
+                                .padding()
+                                .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 8))
+                                .padding(.horizontal, 20)
+                            }
+                        }
+                    }
+                }
+                
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(theme.primaryBackground.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .foregroundColor(theme.accentColor)
+                }
+            }
+            .sheet(isPresented: $showRideSummary) {
+                if let ride = selectedRide {
+                    EnhancedRideSummaryView(ride: ride)
+                        .presentationDetents([.large])
+                }
+            }
+        }
     }
+}
+
+// MARK: - Stat Row
+
+struct StatRow: View {
+    let label: String
+    let value: String
+    @ObservedObject private var theme = ThemeManager.shared
     
-    var calendarDistanceInMiles: Double {
-        return distance / 1609.34
+    var body: some View {
+        HStack {
+            Text(label)
+                .foregroundColor(theme.secondaryText)
+            Spacer()
+            Text(value)
+                .fontWeight(.semibold)
+                .foregroundColor(theme.primaryText)
+        }
     }
 }
 
@@ -266,4 +288,3 @@ extension RideRecord {
     RideCalendarView()
         .preferredColorScheme(.dark)
 }
-

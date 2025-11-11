@@ -52,6 +52,28 @@ class UserPreferenceManager: ObservableObject {
         }
     }
     
+    // Phase 34: Voice announcement settings
+    @Published var distanceUpdatesEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(distanceUpdatesEnabled, forKey: "distanceUpdatesEnabled")
+            print("Branchr: Distance updates preference updated: \(distanceUpdatesEnabled)")
+        }
+    }
+    
+    @Published var paceOrSpeedUpdatesEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(paceOrSpeedUpdatesEnabled, forKey: "paceOrSpeedUpdatesEnabled")
+            print("Branchr: Pace/speed updates preference updated: \(paceOrSpeedUpdatesEnabled)")
+        }
+    }
+    
+    @Published var completionSummaryEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(completionSummaryEnabled, forKey: "completionSummaryEnabled")
+            print("Branchr: Completion summary preference updated: \(completionSummaryEnabled)")
+        }
+    }
+    
     @Published var darkModeEnabled: Bool {
         didSet {
             UserDefaults.standard.set(darkModeEnabled, forKey: "darkModeEnabled")
@@ -71,6 +93,10 @@ class UserPreferenceManager: ObservableObject {
         self.musicSyncEnabled = userDefaults.object(forKey: "musicSyncEnabled") as? Bool ?? true
         self.hapticFeedbackEnabled = userDefaults.object(forKey: "hapticFeedbackEnabled") as? Bool ?? true
         self.darkModeEnabled = userDefaults.object(forKey: "darkModeEnabled") as? Bool ?? false
+        // Phase 34: Voice announcement settings (default ON)
+        self.distanceUpdatesEnabled = userDefaults.object(forKey: "distanceUpdatesEnabled") as? Bool ?? true
+        self.paceOrSpeedUpdatesEnabled = userDefaults.object(forKey: "paceOrSpeedUpdatesEnabled") as? Bool ?? true
+        self.completionSummaryEnabled = userDefaults.object(forKey: "completionSummaryEnabled") as? Bool ?? true
         
         print("Branchr UserPreferenceManager initialized")
         print("Branchr: Voice assistant enabled: \(voiceAssistantEnabled)")

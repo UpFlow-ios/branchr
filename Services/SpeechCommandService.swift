@@ -182,13 +182,17 @@ class SpeechCommandService: NSObject, ObservableObject {
     }
     
     private func processRecognitionResult(_ result: SFSpeechRecognitionResult) {
-        let spokenText = result.bestTranscription.formattedString.lowercased()
+        let spokenText = result.bestTranscription.formattedString
+        let lowerText = spokenText.lowercased()
         print("Branchr: Recognized speech: \(spokenText)")
         
-        // Check for voice commands
+        // Phase 34H: Route all recognized speech through VoiceCommandRouter
+        VoiceCommandRouter.shared.handleCommand(spokenText)
+        
+        // Check for ride tracking voice commands
         for command in RideVoiceCommand.allCases {
             for keyword in command.keywords {
-                if spokenText.contains(keyword) {
+                if lowerText.contains(keyword) {
                     detectedCommand = command
                     print("Branchr: Detected command: \(command.displayName)")
                     stopListening() // Stop listening after command detection

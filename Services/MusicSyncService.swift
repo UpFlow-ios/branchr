@@ -7,6 +7,7 @@
 
 import Foundation
 import MediaPlayer
+import AVFoundation
 import Combine
 import MultipeerConnectivity
 
@@ -63,6 +64,9 @@ enum MusicSource: String, Codable, CaseIterable {
 /// Service for syncing music playback information across connected riders
 /// Uses MPNowPlayingInfoCenter to read host's current track and broadcasts via MultipeerConnectivity
 final class MusicSyncService: NSObject, ObservableObject {
+    // MARK: - Phase 34H: Shared Singleton for Voice Commands
+    static let shared = MusicSyncService()
+    
     @Published var currentTrack: NowPlayingInfo?
     @Published var isHostDJ: Bool = false
     @Published var isPolling: Bool = false
@@ -266,6 +270,36 @@ final class MusicSyncService: NSObject, ObservableObject {
         } catch {
             print("Branchr: Failed to encode playback command: \(error)")
         }
+    }
+    
+    // MARK: - Phase 34H: Voice Command Music Controls
+    
+    /// Play music by artist name (voice command support)
+    func playArtist(_ name: String) {
+        print("🎵 MusicSyncService: playing \(name)")
+        // TODO: Integrate with MusicKit or playlist system once Apple Music token is available
+        // For now, this is a placeholder that will be implemented when MusicKit is re-enabled
+    }
+    
+    /// Pause music playback (voice command support)
+    func pausePlayback() {
+        print("⏸️ MusicSyncService: pause playback")
+        // TODO: Integrate with MusicKit or system music player once Apple Music token is available
+        // For now, this is a placeholder that will control playback when MusicKit is re-enabled
+    }
+    
+    /// Resume current track (voice command support)
+    func resumeCurrentTrack() {
+        print("▶️ MusicSyncService: resume current track")
+        // TODO: Integrate with MusicKit or system music player once Apple Music token is available
+        // For now, this is a placeholder that will control playback when MusicKit is re-enabled
+    }
+    
+    /// Skip to next track (voice command support)
+    func nextTrack() {
+        print("⏭️ MusicSyncService: next track")
+        // TODO: Integrate with MusicKit or system music player once Apple Music token is available
+        // For now, this is a placeholder that will control playback when MusicKit is re-enabled
     }
     
     deinit {
