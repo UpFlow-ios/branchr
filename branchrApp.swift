@@ -11,16 +11,6 @@ import FirebaseAuth // Phase 22: For Auth.auth().currentUser
 import FirebaseMessaging // Phase 28: For FCM
 import UserNotifications // Phase 28: For push notifications
 
-// MARK: - Phase 34G: Global Firebase Configuration Helper
-
-/// Ensures Firebase is configured before any services try to use it
-func ensureFirebaseConfigured() {
-    if FirebaseApp.app() == nil {
-        FirebaseApp.configure()
-        print("☁️ FirebaseApp.configure() called by ensureFirebaseConfigured()")
-    }
-}
-
 @main
 struct branchrApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
@@ -28,8 +18,11 @@ struct branchrApp: App {
     @Environment(\.scenePhase) private var scenePhase
     
     init() {
-        // Phase 34G: Ensure Firebase is configured before any services
-        ensureFirebaseConfigured()
+        // Phase 35.4: Single Firebase configuration - no helper function
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+            print("☁️ Firebase configured safely at launch")
+        }
         
         // Phase 34H: Quiet down PerfPowerTelemetryClientRegistrationService noise (debug builds only)
         #if DEBUG
@@ -98,7 +91,6 @@ struct branchrApp: App {
         if FirebaseApp.app() == nil {
             print("⚠️ Firebase not configured yet, retrying sign-in in 1s…")
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                ensureFirebaseConfigured() // Ensure it's configured before retry
                 attempt()
             }
         } else {
@@ -154,18 +146,9 @@ struct branchrApp: App {
 class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-        // Phase 34H: Delay FCM registration until Firebase is fully configured
-        if FirebaseApp.app() == nil {
-            print("⚠️ Firebase not ready – delaying FCM setup…")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                ensureFirebaseConfigured()
-                Messaging.messaging().delegate = self
-                print("🔔 FCMService configured after Firebase ready")
-            }
-        } else {
-            Messaging.messaging().delegate = self
-            print("🔔 FCMService configured immediately")
-        }
+        // Phase 34H: FCM registration
+        Messaging.messaging().delegate = self
+        print("🔔 FCMService configured")
         return true
     }
     

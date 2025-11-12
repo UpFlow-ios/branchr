@@ -87,6 +87,7 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
     func startSoloRide() {
         guard rideState == .idle else { return }
         resetRideData()
+        showSummary = false  // Phase 35.4: Hide summary when starting new ride
         isGroupRide = false
         isHost = false
         groupRideId = nil
@@ -102,6 +103,7 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
     func startGroupRide() {
         guard rideState == .idle, let uid = Auth.auth().currentUser?.uid else { return }
         resetRideData()
+        showSummary = false  // Phase 35.4: Hide summary when starting new ride
         isGroupRide = true
         isHost = true
         groupRideId = UUID().uuidString
@@ -141,6 +143,7 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
     func joinGroupRide(rideId: String) {
         guard rideState == .idle, let uid = Auth.auth().currentUser?.uid else { return }
         resetRideData()
+        showSummary = false  // Phase 35.4: Hide summary when starting new ride
         isGroupRide = true
         isHost = false
         groupRideId = rideId
@@ -212,6 +215,10 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
     
     func endRide() {
         guard rideState == .active || rideState == .paused else { return }
+        
+        // Phase 35.4: Log who called endRide for debugging
+        print("🛑 endRide() called - processingRemoteCommand: \(processingRemoteCommand), isHost: \(isHost)")
+        
         rideState = .ended
         locationManager.stopUpdatingLocation()
         stopTimer()
@@ -437,7 +444,15 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
                 case .resume:
                     self.resumeRide()
                 case .end:
-                    self.endRide()
+                    // Phase 35.4: Only end if we're the host or explicitly requested
+                    if self.isHost {
+                        print("🛑 endRide() called by REMOTE/HOST command")
+                        self.endRide()
+                    } else {
+                        print("⚠️ Non-host received end command - ignoring to prevent auto-stop")
+                        // Non-hosts should see summary but not end their own ride
+                        // The summary will come from the shared summary system
+                    }
                 }
                 self.processingRemoteCommand = false
             }

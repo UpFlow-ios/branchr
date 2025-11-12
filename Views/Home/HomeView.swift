@@ -205,14 +205,15 @@ struct HomeView: View {
                     )
                     .sheet(isPresented: $showSmartRideSheet) {
                         RideSheetView()
-                            .presentationDetents([.large, .fraction(0.3)])
+                            .presentationDetents([.large])
                     }
                     .onChange(of: rideSession.rideState) { state in
-                        if state == .active {
+                        // Phase 35.4: Keep sheet open for entire ride lifecycle
+                        if state == .active || state == .paused {
                             withAnimation(.spring()) { showSmartRideSheet = true }
-                        } else if state == .idle {
-                            withAnimation(.spring()) { showSmartRideSheet = false }
                         }
+                        // Don't auto-dismiss on .ended - let user close manually
+                        // This way they can see the summary overlay
                     }
                     
                     // Phase 33B: Dynamic Start/Stop Connection Button with Rainbow Glow + Improved Colors

@@ -47,7 +47,7 @@ struct RideSheetView: View {
                     )
                     .ignoresSafeArea()
                     .offset(y: parallax)
-                    .scaleEffect(1 + abs(parallax) / 2000)
+                    // Phase 35.4: Remove scaleEffect - safer for Metal-backed map views
                     .onChange(of: rideManager.route.count) {
                         updateMapRegion()
                     }
@@ -118,15 +118,28 @@ struct RideSheetView: View {
                 }
                 
                 riderOverlay
+                
+                // Phase 35.4: Show summary as overlay instead of new sheet
+                // This keeps the map alive and prevents Metal crashes
+                if rideManager.showSummary, let rideRecord = createRideRecord() {
+                    Color.black.opacity(0.35)
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                        .onTapGesture {
+                            // Allow dismissing by tapping background
+                            withAnimation { rideManager.showSummary = false }
+                        }
+                    
+                    EnhancedRideSummaryView(ride: rideRecord)
+                        .background(.ultraThinMaterial)
+                        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 24)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: rideManager.connectedRiders.count)
-        }
-        .sheet(isPresented: $rideManager.showSummary) {
-            if let rideRecord = createRideRecord() {
-                EnhancedRideSummaryView(ride: rideRecord)
-                    .presentationDetents([.large])
-                    .transition(.opacity)
-            }
+            .animation(.spring(response: 0.45, dampingFraction: 0.7), value: rideManager.showSummary)
         }
         .sheet(isPresented: $showConnectedRidersSheet) {
             // Phase 35.2: Connected Riders Sheet with local instances

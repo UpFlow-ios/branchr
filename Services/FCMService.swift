@@ -46,11 +46,10 @@ class FCMService: NSObject, ObservableObject, MessagingDelegate, UNUserNotificat
     // MARK: - Configuration
     
     func configureNotifications() {
-        // Phase 34H: Ensure Firebase is configured before setting up FCM
+        // Phase 35.4: Check Firebase without helper function
         if FirebaseApp.app() == nil {
             print("⚠️ Firebase not ready – delaying FCM setup…")
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                ensureFirebaseConfigured()
                 self.configureNotifications()
             }
             return
