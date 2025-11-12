@@ -28,6 +28,11 @@ struct RideSheetView: View {
     @Namespace private var rideNamespace
     @Namespace private var riderNamespace
     
+    // Phase 35.5: Log state changes to track auto-stops
+    init() {
+        print("🎯 RideSheetView initialized")
+    }
+    
     var body: some View {
         GeometryReader { geo in
             let minY = geo.frame(in: .global).minY
@@ -140,6 +145,10 @@ struct RideSheetView: View {
             }
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: rideManager.connectedRiders.count)
             .animation(.spring(response: 0.45, dampingFraction: 0.7), value: rideManager.showSummary)
+            .onChange(of: rideManager.rideState) { newState in
+                // Phase 35.5: Track state changes to identify auto-stops
+                print("🎯 rideState changed to: \(newState)")
+            }
         }
         .sheet(isPresented: $showConnectedRidersSheet) {
             // Phase 35.2: Connected Riders Sheet with local instances

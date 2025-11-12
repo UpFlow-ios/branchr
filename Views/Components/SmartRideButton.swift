@@ -29,7 +29,7 @@ struct SmartRideButton: View {
             .buttonStyle(.plain)
             .rainbowGlow(active: shouldShowGlow)
             .simultaneousGesture(
-                LongPressGesture(minimumDuration: 5.0)
+                LongPressGesture(minimumDuration: 1.0)  // Phase 35.5: Changed from 5.0 to 1.0 second
                     .onEnded { _ in handleLongPress() }
                     .onChanged { _ in
                         if !isHolding { startHoldTimer() }
@@ -155,9 +155,9 @@ struct SmartRideButton: View {
         isHolding = false
         holdProgress = 0.0
         
-        // Phase 35.3: Instant stop - no countdown
+        // Phase 35.5: User-triggered stop with explicit flag
         if rideManager.rideState == .active || rideManager.rideState == .paused {
-            rideManager.endRide()
+            rideManager.endRide(triggeredByUser: true)
             VoiceFeedbackService.shared.speak("Ride stopped, saved to calendar")
             UINotificationFeedbackGenerator().notificationOccurred(.success)
         }

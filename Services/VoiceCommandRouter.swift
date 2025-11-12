@@ -94,8 +94,8 @@ final class VoiceCommandRouter {
         }
         else if lower.contains("stop ride") || lower.contains("stop ride tracking") || lower.contains("end ride") {
             Task { @MainActor in
-                // Phase 35.3: Instant stop
-                RideSessionManager.shared.endRide()
+                // Phase 35.5: User-triggered voice stop
+                RideSessionManager.shared.endRide(triggeredByUser: true)
                 await VoiceFeedbackService.shared.speak("Ride stopped, saved to calendar")
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             }
@@ -122,8 +122,8 @@ final class VoiceCommandRouter {
             }
         } else if text.contains("stop ride") || text.contains("end ride") || text.contains("stop tracking") {
             Task { @MainActor in
-                // Phase 35.3: Instant stop
-                RideSessionManager.shared.endRide()
+                // Phase 35.5: User-triggered voice stop
+                RideSessionManager.shared.endRide(triggeredByUser: true)
                 await VoiceFeedbackService.shared.speak("Ride stopped, saved to calendar")
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             }

@@ -45,6 +45,9 @@ struct RideMapViewRepresentable: UIViewRepresentable {
             let annotation = RiderPointAnnotation(rider: rider)
             mapView.addAnnotation(annotation)
         }
+        
+        // Phase 35.5: Log map updates to verify continuous tracking
+        print("🗺️ Map updating with \(coordinates.count) coordinates, riders: \(riderAnnotations.count)")
     }
     
     func makeCoordinator() -> Coordinator {

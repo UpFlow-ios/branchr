@@ -213,11 +213,11 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
         print("▶️ Ride resumed")
     }
     
-    func endRide() {
+    func endRide(triggeredByUser: Bool = true) {
         guard rideState == .active || rideState == .paused else { return }
         
-        // Phase 35.4: Log who called endRide for debugging
-        print("🛑 endRide() called - processingRemoteCommand: \(processingRemoteCommand), isHost: \(isHost)")
+        // Phase 35.5: Enhanced logging to track auto-stop issues
+        print("🛑 endRide() manually triggered: \(triggeredByUser) - processingRemoteCommand: \(processingRemoteCommand), isHost: \(isHost)")
         
         rideState = .ended
         locationManager.stopUpdatingLocation()
@@ -444,10 +444,10 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
                 case .resume:
                     self.resumeRide()
                 case .end:
-                    // Phase 35.4: Only end if we're the host or explicitly requested
+                    // Phase 35.5: Only end if we're the host or explicitly requested
                     if self.isHost {
                         print("🛑 endRide() called by REMOTE/HOST command")
-                        self.endRide()
+                        self.endRide(triggeredByUser: false)  // Remote trigger
                     } else {
                         print("⚠️ Non-host received end command - ignoring to prevent auto-stop")
                         // Non-hosts should see summary but not end their own ride
