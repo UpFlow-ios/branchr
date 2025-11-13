@@ -216,6 +216,28 @@ struct HomeView: View {
                         // This way they can see the summary overlay
                     }
                     
+                    // Phase 35.8: Explicit Group Ride Button
+                    Button(action: {
+                        _ = PulseSyncService.shared.generateHostTimestamp()
+                        RideSessionManager.shared.startGroupRide()
+                        withAnimation(.spring()) { showSmartRideSheet = true }
+                    }) {
+                        HStack {
+                            Image(systemName: "person.3.sequence.fill")
+                                .font(.headline)
+                            Text("Start Group Ride")
+                                .font(.headline)
+                        }
+                        .foregroundColor(.white)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(16)
+                    }
+                    .buttonStyle(.plain)
+                    .shadow(radius: 12)
+                    .padding(.horizontal, 16)
+                    
                     // Phase 33B: Dynamic Start/Stop Connection Button with Rainbow Glow + Improved Colors
                     Button(action: {
                         connectionManager.toggleConnection()
