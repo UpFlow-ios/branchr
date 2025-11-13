@@ -81,31 +81,13 @@ struct SmartRideButton: View {
     }
     
     private var buttonBackgroundColor: Color {
-        switch rideManager.rideState {
-        case .idle, .ended:
-            // Light mode: black bg, Dark mode: yellow bg
-            return colorScheme == .light ? Color.black : Color.yellow
-        case .active:
-            // Orange for active state
-            return Color.orange
-        case .paused:
-            // Green for paused/resume state
-            return Color.green
-        }
+        // All states use YELLOW background
+        return Color.yellow
     }
     
     private var buttonTextColor: Color {
-        switch rideManager.rideState {
-        case .idle, .ended:
-            // Light mode: yellow text, Dark mode: black text
-            return colorScheme == .light ? Color.yellow : Color.black
-        case .active:
-            // White text on orange
-            return Color.white
-        case .paused:
-            // White text on green
-            return Color.white
-        }
+        // All states use BLACK text
+        return Color.black
     }
     
     private var shouldShowGlow: Bool {

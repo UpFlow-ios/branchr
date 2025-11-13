@@ -108,9 +108,12 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
     func startGroupRide() {
         guard rideState == .idle, let uid = Auth.auth().currentUser?.uid else { return }
         resetRideData()
-        showSummary = false  // Phase 35.4: Hide summary when starting new ride
+        showSummary = false
+        
+        // CRITICAL: Set group ride state
         isGroupRide = true
         isHost = true
+        rideState = .active
         groupRideId = UUID().uuidString
         
         // Phase 35.6: Track absolute ride start time for safety guard

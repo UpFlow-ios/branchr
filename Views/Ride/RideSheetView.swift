@@ -42,7 +42,7 @@ struct RideSheetView: View {
                 // Background
                 theme.primaryBackground.ignoresSafeArea()
                 
-                // Phase 35.3: Map View with HUD overlay
+                // Map View with HUD overlay - FIXED for Metal stability
                 ZStack(alignment: .topLeading) {
                     RideMapViewRepresentable(
                         region: $region,
@@ -50,9 +50,7 @@ struct RideSheetView: View {
                         showsUserLocation: true,
                         riderAnnotations: rideManager.riderAnnotations
                     )
-                    .ignoresSafeArea()
-                    .offset(y: parallax)
-                    // Phase 35.4: Remove scaleEffect - safer for Metal-backed map views
+                    .ignoresSafeArea(edges: .all)
                     .onChange(of: rideManager.route.count) {
                         updateMapRegion()
                     }

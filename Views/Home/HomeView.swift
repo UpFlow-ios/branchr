@@ -190,16 +190,14 @@ struct HomeView: View {
                 
                 // MARK: - Main Actions
                 VStack(spacing: 14) {
-                    // Smart Group Ride: Unified Adaptive Button
+                    // Start Ride Button
                     SmartRideButton(
                         onStartSolo: {
                             RideSessionManager.shared.startSoloRide()
                             withAnimation(.spring()) { showSmartRideSheet = true }
                         },
                         onStartGroup: {
-                            // Host pulse sync + start group ride
-                            _ = PulseSyncService.shared.generateHostTimestamp()
-                            RideSessionManager.shared.startGroupRide()
+                            RideSessionManager.shared.startSoloRide()
                             withAnimation(.spring()) { showSmartRideSheet = true }
                         }
                     )
@@ -208,15 +206,13 @@ struct HomeView: View {
                             .presentationDetents([.large])
                     }
                     .onChange(of: rideSession.rideState) { state in
-                        // Phase 35.4: Keep sheet open for entire ride lifecycle
+                        // Keep sheet open for entire ride lifecycle
                         if state == .active || state == .paused {
                             withAnimation(.spring()) { showSmartRideSheet = true }
                         }
-                        // Don't auto-dismiss on .ended - let user close manually
-                        // This way they can see the summary overlay
                     }
                     
-                    // Phase 35.8: Explicit Group Ride Button
+                    // Start Group Ride Button - YELLOW
                     Button(action: {
                         _ = PulseSyncService.shared.generateHostTimestamp()
                         RideSessionManager.shared.startGroupRide()
@@ -228,17 +224,17 @@ struct HomeView: View {
                             Text("Start Group Ride")
                                 .font(.headline)
                         }
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                         .padding()
                         .frame(maxWidth: .infinity)
-                        .background(.ultraThinMaterial)
+                        .background(Color.yellow)
                         .cornerRadius(16)
                     }
                     .buttonStyle(.plain)
-                    .shadow(radius: 12)
+                    .shadow(radius: 8)
                     .padding(.horizontal, 16)
                     
-                    // Phase 33B: Dynamic Start/Stop Connection Button with Rainbow Glow + Improved Colors
+                    // Start Connection Button - YELLOW
                     Button(action: {
                         connectionManager.toggleConnection()
                     }) {
@@ -249,17 +245,16 @@ struct HomeView: View {
                               ? "Connecting..."
                               : "Start Connection"
                         )
-                        .fontWeight(.semibold)
+                        .font(.headline)
+                        .foregroundColor(.black)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 14)
-                                .fill(Color.branchrButtonBackground)
-                        )
-                        .foregroundColor(Color.branchrButtonText)
-                        .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 3)
+                        .background(Color.yellow)
+                        .cornerRadius(16)
                     }
-                    .rainbowGlow(active: connectionManager.state == .connecting || connectionManager.state == .connected) // Phase 34D: Show during connecting and connected
+                    .buttonStyle(.plain)
+                    .shadow(radius: 8)
+                    .rainbowGlow(active: connectionManager.state == .connecting || connectionManager.state == .connected)
                     .disabled(connectionManager.state == .connecting)
                     .animation(.easeInOut(duration: 0.4), value: connectionManager.state)
                     .animation(.easeInOut, value: connectionManager.showRainbowGlow)
@@ -287,7 +282,7 @@ struct HomeView: View {
                         .padding(.top, 8)
                     }
                     
-                    // Phase 33B: Start Voice Chat Button (red when active, themed for light/dark)
+                    // Start Voice Chat Button - YELLOW
                     Button(action: {
                         if voiceService.isVoiceChatActive {
                             voiceService.stopVoiceChat()
@@ -297,25 +292,19 @@ struct HomeView: View {
                     }) {
                         HStack {
                             Image(systemName: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill")
-                                .font(.system(size: 18, weight: .medium))
+                                .font(.headline)
                             
                             Text(voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat")
-                                .fontWeight(.semibold)
+                                .font(.headline)
                         }
-                        .foregroundColor(voiceService.isVoiceChatActive ? .white : Color.branchrButtonText)
+                        .foregroundColor(.black)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 14)
-                                .fill(voiceService.isVoiceChatActive ? Color.red : Color.branchrButtonBackground)
-                                .shadow(
-                                    color: voiceService.isVoiceChatActive ? .red.opacity(0.5) : .black.opacity(0.3),
-                                    radius: 5,
-                                    x: 0,
-                                    y: 3
-                                )
-                        )
+                        .background(Color.yellow)
+                        .cornerRadius(16)
                     }
+                    .buttonStyle(.plain)
+                    .shadow(radius: 8)
                     .animation(.easeInOut(duration: 0.3), value: voiceService.isVoiceChatActive)
                     
                     BranchrButton(title: "Safety & SOS", icon: "exclamationmark.triangle.fill") {
