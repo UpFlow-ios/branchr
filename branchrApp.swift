@@ -53,7 +53,11 @@ struct branchrApp: App {
     // MARK: - Phase 35: Session Recovery
     
     /// Check for and restore a previous ride session
+    /// DISABLED in Phase 35.11 - prevents auto-starting rides on app launch
     private func checkAndRestoreRideSession() {
+        // DISABLED: Auto-restore causes rides to start on launch
+        // This feature can be re-enabled later with user confirmation
+        /*
         Task { @MainActor in
             let recoveryService = RideSessionRecoveryService.shared
             
@@ -71,6 +75,7 @@ struct branchrApp: App {
             
             print("🔄 Restored ride session on app launch")
         }
+        */
     }
     
     // MARK: - Phase 34G: Anonymous Sign-In with Firebase Guard
@@ -116,8 +121,8 @@ struct branchrApp: App {
                             PresenceManager.shared.setOnline(true)
                         }
                         
-                        // Phase 35: Check for recoverable ride session
-                        checkAndRestoreRideSession()
+                        // Phase 35.11: DISABLED auto-restore on launch for stability
+                        // checkAndRestoreRideSession() // Disabled - prevents auto-starting rides
                     }
                     .onDisappear {
                         // Phase 23: Set user offline when app disappears (only if signed in)

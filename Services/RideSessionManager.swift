@@ -78,6 +78,12 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
     override init() {
         super.init()
         configureLocationManager()
+        
+        // Phase 35.11: Force default state on launch - prevent auto-start
+        rideState = .idle
+        isGroupRide = false
+        isHost = false
+        showSummary = false
     }
     
     // Note: stopListeners() is called explicitly when needed
