@@ -212,28 +212,6 @@ struct HomeView: View {
                         }
                     }
                     
-                    // Start Group Ride Button - YELLOW
-                    Button(action: {
-                        _ = PulseSyncService.shared.generateHostTimestamp()
-                        RideSessionManager.shared.startGroupRide()
-                        withAnimation(.spring()) { showSmartRideSheet = true }
-                    }) {
-                        HStack {
-                            Image(systemName: "person.3.sequence.fill")
-                                .font(.headline)
-                            Text("Start Group Ride")
-                                .font(.headline)
-                        }
-                        .foregroundColor(.black)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.yellow)
-                        .cornerRadius(16)
-                    }
-                    .buttonStyle(.plain)
-                    .shadow(radius: 8)
-                    .padding(.horizontal, 16)
-                    
                     // Start Connection Button - YELLOW
                     Button(action: {
                         connectionManager.toggleConnection()
