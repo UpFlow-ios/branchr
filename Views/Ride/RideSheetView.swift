@@ -57,41 +57,41 @@ struct RideSheetView: View {
                         updateMapRegion()
                     }
                     
-                    // Phase 35.3: LIVE tracking badge + HUD
+                    // Phase 35.7: Enhanced LIVE tracking badge + HUD
                     if rideManager.rideState == .active {
                         VStack(alignment: .leading, spacing: 8) {
-                            // LIVE Tracking Badge
+                            // LIVE Tracking Badge - Enhanced
                             HStack(spacing: 6) {
                                 Circle()
                                     .fill(Color.green)
                                     .frame(width: 8, height: 8)
-                                Text("LIVE Tracking")
-                                    .font(.caption2.bold())
+                                    .shadow(color: .green.opacity(0.6), radius: 6)
+                                Text("LIVE TRACKING")
+                                    .font(.caption.bold())
+                                    .textCase(.uppercase)
                                     .foregroundColor(.white)
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(
-                                Capsule()
-                                    .fill(.ultraThinMaterial)
-                                    .shadow(color: Color.green.opacity(0.3), radius: 8, x: 0, y: 4)
-                            )
+                            .background(Color.black.opacity(0.25))
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(12)
+                            .shadow(radius: 12)
                             
-                            // Group Ride HUD
+                            // Group Ride HUD - Enhanced with blur
                             if rideManager.isGroupRide {
                                 HStack(spacing: 6) {
                                     Text("👑")
                                     Text("\(rideManager.connectedRiders.count + 1) riders")
-                                        .font(.caption2.bold())
+                                        .font(.caption.bold())
                                         .foregroundColor(.white)
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(
-                                    Capsule()
-                                        .fill(.ultraThinMaterial)
-                                        .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
-                                )
+                                .background(Color.black.opacity(0.25))
+                                .background(.ultraThinMaterial)
+                                .cornerRadius(12)
+                                .shadow(radius: 12)
                             }
                         }
                         .padding(20)
@@ -104,6 +104,18 @@ struct RideSheetView: View {
                         .matchedGeometryEffect(id: "rideHeader", in: rideNamespace)
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
+                    
+                    // Phase 35.7: Music Area Placeholder
+                    musicPlaceholderView
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                    
+                    // Phase 35.7: Connected Riders Preview Strip
+                    if rideManager.isGroupRide && !rideManager.connectedRiders.isEmpty {
+                        connectedRidersPreview
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 8)
+                    }
                     
                     Spacer()
                     
@@ -414,6 +426,44 @@ struct RideSheetView: View {
                 )
                 .padding(.horizontal, 20)
                 .padding(.bottom, 120)
+            }
+        }
+    }
+    
+    // Phase 35.7: Music Placeholder View
+    private var musicPlaceholderView: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Music")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+            
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.ultraThinMaterial)
+                .frame(height: 50)
+                .overlay(
+                    Text("Coming Soon")
+                        .foregroundColor(.gray)
+                        .font(.footnote)
+                )
+        }
+    }
+    
+    // Phase 35.7: Connected Riders Preview Strip
+    private var connectedRidersPreview: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(rideManager.connectedRiders) { rider in
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 42, height: 42)
+                        .overlay(
+                            Text(String(rider.name.prefix(1)))
+                                .font(.headline)
+                                .foregroundColor(.white)
+                        )
+                        .overlay(Circle().stroke(.white, lineWidth: 2))
+                        .shadow(radius: 5)
+                }
             }
         }
     }

@@ -26,10 +26,10 @@ struct SmartRideButton: View {
     
     var body: some View {
         buildButton()
-            .buttonStyle(.plain)
+            .buttonStyle(.plain)  // Phase 35.7: Keep plain style to prevent orange press state
             .rainbowGlow(active: shouldShowGlow)
-            .simultaneousGesture(
-                LongPressGesture(minimumDuration: 1.0)  // Phase 35.5: Changed from 5.0 to 1.0 second
+            .gesture(
+                LongPressGesture(minimumDuration: 1.0)
                     .onEnded { _ in handleLongPress() }
                     .onChanged { _ in
                         if !isHolding { startHoldTimer() }

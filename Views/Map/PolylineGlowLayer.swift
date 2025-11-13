@@ -17,8 +17,8 @@ import MapKit
 class RainbowPolylineRenderer: MKPolylineRenderer {
     
     override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
-        // Draw the main polyline with gradient colors
-        let colors: [UIColor] = [
+        // Phase 35.7: Enhanced saturation for more vibrant rainbow
+        let baseColors: [UIColor] = [
             .systemRed,
             .systemOrange,
             .systemYellow,
@@ -27,6 +27,7 @@ class RainbowPolylineRenderer: MKPolylineRenderer {
             .systemBlue,
             .systemPurple
         ]
+        let colors: [UIColor] = baseColors.map { $0.withAlphaComponent(0.95) }
         
         // Create gradient
         let colorSpace = CGColorSpaceCreateDeviceRGB()

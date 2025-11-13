@@ -57,9 +57,9 @@ struct RideMapViewRepresentable: UIViewRepresentable {
     class Coordinator: NSObject, MKMapViewDelegate {
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
             if let polyline = overlay as? MKPolyline {
-                // Phase 35.3: Use rainbow glow renderer
+                // Phase 35.7: Enhanced rainbow glow renderer with wider line
                 let renderer = RainbowPolylineRenderer(polyline: polyline)
-                renderer.lineWidth = 4
+                renderer.lineWidth = 8  // Increased from 4 to 8
                 return renderer
             }
             return MKOverlayRenderer(overlay: overlay)

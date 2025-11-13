@@ -37,7 +37,8 @@ struct RainbowGlowModifier: ViewModifier {
                     )
                     .blur(radius: 2)
                     .opacity(0.9)
-                    .shadow(color: .yellow.opacity(0.6), radius: 12, x: 0, y: 0)
+                    .shadow(color: .yellow.opacity(0.9), radius: 35, x: 0, y: 0)  // Phase 35.7: Enhanced glow
+                    .shadow(color: .purple.opacity(0.6), radius: 70, x: 0, y: 0)
             )
             .onAppear {
                 // Trigger haptic on first appearance
