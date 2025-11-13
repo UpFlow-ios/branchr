@@ -54,6 +54,7 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
     private let db = Firestore.firestore()
     
     private var startTime: Date?
+    private var rideStartTime: Date?  // Phase 35.6: Track absolute ride start for safety guard
     private var pausedTime: TimeInterval = 0
     private var lastPauseTime: Date?
     private var timer: Timer?
@@ -92,6 +93,10 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
         isHost = false
         groupRideId = nil
         
+        // Phase 35.6: Track absolute ride start time for safety guard
+        rideStartTime = Date()
+        print("🚀 startSoloRide() called at \(Date().formatted(date: .omitted, time: .standard))")
+        
         requestLocationPermissionIfNeeded { [weak self] granted in
             guard let self = self, granted else { return }
             self.beginActiveRide()
@@ -107,6 +112,10 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
         isGroupRide = true
         isHost = true
         groupRideId = UUID().uuidString
+        
+        // Phase 35.6: Track absolute ride start time for safety guard
+        rideStartTime = Date()
+        print("🚀 startGroupRide() called at \(Date().formatted(date: .omitted, time: .standard))")
         
         let profile = currentUserProfile()
         hostDisplayName = profile.name
@@ -216,8 +225,15 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
     func endRide(triggeredByUser: Bool = true) {
         guard rideState == .active || rideState == .paused else { return }
         
-        // Phase 35.5: Enhanced logging to track auto-stop issues
-        print("🛑 endRide() manually triggered: \(triggeredByUser) - processingRemoteCommand: \(processingRemoteCommand), isHost: \(isHost)")
+        // Phase 35.6: Safety guard - prevent accidental stops within first 10 seconds
+        let rideDuration = Date().timeIntervalSince(rideStartTime ?? Date())
+        if triggeredByUser && rideDuration < 10 && !processingRemoteCommand {
+            print("⚠️ Ignoring accidental endRide trigger (duration: \(String(format: "%.1f", rideDuration))s) - ride too new")
+            return
+        }
+        
+        // Phase 35.6: Enhanced logging with duration
+        print("🛑 endRide() triggered: user=\(triggeredByUser), duration=\(String(format: "%.1f", rideDuration))s, processingRemote=\(processingRemoteCommand), isHost=\(isHost)")
         
         rideState = .ended
         locationManager.stopUpdatingLocation()
