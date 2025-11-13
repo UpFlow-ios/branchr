@@ -42,7 +42,7 @@ struct RideSheetView: View {
                 // Background
                 theme.primaryBackground.ignoresSafeArea()
                 
-                // Map View with HUD overlay - FIXED for Metal stability
+                // Map View with HUD overlay - FIXED for Metal stability (Phase 1)
                 ZStack(alignment: .topLeading) {
                     RideMapViewRepresentable(
                         region: $region,
@@ -50,6 +50,7 @@ struct RideSheetView: View {
                         showsUserLocation: true,
                         riderAnnotations: rideManager.riderAnnotations
                     )
+                    .frame(width: geo.size.width, height: geo.size.height * 0.4)
                     .ignoresSafeArea(edges: .all)
                     .onChange(of: rideManager.route.count) {
                         updateMapRegion()
@@ -353,12 +354,9 @@ struct RideSheetView: View {
             )
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(theme.isDarkMode ? Color.branchrAccent : Color.black)
-                .shadow(color: Color.black.opacity(0.25), radius: 12, x: 0, y: 6)
-        )
-        .foregroundColor(theme.isDarkMode ? Color.black : Color.branchrAccent)
+        .background(theme.cardBackground)
+        .cornerRadius(16)
+        .shadow(color: theme.primaryGlow.opacity(0.25), radius: 10)
     }
     
     private var riderOverlay: some View {

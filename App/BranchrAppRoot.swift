@@ -69,7 +69,7 @@ struct BranchrAppRoot: View {
             }
             .tint(theme.primaryButton)
             .preferredColorScheme(theme.isDarkMode ? .dark : .light)
-        .background(theme.primaryBackground.ignoresSafeArea())
+            .background(theme.primaryBackground.ignoresSafeArea())
         .sheet(isPresented: $showDJControls) {
             DJControlView(dj: hostDJ, musicSync: musicSync, songRequests: songRequests)
         }

@@ -188,8 +188,8 @@ struct HomeView: View {
                 }
                 .padding(.vertical, 10)
                 
-                // MARK: - Main Actions
-                VStack(spacing: 14) {
+                // MARK: - Main Actions (Phase 1: Unified Button System)
+                VStack(spacing: 25) {
                     // Start Ride Button
                     SmartRideButton(
                         onStartSolo: {
@@ -212,30 +212,19 @@ struct HomeView: View {
                         }
                     }
                     
-                    // Start Connection Button - YELLOW
-                    Button(action: {
-                        connectionManager.toggleConnection()
-                    }) {
-                        Text(
-                            connectionManager.state == .connected
+                    // Start Connection Button
+                    PrimaryButton(
+                        title: connectionManager.state == .connected
                             ? "Stop Connection"
                             : connectionManager.state == .connecting
                               ? "Connecting..."
-                              : "Start Connection"
-                        )
-                        .font(.headline)
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.yellow)
-                        .cornerRadius(16)
-                    }
-                    .buttonStyle(.plain)
-                    .shadow(radius: 8)
-                    .rainbowGlow(active: connectionManager.state == .connecting || connectionManager.state == .connected)
-                    .disabled(connectionManager.state == .connecting)
-                    .animation(.easeInOut(duration: 0.4), value: connectionManager.state)
-                    .animation(.easeInOut, value: connectionManager.showRainbowGlow)
+                              : "Start Connection",
+                        icon: nil,
+                        action: {
+                            connectionManager.toggleConnection()
+                        },
+                        isDisabled: connectionManager.state == .connecting
+                    )
                     
                     // Show connected peers if any
                     if !connectionManager.connectedPeers.isEmpty {
@@ -260,32 +249,21 @@ struct HomeView: View {
                         .padding(.top, 8)
                     }
                     
-                    // Start Voice Chat Button - YELLOW
-                    Button(action: {
-                        if voiceService.isVoiceChatActive {
-                            voiceService.stopVoiceChat()
-                        } else {
-                            voiceService.startVoiceChat()
+                    // Start Voice Chat Button
+                    PrimaryButton(
+                        title: voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
+                        icon: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill",
+                        action: {
+                            if voiceService.isVoiceChatActive {
+                                voiceService.stopVoiceChat()
+                            } else {
+                                voiceService.startVoiceChat()
+                            }
                         }
-                    }) {
-                        HStack {
-                            Image(systemName: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill")
-                                .font(.headline)
-                            
-                            Text(voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat")
-                                .font(.headline)
-                        }
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.yellow)
-                        .cornerRadius(16)
-                    }
-                    .buttonStyle(.plain)
-                    .shadow(radius: 8)
-                    .animation(.easeInOut(duration: 0.3), value: voiceService.isVoiceChatActive)
+                    )
                     
-                    BranchrButton(title: "Safety & SOS", icon: "exclamationmark.triangle.fill") {
+                    // Safety & SOS Button
+                    SafetyButton {
                         showingSafetySettings = true
                     }
                 }
