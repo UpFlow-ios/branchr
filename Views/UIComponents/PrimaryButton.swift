@@ -2,7 +2,7 @@
 //  PrimaryButton.swift
 //  branchr
 //
-//  Created for Phase 1 - UI Foundation Cleanup
+//  Phase 2: Non-floating button with press effect and hero support
 //
 
 import SwiftUI
@@ -10,48 +10,67 @@ import SwiftUI
 /**
  * 🎨 Primary Button Component
  *
- * Reusable button with permanent rainbow glow animation.
- * Always yellow background with black text.
+ * Reusable button that adapts to light/dark mode.
+ * No floating animations - only subtle press-down effect.
  */
 struct PrimaryButton: View {
     let title: String
-    let icon: String?
+    let systemImage: String?
+    let isHero: Bool
     let action: () -> Void
-    var isDisabled: Bool = false
     
-    @State private var glow = false
     @ObservedObject private var theme = ThemeManager.shared
+    @State private var isPressed: Bool = false
+    
+    init(_ title: String,
+         systemImage: String? = nil,
+         isHero: Bool = false,
+         action: @escaping () -> Void) {
+        self.title = title
+        self.systemImage = systemImage
+        self.isHero = isHero
+        self.action = action
+    }
     
     var body: some View {
-        Button(action: action) {
-            HStack {
-                if let icon = icon {
-                    Image(systemName: icon)
+        Button {
+            action()
+        } label: {
+            HStack(spacing: 8) {
+                if let systemImage = systemImage {
+                    Image(systemName: systemImage)
                         .font(.headline)
                 }
                 Text(title)
-                    .font(.headline)
+                    .fontWeight(.semibold)
             }
-            .foregroundColor(.black)
-            .padding()
+            .foregroundColor(theme.primaryButtonText)
+            .padding(.horizontal, 24)
+            .padding(.vertical, isHero ? 18 : 14)
             .frame(maxWidth: .infinity)
-            .background(theme.primaryYellow)
-            .cornerRadius(16)
-            .shadow(
-                color: theme.primaryGlow.opacity(glow ? 0.7 : 0.3),
-                radius: glow ? 20 : 6
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(theme.primaryButtonBackground)
+                    .shadow(
+                        color: theme.glowColor.opacity(isHero ? 0.8 : 0.4),
+                        radius: isHero ? 18 : 10,
+                        x: 0,
+                        y: isHero ? 8 : 4
+                    )
             )
-            .opacity(isDisabled ? 0.5 : 1.0)
+            .scaleEffect(isPressed ? 0.97 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isPressed)
         }
-        .buttonStyle(.plain)
-        .disabled(isDisabled)
-        .onAppear {
-            glow = true
-        }
-        .animation(
-            .easeInOut(duration: 1.6).repeatForever(autoreverses: true),
-            value: glow
+        .buttonStyle(PlainButtonStyle())
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if !isPressed { isPressed = true }
+                }
+                .onEnded { _ in
+                    isPressed = false
+                }
         )
+        .accessibilityLabel(Text(title))
     }
 }
-

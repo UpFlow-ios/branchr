@@ -8,42 +8,28 @@
 import SwiftUI
 
 /// Custom theme manager for Branchr app
-/// Dark mode: Black/grey background with yellow buttons
-/// Light mode: Yellow background with black buttons
-class ThemeManager: ObservableObject {
+/// Phase 2: Light mode = yellow bg, black buttons | Dark mode = black bg, yellow buttons
+final class ThemeManager: ObservableObject {
     static let shared = ThemeManager()
     
-    @Published var isDarkMode: Bool = true
+    @Published var isDarkMode: Bool = false {
+        didSet {
+            print("🎨 Theme toggled: \(isDarkMode ? "Dark" : "Light")")
+        }
+    }
     
     private init() {
         // Detect system appearance
         self.isDarkMode = UITraitCollection.current.userInterfaceStyle == .dark
     }
     
-    // MARK: - Global Colors (Phase 1)
-    var primaryYellow: Color {
-        Color(hex: "FFD500")
-    }
-    
-    var primaryBlack: Color {
-        Color.black
-    }
-    
-    var primaryGlow: Color {
-        Color(hex: "FFE55C")
-    }
-    
-    var darkCard: Color {
-        Color(hex: "111111")
-    }
-    
-    var lightCard: Color {
-        Color(hex: "FFE76D")
-    }
+    // MARK: - Base Brand Colors (Phase 2)
+    let branchrYellow = Color(hex: "#FFD500")
+    let branchrBlack = Color.black
     
     // MARK: - Background Colors
     var primaryBackground: Color {
-        isDarkMode ? primaryBlack : primaryYellow
+        isDarkMode ? branchrBlack : branchrYellow
     }
     
     var secondaryBackground: Color {
@@ -51,7 +37,51 @@ class ThemeManager: ObservableObject {
     }
     
     var cardBackground: Color {
-        isDarkMode ? darkCard : lightCard
+        isDarkMode ? Color.black.opacity(0.9) : Color.white.opacity(0.2)
+    }
+    
+    // MARK: - Button Colors (Phase 2)
+    var primaryButtonBackground: Color {
+        isDarkMode ? branchrYellow : branchrBlack
+    }
+    
+    var primaryButtonText: Color {
+        isDarkMode ? branchrBlack : branchrYellow
+    }
+    
+    // Safety button always black with yellow text
+    var safetyButtonBackground: Color {
+        branchrBlack
+    }
+    
+    var safetyButtonText: Color {
+        branchrYellow
+    }
+    
+    // Soft glow color for hero CTA and tiles
+    var glowColor: Color {
+        branchrYellow.opacity(isDarkMode ? 0.8 : 0.6)
+    }
+    
+    // MARK: - Legacy Support (keep for compatibility)
+    var primaryYellow: Color {
+        branchrYellow
+    }
+    
+    var primaryBlack: Color {
+        branchrBlack
+    }
+    
+    var primaryGlow: Color {
+        Color(hex: "#FFE55C")
+    }
+    
+    var darkCard: Color {
+        Color(hex: "#111111")
+    }
+    
+    var lightCard: Color {
+        Color(hex: "#FFE76D")
     }
     
     // MARK: - Text Colors
@@ -67,13 +97,9 @@ class ThemeManager: ObservableObject {
         isDarkMode ? Color.yellow : Color.black
     }
     
-    // MARK: - Button Colors
+    // MARK: - Legacy Button Colors (keep for compatibility)
     var primaryButton: Color {
-        isDarkMode ? Color.yellow : Color.black
-    }
-    
-    var primaryButtonText: Color {
-        isDarkMode ? Color.black : Color.yellow
+        primaryButtonBackground
     }
     
     var secondaryButton: Color {
@@ -177,27 +203,17 @@ extension View {
 
 extension Color {
     init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3: // RGB (12-bit)
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (255, 0, 0, 0)
-        }
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue: Double(b) / 255,
-            opacity: Double(a) / 255
-        )
+        var hexString = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        hexString = hexString.replacingOccurrences(of: "#", with: "")
+        
+        var rgb: UInt64 = 0
+        Scanner(string: hexString).scanHexInt64(&rgb)
+        
+        let r = Double((rgb >> 16) & 0xFF) / 255.0
+        let g = Double((rgb >> 8) & 0xFF) / 255.0
+        let b = Double(rgb & 0xFF) / 255.0
+        
+        self.init(red: r, green: g, blue: b)
     }
     
     /// Button background color that adapts to light/dark mode

@@ -188,19 +188,27 @@ struct HomeView: View {
                 }
                 .padding(.vertical, 10)
                 
-                // MARK: - Main Actions (Phase 1: Unified Button System)
-                VStack(spacing: 25) {
-                    // Start Ride Button
-                    SmartRideButton(
-                        onStartSolo: {
+                // MARK: - Main Actions (Phase 2: Unified Button System)
+                VStack(spacing: 20) {
+                    // Start Ride Tracking - Hero Button
+                    PrimaryButton(
+                        rideSession.rideState == .idle || rideSession.rideState == .ended
+                            ? "Start Ride Tracking"
+                            : rideSession.rideState == .active
+                              ? "Pause Ride"
+                              : "Resume Ride",
+                        systemImage: nil,
+                        isHero: true
+                    ) {
+                        if rideSession.rideState == .idle || rideSession.rideState == .ended {
                             RideSessionManager.shared.startSoloRide()
                             withAnimation(.spring()) { showSmartRideSheet = true }
-                        },
-                        onStartGroup: {
-                            RideSessionManager.shared.startSoloRide()
-                            withAnimation(.spring()) { showSmartRideSheet = true }
+                        } else if rideSession.rideState == .active {
+                            RideSessionManager.shared.pauseRide()
+                        } else if rideSession.rideState == .paused {
+                            RideSessionManager.shared.resumeRide()
                         }
-                    )
+                    }
                     .sheet(isPresented: $showSmartRideSheet) {
                         RideSheetView()
                             .presentationDetents([.large])
@@ -214,17 +222,16 @@ struct HomeView: View {
                     
                     // Start Connection Button
                     PrimaryButton(
-                        title: connectionManager.state == .connected
+                        connectionManager.state == .connected
                             ? "Stop Connection"
                             : connectionManager.state == .connecting
                               ? "Connecting..."
                               : "Start Connection",
-                        icon: nil,
-                        action: {
-                            connectionManager.toggleConnection()
-                        },
-                        isDisabled: connectionManager.state == .connecting
-                    )
+                        systemImage: nil,
+                        isHero: false
+                    ) {
+                        connectionManager.toggleConnection()
+                    }
                     
                     // Show connected peers if any
                     if !connectionManager.connectedPeers.isEmpty {
@@ -251,24 +258,27 @@ struct HomeView: View {
                     
                     // Start Voice Chat Button
                     PrimaryButton(
-                        title: voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
-                        icon: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill",
-                        action: {
-                            if voiceService.isVoiceChatActive {
-                                voiceService.stopVoiceChat()
-                            } else {
-                                voiceService.startVoiceChat()
-                            }
+                        voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
+                        systemImage: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill",
+                        isHero: false
+                    ) {
+                        if voiceService.isVoiceChatActive {
+                            voiceService.stopVoiceChat()
+                        } else {
+                            voiceService.startVoiceChat()
                         }
-                    )
+                    }
                     
                     // Safety & SOS Button
-                    SafetyButton {
+                    SafetyButton(
+                        "Safety & SOS",
+                        systemImage: "exclamationmark.triangle.fill"
+                    ) {
                         showingSafetySettings = true
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 32)
                 
                 Spacer(minLength: 40)
             }

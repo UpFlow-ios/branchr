@@ -35,14 +35,14 @@ struct RideSheetView: View {
     
     var body: some View {
         GeometryReader { geo in
-            let minY = geo.frame(in: .global).minY
-            let parallax = min(0, minY) * 0.25
-            
-            ZStack {
-                // Background
-                theme.primaryBackground.ignoresSafeArea()
+            VStack(spacing: 16) {
+                // Top controls (pause/stop buttons)
+                headerView
+                    .matchedGeometryEffect(id: "rideHeader", in: rideNamespace)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
                 
-                // Map View with HUD overlay - FIXED for Metal stability (Phase 1)
+                // Map section ~40% of height (Phase 2)
                 ZStack(alignment: .topLeading) {
                     RideMapViewRepresentable(
                         region: $region,
@@ -50,16 +50,17 @@ struct RideSheetView: View {
                         showsUserLocation: true,
                         riderAnnotations: rideManager.riderAnnotations
                     )
-                    .frame(width: geo.size.width, height: geo.size.height * 0.4)
-                    .ignoresSafeArea(edges: .all)
+                    .frame(height: 260) // Explicit height to stay stable
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .shadow(color: theme.glowColor.opacity(0.4), radius: 12, x: 0, y: 6)
                     .onChange(of: rideManager.route.count) {
                         updateMapRegion()
                     }
                     
-                    // Phase 35.7: Enhanced LIVE tracking badge + HUD
+                    // LIVE tracking badge + HUD (Phase 2)
                     if rideManager.rideState == .active {
                         VStack(alignment: .leading, spacing: 8) {
-                            // LIVE Tracking Badge - Enhanced
+                            // LIVE Tracking Badge
                             HStack(spacing: 6) {
                                 Circle()
                                     .fill(Color.green)
@@ -72,12 +73,11 @@ struct RideSheetView: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(Color.black.opacity(0.25))
                             .background(.ultraThinMaterial)
                             .cornerRadius(12)
                             .shadow(radius: 12)
                             
-                            // Group Ride HUD - Enhanced with blur
+                            // Group Ride HUD
                             if rideManager.isGroupRide {
                                 HStack(spacing: 6) {
                                     Text("👑")
@@ -87,7 +87,6 @@ struct RideSheetView: View {
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(Color.black.opacity(0.25))
                                 .background(.ultraThinMaterial)
                                 .cornerRadius(12)
                                 .shadow(radius: 12)
@@ -97,69 +96,64 @@ struct RideSheetView: View {
                         .transition(.scale.combined(with: .opacity))
                     }
                 }
+                .padding(.horizontal, 16)
                 
-                VStack(spacing: 0) {
-                    headerView
-                        .matchedGeometryEffect(id: "rideHeader", in: rideNamespace)
+                // Stats row (Phase 2)
+                statsView
+                    .matchedGeometryEffect(id: "rideStats", in: rideNamespace)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+                    
+                // Phase 35.7: Music Area Placeholder
+                musicPlaceholderView
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                
+                // Phase 35.7: Connected Riders Preview Strip
+                if rideManager.isGroupRide && !rideManager.connectedRiders.isEmpty {
+                    connectedRidersPreview
                         .padding(.horizontal, 20)
-                        .padding(.top, 20)
-                    
-                    // Phase 35.7: Music Area Placeholder
-                    musicPlaceholderView
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
-                    
-                    // Phase 35.7: Connected Riders Preview Strip
-                    if rideManager.isGroupRide && !rideManager.connectedRiders.isEmpty {
-                        connectedRidersPreview
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 8)
-                    }
-                    
-                    Spacer()
-                    
-                    statsView
-                        .matchedGeometryEffect(id: "rideStats", in: rideNamespace)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 20)
-                    
-                    // Phase 35.1: Host Controls Section
-                    if rideManager.isGroupRide && rideManager.isHost {
-                        RideSheetHostControls()
-                            .matchedGeometryEffect(id: "hostControls", in: rideNamespace)
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 20)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
+                        .padding(.vertical, 8)
                 }
                 
-                riderOverlay
+                Spacer()
                 
-                // Phase 35.4: Show summary as overlay instead of new sheet
-                // This keeps the map alive and prevents Metal crashes
-                if rideManager.showSummary, let rideRecord = createRideRecord() {
-                    Color.black.opacity(0.35)
-                        .ignoresSafeArea()
-                        .transition(.opacity)
-                        .onTapGesture {
-                            // Allow dismissing by tapping background
-                            withAnimation { rideManager.showSummary = false }
-                        }
-                    
-                    EnhancedRideSummaryView(ride: rideRecord)
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 24)
+                // Phase 35.1: Host Controls Section
+                if rideManager.isGroupRide && rideManager.isHost {
+                    RideSheetHostControls()
+                        .matchedGeometryEffect(id: "hostControls", in: rideNamespace)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: rideManager.connectedRiders.count)
-            .animation(.spring(response: 0.45, dampingFraction: 0.7), value: rideManager.showSummary)
-            .onChange(of: rideManager.rideState) { newState in
-                // Phase 35.5: Track state changes to identify auto-stops
-                print("🎯 rideState changed to: \(newState)")
+            
+            // Overlays (Phase 2)
+            riderOverlay
+            
+            // Phase 35.4: Show summary as overlay instead of new sheet
+            if rideManager.showSummary, let rideRecord = createRideRecord() {
+                Color.black.opacity(0.35)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .onTapGesture {
+                        withAnimation { rideManager.showSummary = false }
+                    }
+                
+                EnhancedRideSummaryView(ride: rideRecord)
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 24)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(theme.primaryBackground.ignoresSafeArea())
+        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: rideManager.connectedRiders.count)
+        .animation(.spring(response: 0.45, dampingFraction: 0.7), value: rideManager.showSummary)
+        .onChange(of: rideManager.rideState) { newState in
+            print("🎯 rideState changed to: \(newState)")
         }
         .sheet(isPresented: $showConnectedRidersSheet) {
             // Phase 35.2: Connected Riders Sheet with local instances
@@ -332,31 +326,40 @@ struct RideSheetView: View {
     }
     
     private var statsView: some View {
-        HStack(spacing: 30) {
-            RideSheetStatCard(
-                icon: "location.fill",
-                value: String(format: "%.2f", rideManager.totalDistance / 1609.34),
-                label: "Distance",
-                unit: "mi"
-            )
-            
-            RideSheetStatCard(
-                icon: "clock.fill",
-                value: formatDuration(rideManager.duration),
-                label: "Time"
-            )
-            
-            RideSheetStatCard(
-                icon: "speedometer",
-                value: String(format: "%.1f", rideManager.averageSpeed * 2.237),
-                label: "Avg Speed",
-                unit: "mph"
-            )
+        HStack(spacing: 16) {
+            statCard(icon: "location.fill", title: "Distance", value: String(format: "%.2f", rideManager.totalDistance / 1609.34), unit: "mi")
+            statCard(icon: "clock.fill", title: "Time", value: formatDuration(rideManager.duration), unit: nil)
+            statCard(icon: "speedometer", title: "Avg Speed", value: String(format: "%.1f", rideManager.averageSpeed * 2.237), unit: "mph")
         }
+    }
+    
+    private func statCard(icon: String, title: String, value: String, unit: String?) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(theme.primaryText)
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(value)
+                    .font(.headline.bold())
+                    .foregroundColor(theme.primaryText)
+                if let unit = unit {
+                    Text(unit)
+                        .font(.caption)
+                        .foregroundColor(theme.secondaryText)
+                        .opacity(0.7)
+                }
+            }
+            Text(title)
+                .font(.caption)
+                .foregroundColor(theme.secondaryText)
+        }
+        .frame(maxWidth: .infinity)
         .padding()
-        .background(theme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: theme.primaryGlow.opacity(0.25), radius: 10)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(theme.cardBackground)
+                .shadow(color: theme.glowColor.opacity(0.3), radius: 8, x: 0, y: 4)
+        )
     }
     
     private var riderOverlay: some View {

@@ -67,7 +67,7 @@ struct BranchrAppRoot: View {
                 }
                 .tag(3)
             }
-            .tint(theme.primaryButton)
+            .tint(theme.branchrBlack)
             .preferredColorScheme(theme.isDarkMode ? .dark : .light)
             .background(theme.primaryBackground.ignoresSafeArea())
         .sheet(isPresented: $showDJControls) {
