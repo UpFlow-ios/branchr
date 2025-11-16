@@ -53,7 +53,7 @@ struct RideTrackingView: View {
     
     var body: some View {
         NavigationView {
-            ZStack {
+            ZStack(alignment: .topLeading) {
                 // Background
                 theme.primaryBackground.ignoresSafeArea()
                 
@@ -70,6 +70,7 @@ struct RideTrackingView: View {
                     updateMapRegion()
                 }
                 
+                // Phase 5B: Main content VStack
                 VStack(spacing: 0) {
                     // Phase 34: Header with yellow text
                     HStack {
@@ -127,6 +128,24 @@ struct RideTrackingView: View {
                         .padding(.bottom, 50)
                 }
                 
+                // Phase 5B: Ride Host HUD overlay at top
+                if rideService.rideState == .active || rideService.rideState == .paused {
+                    RideHostHUDView(
+                        hostName: profileManager.currentDisplayName,
+                        hostImage: profileManager.currentProfileImage,
+                        distanceMiles: rideService.totalDistanceMiles,
+                        speedMph: rideService.currentSpeedMph,
+                        durationText: rideService.formattedDuration,
+                        isConnected: connectionManager.state == .connected,
+                        isMusicOn: musicSync.currentTrack?.isPlaying ?? false
+                    )
+                    .padding(.top, 12)
+                    .padding(.leading, 16)
+                    .onAppear {
+                        print("🎛 RideHostHUDView visible – host HUD overlay active")
+                    }
+                }
+                
                 // Phase 4: Rider Info Panel (slides up from bottom when rider is selected)
                 if let rider = selectedRider {
                     VStack {
@@ -141,7 +160,10 @@ struct RideTrackingView: View {
                         .padding(.horizontal, 20)
                         .padding(.bottom, 100)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: selectedRider != nil)
+                        .animation(
+                            .spring(response: 0.4, dampingFraction: 0.8),
+                            value: selectedRider?.riderID
+                        )
                     }
                 }
                 
@@ -157,21 +179,6 @@ struct RideTrackingView: View {
                         .foregroundStyle(.white)
                         .shadow(radius: 8)
                         .transition(.opacity)
-                }
-            }
-            .overlay(alignment: .top) {
-                // Phase 5: Ride Host HUD
-                if rideService.rideState == .active || rideService.rideState == .paused {
-                    RideHostHUDView(
-                        hostName: profileManager.currentDisplayName,
-                        hostImage: profileManager.currentProfileImage,
-                        distanceMiles: rideService.totalDistanceMiles,
-                        speedMph: rideService.currentSpeedMph,
-                        durationText: rideService.formattedDuration,
-                        isConnected: connectionManager.state == .connected,
-                        isMusicOn: musicSync.currentTrack?.isPlaying ?? false
-                    )
-                    .padding(.top, 8)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)

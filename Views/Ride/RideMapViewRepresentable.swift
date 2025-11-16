@@ -45,6 +45,7 @@ struct RideMapViewRepresentable: UIViewRepresentable {
         let existingUser = mapView.annotations.compactMap { $0 as? UserAnnotation }
         mapView.removeAnnotations(existingRider + existingUser)
         
+        var hostAnnotation: UserAnnotation? = nil
         riderAnnotations.forEach { rider in
             // Phase 4: Use UserAnnotation for Phase 4 features
             let annotation = UserAnnotation(
@@ -55,10 +56,14 @@ struct RideMapViewRepresentable: UIViewRepresentable {
                 profileImage: rider.profileImage
             )
             mapView.addAnnotation(annotation)
+            if rider.isHost {
+                hostAnnotation = annotation
+            }
         }
         
-        // Phase 35.5: Log map updates to verify continuous tracking
+        // Phase 5B: Log map updates with annotation info
         print("🗺️ Map updating with \(coordinates.count) coordinates, riders: \(riderAnnotations.count)")
+        print("🗺 Added annotations – host: \(hostAnnotation != nil), riders: \(riderAnnotations.count)")
     }
     
     func makeCoordinator() -> Coordinator {

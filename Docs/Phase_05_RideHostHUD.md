@@ -208,3 +208,45 @@ This phase implements:
 - Follows existing code patterns and architecture
 - Uses centralized services for data access
 
+---
+
+## Phase 5B – HUD Wiring & Visibility Polish
+
+**Date:** January 15, 2025  
+**Status:** ✅ Complete  
+**Build:** ✅ BUILD SUCCEEDED
+
+### Changes Made
+
+**Files Modified:**
+- `Views/Ride/RideTrackingView.swift` - Restructured layout with ZStack for proper HUD overlay
+- `Views/Ride/RideMapViewRepresentable.swift` - Added logging for annotation tracking
+
+**Implementation:**
+1. **ZStack Layout Restructure:**
+   - Changed main container to `ZStack(alignment: .topLeading)`
+   - HUD positioned at top with proper padding (12pt top, 16pt leading)
+   - Rider info panel positioned at bottom with spring animation
+   - All overlays properly layered
+
+2. **HUD Visibility:**
+   - HUD appears when ride is active or paused
+   - Semi-transparent black background ensures readability over map
+   - Proper z-ordering so HUD is above map but below other UI elements
+
+3. **Rider Info Panel:**
+   - Slides up from bottom when marker is tapped
+   - Animation uses `selectedRider?.riderID` as value for smooth transitions
+   - Properly connected to `selectedRider` binding from map
+
+4. **Logging Added:**
+   - `RideHostHUDView.onAppear` logs when HUD becomes visible
+   - `RideMapViewRepresentable` logs annotation counts (host + riders)
+
+### Result
+
+- Host HUD is now visible at the top of the ride sheet
+- Rider info panel appears when tapping markers (ready for when riders are added)
+- All Phase 4 and Phase 5 features are properly wired and visible
+- Logging confirms HUD and annotations are active
+

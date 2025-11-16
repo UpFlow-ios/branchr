@@ -13,6 +13,7 @@ This file tracks all completed phases in chronological order.
 - Phase 03 – Group Ride Foundation (✅ completed)
 - Phase 04 – Rider map annotations + info panel (✅ completed 2025-01-15)
 - Phase 05 – Ride host HUD + live ride stats (✅ completed 2025-01-15)
+- Phase 05B – HUD wiring & visibility polish (✅ completed 2025-01-15)
 - Phase 12 – Widget Setup (✅ completed)
 - Phase 18.1 – HomeView UI Polish (✅ completed)
 - Phase 18.2-18.3 – UI Enhancements (✅ completed)
