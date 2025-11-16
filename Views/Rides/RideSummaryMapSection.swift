@@ -11,6 +11,7 @@ import MapKit
 struct RideSummaryMapSection: View {
     let locations: [CLLocationCoordinate2D]
     @State private var region: MKCoordinateRegion
+    @State private var selectedRider: UserAnnotation? = nil // Phase 4: Required binding (not used in summary)
 
     init(locations: [CLLocationCoordinate2D]) {
         self.locations = locations
@@ -36,7 +37,8 @@ struct RideSummaryMapSection: View {
                 region: $region,
                 coordinates: locations,
                 showsUserLocation: false,
-                riderAnnotations: []
+                riderAnnotations: [],
+                selectedRider: $selectedRider
             )
             .allowsHitTesting(false)
 

@@ -24,7 +24,7 @@ struct RainbowGlowModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)  // Phase 34D: Match button corner radius
                     .stroke(
                         AngularGradient(
                             gradient: Gradient(colors: [

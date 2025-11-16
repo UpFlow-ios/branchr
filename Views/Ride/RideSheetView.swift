@@ -25,6 +25,7 @@ struct RideSheetView: View {
         center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
         span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
     )
+    @State private var selectedRider: UserAnnotation? = nil // Phase 4: Selected rider for info panel
     @Namespace private var rideNamespace
     @Namespace private var riderNamespace
     
@@ -48,7 +49,8 @@ struct RideSheetView: View {
                         region: $region,
                         coordinates: rideManager.route,
                         showsUserLocation: true,
-                        riderAnnotations: rideManager.riderAnnotations
+                        riderAnnotations: rideManager.riderAnnotations,
+                        selectedRider: $selectedRider
                     )
                     .frame(height: 260) // Explicit height to stay stable
                     .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))

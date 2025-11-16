@@ -325,5 +325,28 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
     var formattedAverageSpeed: String {
         String(format: "%.1f km/h", averageSpeed)
     }
+    
+    // MARK: - Phase 4: Rider Info Helper Methods
+    
+    /**
+     * Get speed for a specific rider (in mph)
+     * Phase 4: Placeholder - returns current speed for now
+     */
+    func speedFor(riderID: String) -> Double {
+        // Phase 4: In a full implementation, this would look up the rider's speed
+        // For now, return current speed converted to mph
+        return currentSpeed * 0.621371 // km/h to mph
+    }
+    
+    /**
+     * Get distance from host for a specific rider (in miles)
+     * Phase 4: Placeholder - returns 0 for now
+     */
+    func distanceFromHost(riderID: String) -> Double {
+        // Phase 4: In a full implementation, this would calculate distance
+        // between the rider's location and the host's location
+        // For now, return 0 as placeholder
+        return 0.0
+    }
 }
 

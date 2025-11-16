@@ -24,7 +24,8 @@ final class ThemeManager: ObservableObject {
     }
     
     // MARK: - Base Brand Colors (Phase 2)
-    let branchrYellow = Color(hex: "#FFD500")
+    let brandYellow = Color(hex: "#FFD500")  // Official brand yellow #FFD500
+    let branchrYellow = Color(hex: "#FFD500")  // Legacy alias
     let branchrBlack = Color.black
     
     // MARK: - Background Colors
@@ -94,7 +95,7 @@ final class ThemeManager: ObservableObject {
     }
     
     var accentText: Color {
-        isDarkMode ? Color.yellow : Color.black
+        isDarkMode ? brandYellow : Color.black
     }
     
     // MARK: - Legacy Button Colors (keep for compatibility)
@@ -112,7 +113,7 @@ final class ThemeManager: ObservableObject {
     
     // MARK: - Accent Colors
     var accentColor: Color {
-        isDarkMode ? Color.yellow : Color.black
+        isDarkMode ? brandYellow : Color.black
     }
     
     var successColor: Color {
@@ -237,6 +238,6 @@ extension Color {
         })
     }
     
-    /// Accent color (yellow)
-    static var branchrAccent: Color { Color.yellow }
+    /// Accent color (official brand yellow #FFD500)
+    static var branchrAccent: Color { Color(hex: "#FFD500") }
 }

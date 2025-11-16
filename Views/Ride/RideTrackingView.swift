@@ -45,6 +45,9 @@ struct RideTrackingView: View {
         span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
     )
     
+    // Phase 4: Selected rider for info panel
+    @State private var selectedRider: UserAnnotation? = nil
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -56,7 +59,8 @@ struct RideTrackingView: View {
                     region: $region,
                     coordinates: rideService.route,
                     showsUserLocation: true,
-                    riderAnnotations: []
+                    riderAnnotations: [],
+                    selectedRider: $selectedRider
                 )
                 .ignoresSafeArea() // Phase 34D: Map fills entire screen
                 .onChange(of: rideService.route.count) { _ in
@@ -118,6 +122,24 @@ struct RideTrackingView: View {
                     // Phase 35A: Unified ride button
                     rideButton
                         .padding(.bottom, 50)
+                }
+                
+                // Phase 4: Rider Info Panel (slides up from bottom when rider is selected)
+                if let rider = selectedRider {
+                    VStack {
+                        Spacer()
+                        RiderInfoPanel(
+                            name: rider.name,
+                            speed: rideService.speedFor(riderID: rider.riderID),
+                            distance: rideService.distanceFromHost(riderID: rider.riderID),
+                            profileImage: rider.profileImage,
+                            isHost: rider.isHost
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 100)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: selectedRider != nil)
+                    }
                 }
                 
                 // Phase 35B: Rainbow pulse overlay

@@ -81,8 +81,8 @@ struct SmartRideButton: View {
     }
     
     private var buttonBackgroundColor: Color {
-        // All states use YELLOW background
-        return Color.yellow
+        // All states use official brand yellow #FFD500
+        return theme.brandYellow
     }
     
     private var buttonTextColor: Color {

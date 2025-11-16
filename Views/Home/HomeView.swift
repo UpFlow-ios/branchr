@@ -98,19 +98,22 @@ struct HomeView: View {
                     }
                 }
                 
-                // MARK: - Logo Header (Phase 29: Branchr Logo)
+                // MARK: - Logo Header (Phase 29: Branchr Logo with Dynamic Theme Swap)
                 VStack(spacing: 12) {
-                    // Phase 29: Branchr Logo
-                    Image("BranchrLogo")
+                    // App Icon - Theme-aware (above "branchr" text, larger and centered)
+                    Image(theme.isDarkMode ? "AppIconDark" : "AppIconLight")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 120, height: 120)
-                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+                        .frame(width: 160, height: 160)
+                        .cornerRadius(28)
                     
+                    // "branchr" text centered below app icon
                     Text("branchr")
                         .font(.system(size: 38, weight: .bold, design: .rounded))
                         .foregroundColor(theme.primaryText)
                 }
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
                 .padding(.top, 40)
                 
                 // MARK: - Connection Status (Phase 29: Dynamic Indicator)
@@ -198,7 +201,8 @@ struct HomeView: View {
                               ? "Pause Ride"
                               : "Resume Ride",
                         systemImage: nil,
-                        isHero: true
+                        isHero: true,
+                        isNeonHalo: true  // Phase 34D: Thin neon halo on press
                     ) {
                         if rideSession.rideState == .idle || rideSession.rideState == .ended {
                             RideSessionManager.shared.startSoloRide()
@@ -209,6 +213,7 @@ struct HomeView: View {
                             RideSessionManager.shared.resumeRide()
                         }
                     }
+                    .rainbowGlow(active: rideSession.rideState == .active)  // Phase 34D: Active-state glow
                     .sheet(isPresented: $showSmartRideSheet) {
                         RideSheetView()
                             .presentationDetents([.large])
@@ -228,10 +233,12 @@ struct HomeView: View {
                               ? "Connecting..."
                               : "Start Connection",
                         systemImage: nil,
-                        isHero: false
+                        isHero: false,
+                        isNeonHalo: true  // Phase 34D: Thin neon halo on press
                     ) {
                         connectionManager.toggleConnection()
                     }
+                    .rainbowGlow(active: connectionManager.state == .connecting || connectionManager.state == .connected)  // Phase 34D: Active-state glow
                     
                     // Show connected peers if any
                     if !connectionManager.connectedPeers.isEmpty {
@@ -260,7 +267,8 @@ struct HomeView: View {
                     PrimaryButton(
                         voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
                         systemImage: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill",
-                        isHero: false
+                        isHero: false,
+                        isNeonHalo: true  // Phase 34D: Thin neon halo on press
                     ) {
                         if voiceService.isVoiceChatActive {
                             voiceService.stopVoiceChat()
@@ -268,6 +276,7 @@ struct HomeView: View {
                             voiceService.startVoiceChat()
                         }
                     }
+                    .rainbowGlow(active: voiceService.isVoiceChatActive)  // Phase 34D: Active-state glow
                     
                     // Safety & SOS Button
                     SafetyButton(

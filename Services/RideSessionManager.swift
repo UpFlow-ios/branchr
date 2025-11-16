@@ -515,12 +515,23 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
                     riders.append(info)
                     
                     if let coordinate = coordinate {
+                        // Phase 4: Determine if this rider is the host
+                        let riderIsHost = self.isHost && doc.documentID == Auth.auth().currentUser?.uid
+                        
+                        // Phase 4: Get profile image if available (for current user only)
+                        var profileImage: UIImage? = nil
+                        if doc.documentID == Auth.auth().currentUser?.uid {
+                            profileImage = ProfileManager.shared.profileImageFor(id: doc.documentID)
+                        }
+                        
                         annotations.append(RiderAnnotation(
                             id: doc.documentID,
                             name: name,
                             photoURL: photoURL?.isEmpty == true ? nil : photoURL,
                             coordinate: coordinate,
-                            isOnline: state != "paused"
+                            isOnline: state != "paused",
+                            isHost: riderIsHost,
+                            profileImage: profileImage
                         ))
                     }
                 }

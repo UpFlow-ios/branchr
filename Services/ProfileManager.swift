@@ -97,5 +97,20 @@ final class ProfileManager: ObservableObject {
         
         print("✅ ProfileManager: Saved profile data")
     }
+    
+    // MARK: - Phase 4: Profile Image Helper
+    
+    /**
+     * Get profile image for a user ID
+     * Phase 4: Returns UIImage from stored imageData
+     */
+    func profileImageFor(id: String) -> UIImage? {
+        // Phase 4: For now, return current user's profile image
+        // In a full implementation, this would look up other users' profiles
+        if let data = imageData {
+            return UIImage(data: data)
+        }
+        return nil
+    }
 }
 

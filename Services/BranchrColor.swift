@@ -14,7 +14,8 @@ struct BranchrColor {
     
     /// Signature yellow for buttons and accents in dark mode
     /// Also used as background in light mode
-    static let yellow = Color(red: 1.0, green: 204.0/255.0, blue: 0.0)
+    /// Official brand yellow: #FFD500
+    static let yellow = Color(hex: "#FFD500")
     
     /// Pure black for backgrounds in dark mode
     /// Also used for buttons in light mode

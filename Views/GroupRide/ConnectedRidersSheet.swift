@@ -528,4 +528,4 @@ struct RiderCard: View {
     )
     .preferredColorScheme(.dark)
 }
-
+                                                                        
