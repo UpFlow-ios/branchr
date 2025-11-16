@@ -348,5 +348,40 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
         // For now, return 0 as placeholder
         return 0.0
     }
+    
+    // MARK: - Phase 5: HUD Helper Methods
+    
+    /**
+     * Get total distance in miles
+     * Phase 5: Converts meters to miles
+     */
+    var totalDistanceMiles: Double {
+        return totalDistance / 1609.34 // meters to miles
+    }
+    
+    /**
+     * Get current speed in mph
+     * Phase 5: Converts km/h to mph
+     */
+    var currentSpeedMph: Double {
+        return currentSpeed * 0.621371 // km/h to mph
+    }
+    
+    /**
+     * Get formatted duration string
+     * Phase 5: Formats seconds into m:ss or h:mm:ss
+     */
+    var formattedDuration: String {
+        let totalSeconds = Int(duration)
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+        
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%d:%02d", minutes, seconds)
+        }
+    }
 }
 

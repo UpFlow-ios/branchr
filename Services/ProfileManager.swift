@@ -112,5 +112,26 @@ final class ProfileManager: ObservableObject {
         }
         return nil
     }
+    
+    // MARK: - Phase 5: Current User Helpers
+    
+    /**
+     * Get current user's display name
+     * Phase 5: Returns name or fallback to "You"
+     */
+    var currentDisplayName: String {
+        return name.isEmpty ? "You" : name
+    }
+    
+    /**
+     * Get current user's profile image
+     * Phase 5: Returns UIImage from stored imageData
+     */
+    var currentProfileImage: UIImage? {
+        if let data = imageData {
+            return UIImage(data: data)
+        }
+        return nil
+    }
 }
 

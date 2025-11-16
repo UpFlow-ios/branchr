@@ -28,6 +28,9 @@ struct RideTrackingView: View {
     @ObservedObject private var theme = ThemeManager.shared
     @ObservedObject private var preferences = UserPreferenceManager.shared
     @StateObject private var speechCommands = SpeechCommandService()
+    @ObservedObject private var profileManager = ProfileManager.shared // Phase 5: Profile data
+    @ObservedObject private var connectionManager = ConnectionManager.shared // Phase 5: Connection status
+    @ObservedObject private var musicSync = MusicSyncService.shared // Phase 5: Music status
     @Environment(\.dismiss) private var dismiss
     @State private var showRideSummary = false // Phase 31: Ride summary sheet
     @State private var lastAnnouncedDistance: Double = 0.0
@@ -154,6 +157,21 @@ struct RideTrackingView: View {
                         .foregroundStyle(.white)
                         .shadow(radius: 8)
                         .transition(.opacity)
+                }
+            }
+            .overlay(alignment: .top) {
+                // Phase 5: Ride Host HUD
+                if rideService.rideState == .active || rideService.rideState == .paused {
+                    RideHostHUDView(
+                        hostName: profileManager.currentDisplayName,
+                        hostImage: profileManager.currentProfileImage,
+                        distanceMiles: rideService.totalDistanceMiles,
+                        speedMph: rideService.currentSpeedMph,
+                        durationText: rideService.formattedDuration,
+                        isConnected: connectionManager.state == .connected,
+                        isMusicOn: musicSync.currentTrack?.isPlaying ?? false
+                    )
+                    .padding(.top, 8)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
