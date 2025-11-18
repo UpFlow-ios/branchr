@@ -255,7 +255,7 @@ struct DayStatsSheet: View {
             }
             .sheet(isPresented: $showRideSummary) {
                 if let ride = selectedRide {
-                    EnhancedRideSummaryView(ride: ride)
+                    EnhancedRideSummaryView(ride: ride, onDone: nil)
                         .presentationDetents([.large])
                 }
             }

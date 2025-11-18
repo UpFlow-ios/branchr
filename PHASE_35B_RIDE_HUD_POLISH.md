@@ -168,13 +168,6 @@ rideControls
 
 **Note:** `rideControls` is now wired into the main layout, ensuring the End Ride button is visible whenever the ride is active or paused.
 
-**Update (Debug & Visibility Fix):**
-- Added debug marker "DEBUG: RideTrackingView LIVE" to confirm active file
-- Changed End Ride visibility condition from `== .active || == .paused` to `!= .idle && != .ended` (catches all in-progress states)
-- Enhanced End Ride button styling: prominent red pill with white text, generous padding
-- Added debug text "DEBUG: End Ride visible for state..." to confirm visibility logic
-- End Ride button is now impossible to miss: big red pill under the yellow Start/Pause/Resume button
-
 **Code Removed:**
 ```swift
 // Removed long-press gesture:
@@ -265,4 +258,83 @@ rideControls
 ---
 
 **Phase 35B Complete — Ride HUD Position, Solo Status, and End Ride Control** 🎉
+
+---
+
+## Phase 35B Extension — End Ride Finalization Pipeline
+
+**Status:** ✅ Complete  
+**Date:** November 17, 2025  
+**Issue:** End Ride button showed summary but didn't finalize ride (no calendar save, recovery spam, HomeView stuck on "Pause Ride")
+
+### Problem Fixed
+
+After tapping "End Ride" and then "Done" on the summary sheet:
+- ❌ HomeView still showed "Pause Ride" instead of "Start Ride"
+- ❌ Recovery service kept spamming "Saved ride session for recovery: active/paused"
+- ❌ Calendar save behavior from previous phases was missing
+- ❌ Ride state wasn't properly reset to idle
+
+### Solution Implemented
+
+**1. Added `onDone` closure to `EnhancedRideSummaryView`**
+- Added optional `onDone: (() -> Void)?` parameter
+- Updated Done button to call `onDone?()` before dismissing
+- Updated all call sites (RideTrackingView passes closure, RideCalendarView passes nil)
+
+**2. Created `handleRideSummaryDone()` in `RideTrackingView`**
+- Clears recovery data via `RideSessionRecoveryService.shared.clearSession()`
+- Ensures ride is saved to RideDataManager and Firebase (if duration >= 300)
+- Resets BOTH services to idle:
+  - `rideService.resetRide()` (RideTrackingService - used by RideTrackingView)
+  - `RideSessionManager.shared.resetRide()` (used by HomeView)
+- Provides voice feedback: "Ride stopped, saved to calendar"
+- Dismisses summary sheet
+
+**3. Removed DEBUG labels**
+- Removed "DEBUG: RideTrackingView LIVE" text
+- Removed "DEBUG: End Ride visible for state..." text
+- Kept useful logging (🛑 endRideDirectly, ✅ handleRideSummaryDone)
+
+### Files Modified
+
+1. `Views/Rides/EnhancedRideSummaryView.swift`
+   - Added `onDone` closure parameter with default nil
+   - Updated Done button to call `onDone?()`
+
+2. `Views/Ride/RideTrackingView.swift`
+   - Added `handleRideSummaryDone()` function
+   - Wired `onDone` closure to EnhancedRideSummaryView
+   - Removed DEBUG labels
+
+3. `Views/Calendar/RideCalendarView.swift`
+   - Updated EnhancedRideSummaryView call to pass `onDone: nil`
+
+### Expected Behavior After Fix
+
+1. User taps "End Ride" → Summary sheet appears
+2. User taps "Done" on summary:
+   - ✅ Console shows: "✅ handleRideSummaryDone() - Finalizing ride"
+   - ✅ Console shows: "🗑️ Cleared ride session recovery data"
+   - ✅ No more "Saved ride session for recovery" spam
+   - ✅ Voice says: "Ride stopped, saved to calendar"
+   - ✅ Ride saved to RideDataManager and Firebase (if >= 5 minutes)
+   - ✅ HomeView button changes from "Pause Ride" to "Start Ride"
+   - ✅ Connection pill returns to "Disconnected" (red) when no ride active
+
+### Testing Checklist
+
+- [x] End Ride button visible when ride is active/paused
+- [x] Summary sheet appears on End Ride tap
+- [x] Done button calls handleRideSummaryDone()
+- [x] Recovery data cleared (no spam logs)
+- [x] Ride saved to calendar/Firebase
+- [x] Both services reset to idle
+- [x] HomeView shows "Start Ride" after completion
+- [x] Voice feedback plays correctly
+- [x] DEBUG labels removed
+
+---
+
+**Phase 35B Complete — Ride HUD Position, Solo Status, End Ride Control, and Finalization Pipeline** 🎉
 

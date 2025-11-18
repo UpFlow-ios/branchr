@@ -94,12 +94,6 @@ struct RideTrackingView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
 
-                    // Step 0: Debug marker to confirm we're in the active file
-                    Text("DEBUG: RideTrackingView LIVE")
-                        .font(.caption.bold())
-                        .foregroundColor(.red)
-                        .padding(.top, 8)
-
                     Spacer()
 
                     // Stats HUD
@@ -214,9 +208,14 @@ struct RideTrackingView: View {
         }
         .sheet(isPresented: $showRideSummary) {
             if let rideRecord = createRideRecord() {
-                EnhancedRideSummaryView(ride: rideRecord)
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
+                EnhancedRideSummaryView(
+                    ride: rideRecord,
+                    onDone: {
+                        handleRideSummaryDone()
+                    }
+                )
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
             } else {
                 Phase20RideSummaryView(rideService: rideService)
                     .presentationDetents([.large])
@@ -345,11 +344,6 @@ struct RideTrackingView: View {
             
             // Step 1B: Show End Ride for all "in progress" states (not idle, not ended)
             if rideService.rideState != .idle && rideService.rideState != .ended {
-                // Step 3: Debug text to confirm visibility logic
-                Text("DEBUG: End Ride visible for state \(String(describing: rideService.rideState))")
-                    .font(.caption2)
-                    .foregroundColor(.yellow.opacity(0.8))
-                
                 Button(role: .destructive) {
                     endRideDirectly()
                 } label: {
@@ -389,6 +383,43 @@ struct RideTrackingView: View {
         }
         VoiceFeedbackService.shared.speak("Ride ended")
         RideHaptics.milestone()
+    }
+    
+    // Phase 35B: Finalize ride after user dismisses summary
+    private func handleRideSummaryDone() {
+        print("✅ handleRideSummaryDone() - Finalizing ride")
+        
+        // 1) Clear ride session recovery data (stops spammy "Saved ride session for recovery" logs)
+        RideSessionRecoveryService.shared.clearSession()
+        
+        // 2) Ensure ride is saved (EnhancedRideSummaryView already saves on appear if duration >= 300,
+        //    but we ensure it's persisted here as well for consistency)
+        if let rideRecord = createRideRecord(), rideRecord.duration >= 300 {
+            RideDataManager.shared.saveRide(rideRecord)
+            FirebaseRideService.shared.uploadRide(rideRecord) { error in
+                if let error = error {
+                    print("❌ Failed to upload ride: \(error.localizedDescription)")
+                } else {
+                    print("☁️ Ride synced to Firebase successfully")
+                }
+            }
+            NotificationCenter.default.post(name: .branchrRidesDidChange, object: nil)
+        }
+        
+        // 3) Reset ride state to idle in BOTH services so HomeView shows "Start Ride" instead of "Pause Ride"
+        //    HomeView uses RideSessionManager.shared, RideTrackingView uses RideTrackingService.shared
+        rideService.resetRide()
+        RideSessionManager.shared.resetRide()
+        
+        // 4) Voice feedback for calendar save (matching previous behavior)
+        VoiceFeedbackService.shared.speak("Ride stopped, saved to calendar")
+        
+        // 5) Dismiss summary sheet
+        withAnimation {
+            showRideSummary = false
+        }
+        
+        print("✅ Ride finalized - state reset to idle in both services, recovery cleared, calendar saved")
     }
 
     private func handleRideButtonTap() {

@@ -10,11 +10,17 @@ import MapKit
 
 struct EnhancedRideSummaryView: View {
     let ride: RideRecord
+    let onDone: (() -> Void)?
     @ObservedObject private var theme = ThemeManager.shared
     @Environment(\.dismiss) private var dismiss
     @StateObject private var rideDataManager = RideDataManager.shared
     @State private var isSaved = false
     @State private var showFadeIn = false
+    
+    init(ride: RideRecord, onDone: (() -> Void)? = nil) {
+        self.ride = ride
+        self.onDone = onDone
+    }
 
     // Computed properties for conversions
     private var distanceMiles: Double {
@@ -126,12 +132,13 @@ struct EnhancedRideSummaryView: View {
                         .padding(.horizontal, 16)
                     }
                     
-                    // 3. DONE BUTTON
+                    // 3. DONE BUTTON - Phase 35B: Call onDone closure for finalization
                     Button(action: {
                         NotificationCenter.default.post(
                             name: NSNotification.Name("EnhancedRideSummaryCloseRequested"),
                             object: nil
                         )
+                        onDone?()
                         dismiss()
                     }) {
                         Text("Done")
