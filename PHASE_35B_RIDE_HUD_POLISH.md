@@ -168,6 +168,13 @@ rideControls
 
 **Note:** `rideControls` is now wired into the main layout, ensuring the End Ride button is visible whenever the ride is active or paused.
 
+**Update (Debug & Visibility Fix):**
+- Added debug marker "DEBUG: RideTrackingView LIVE" to confirm active file
+- Changed End Ride visibility condition from `== .active || == .paused` to `!= .idle && != .ended` (catches all in-progress states)
+- Enhanced End Ride button styling: prominent red pill with white text, generous padding
+- Added debug text "DEBUG: End Ride visible for state..." to confirm visibility logic
+- End Ride button is now impossible to miss: big red pill under the yellow Start/Pause/Resume button
+
 **Code Removed:**
 ```swift
 // Removed long-press gesture:

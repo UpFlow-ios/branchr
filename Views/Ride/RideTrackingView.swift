@@ -94,6 +94,12 @@ struct RideTrackingView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
 
+                    // Step 0: Debug marker to confirm we're in the active file
+                    Text("DEBUG: RideTrackingView LIVE")
+                        .font(.caption.bold())
+                        .foregroundColor(.red)
+                        .padding(.top, 8)
+
                     Spacer()
 
                     // Stats HUD
@@ -337,18 +343,26 @@ struct RideTrackingView: View {
         VStack(spacing: 8) {
             rideButton
             
-            // Phase 35B: Explicit End Ride button when ride is active or paused
-            if rideService.rideState == .active || rideService.rideState == .paused {
+            // Step 1B: Show End Ride for all "in progress" states (not idle, not ended)
+            if rideService.rideState != .idle && rideService.rideState != .ended {
+                // Step 3: Debug text to confirm visibility logic
+                Text("DEBUG: End Ride visible for state \(String(describing: rideService.rideState))")
+                    .font(.caption2)
+                    .foregroundColor(.yellow.opacity(0.8))
+                
                 Button(role: .destructive) {
                     endRideDirectly()
                 } label: {
                     Text("End Ride")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.red)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
+                        .foregroundColor(.white)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 36)
+                        .background(Color.red.opacity(0.95))
+                        .cornerRadius(20)
                 }
                 .buttonStyle(.plain)
+                .padding(.top, 4)
             }
         }
     }
