@@ -11,6 +11,7 @@ import MapKit
 import CoreLocation
 import UIKit
 import Combine
+import EventKit
 
 /**
  * 🚴‍♂️ Ride Tracking View
@@ -389,12 +390,20 @@ struct RideTrackingView: View {
     private func handleRideSummaryDone() {
         print("✅ handleRideSummaryDone() - Finalizing ride")
         
+        guard let rideRecord = createRideRecord() else {
+            print("⚠️ handleRideSummaryDone: No ride record available")
+            // Still reset state even if no record
+            rideService.resetRide()
+            RideSessionManager.shared.resetRide()
+            withAnimation { showRideSummary = false }
+            return
+        }
+        
         // 1) Clear ride session recovery data (stops spammy "Saved ride session for recovery" logs)
         RideSessionRecoveryService.shared.clearSession()
         
-        // 2) Ensure ride is saved (EnhancedRideSummaryView already saves on appear if duration >= 300,
-        //    but we ensure it's persisted here as well for consistency)
-        if let rideRecord = createRideRecord(), rideRecord.duration >= 300 {
+        // 2) Save to RideDataManager and Firebase (only for rides >= 300 seconds)
+        if rideRecord.duration >= 300 {
             RideDataManager.shared.saveRide(rideRecord)
             FirebaseRideService.shared.uploadRide(rideRecord) { error in
                 if let error = error {
@@ -404,22 +413,42 @@ struct RideTrackingView: View {
                 }
             }
             NotificationCenter.default.post(name: .branchrRidesDidChange, object: nil)
+        } else {
+            print("📊 Skipping Firebase save (ride too short: \(String(format: "%.1f", rideRecord.duration))s < 300s)")
         }
         
-        // 3) Reset ride state to idle in BOTH services so HomeView shows "Start Ride" instead of "Pause Ride"
+        // 3) Save to iOS Calendar app using EventKit (for ALL rides, even short test rides)
+        Task {
+            do {
+                try await RideCalendarService.shared.saveRideToCalendar(rideRecord)
+                print("📆 Calendar event saved successfully for ride at \(rideRecord.date)")
+                await MainActor.run {
+                    VoiceFeedbackService.shared.speak("Ride stopped, saved to calendar")
+                }
+            } catch CalendarError.permissionDenied {
+                print("⚠️ Calendar: Permission denied - skipping calendar save")
+                await MainActor.run {
+                    VoiceFeedbackService.shared.speak("Ride stopped")
+                }
+            } catch {
+                print("❌ Calendar: Failed to save event – \(error.localizedDescription)")
+                await MainActor.run {
+                    VoiceFeedbackService.shared.speak("Ride stopped")
+                }
+            }
+        }
+        
+        // 4) Reset ride state to idle in BOTH services so HomeView shows "Start Ride" instead of "Pause Ride"
         //    HomeView uses RideSessionManager.shared, RideTrackingView uses RideTrackingService.shared
         rideService.resetRide()
         RideSessionManager.shared.resetRide()
-        
-        // 4) Voice feedback for calendar save (matching previous behavior)
-        VoiceFeedbackService.shared.speak("Ride stopped, saved to calendar")
         
         // 5) Dismiss summary sheet
         withAnimation {
             showRideSummary = false
         }
         
-        print("✅ Ride finalized - state reset to idle in both services, recovery cleared, calendar saved")
+        print("✅ Ride finalized - state reset to idle in both services, recovery cleared")
     }
 
     private func handleRideButtonTap() {

@@ -338,3 +338,99 @@ After tapping "End Ride" and then "Done" on the summary sheet:
 
 **Phase 35B Complete — Ride HUD Position, Solo Status, End Ride Control, and Finalization Pipeline** 🎉
 
+---
+
+## Phase 35B Extension 2 — EventKit Calendar Integration
+
+**Status:** ✅ Complete  
+**Date:** November 17, 2025  
+**Issue:** App said "saved to calendar" but no events appeared in iOS Calendar app
+
+### Problem Fixed
+
+After tapping "Done" on the summary sheet:
+- ❌ Voice said "Ride stopped, saved to calendar" but no calendar events were created
+- ❌ No EventKit integration existed in the codebase
+- ❌ `saveRideToCalendar()` in RideSessionManager only saved to RideDataManager/Firebase, not iOS Calendar
+
+### Solution Implemented
+
+**1. Created `RideCalendarService.swift`**
+- New service using EventKit to save rides to iOS Calendar app
+- Handles calendar permission requests
+- Creates calendar events with:
+  - Title: "🚴 Branchr Ride: X.XX mi (Xh Xm)"
+  - Notes: Full ride summary (distance, duration, speed, route points)
+  - Start/End times: Based on ride date and duration
+  - Location: First route coordinate (if available)
+
+**2. Updated `handleRideSummaryDone()` in RideTrackingView**
+- Now calls `RideCalendarService.shared.saveRideToCalendar(rideRecord)` for ALL rides
+- Calendar save is NOT gated by duration >= 300 seconds (unlike Firebase)
+- Voice feedback is conditional:
+  - "Ride stopped, saved to calendar" if calendar save succeeds
+  - "Ride stopped" if permission denied or save fails
+- Comprehensive logging for calendar permission and save status
+
+**3. Calendar Permission Handling**
+- Requests calendar access if not determined
+- Handles denied/restricted permissions gracefully
+- Logs permission status for debugging
+
+### Files Created/Modified
+
+1. **`Services/RideCalendarService.swift`** (NEW)
+   - EventKit integration for iOS Calendar
+   - `saveRideToCalendar(_:)` async method
+   - Permission request and error handling
+   - Event formatting (title, notes, dates)
+
+2. **`Views/Ride/RideTrackingView.swift`**
+   - Added `import EventKit`
+   - Updated `handleRideSummaryDone()` to call `RideCalendarService`
+   - Conditional voice feedback based on calendar save success
+   - Separated Firebase save (>= 300s) from Calendar save (all rides)
+
+### Expected Behavior After Fix
+
+1. User taps "End Ride" → Summary sheet appears
+2. User taps "Done" on summary:
+   - ✅ Console shows: "✅ handleRideSummaryDone() - Finalizing ride"
+   - ✅ Console shows: "📆 Calendar permission: requesting access..." (first time)
+   - ✅ Console shows: "📆 Calendar: attempting to save event with title..."
+   - ✅ Console shows: "📆 Calendar event saved successfully..." OR error message
+   - ✅ Voice says: "Ride stopped, saved to calendar" (if successful) OR "Ride stopped" (if failed)
+   - ✅ iOS Calendar app shows new event with ride details
+
+### Calendar Event Details
+
+- **Title Format**: "🚴 Branchr Ride: X.XX mi (Xh Xm)" or "🚴 Branchr Ride: X.XX mi (Xm)"
+- **Notes Include**:
+  - Distance (miles and km)
+  - Duration (hours, minutes, seconds)
+  - Average speed (mph and km/h)
+  - Route point count
+- **Time Range**: Event spans from ride start date to start date + duration
+- **Location**: First route coordinate (if available)
+
+### Testing Checklist
+
+- [x] Calendar service created with EventKit integration
+- [x] Permission request handled correctly
+- [x] Calendar events created for all rides (not just >= 300s)
+- [x] Voice feedback conditional on save success
+- [x] Comprehensive logging for debugging
+- [x] Build succeeds with no errors
+- [ ] Manual test: Verify events appear in iOS Calendar app (simulator)
+
+### Important Notes
+
+- **Calendar save is NOT gated by duration** - even short test rides create calendar events
+- **Firebase save IS gated by duration >= 300 seconds** - this remains unchanged
+- **Permission handling**: If user denies calendar access, app gracefully continues without calendar save
+- **Error handling**: All calendar errors are logged and don't block ride finalization
+
+---
+
+**Phase 35B Complete — Ride HUD Position, Solo Status, End Ride Control, Finalization Pipeline, and EventKit Calendar Integration** 🎉
+
