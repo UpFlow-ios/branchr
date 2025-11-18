@@ -139,13 +139,17 @@ private var rideControls: some View {
                 Text("End Ride")
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.red)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
             }
+            .buttonStyle(.plain)
         }
     }
 }
 
 // Phase 35B: Direct end ride function
 private func endRideDirectly() {
+    print("🛑 endRideDirectly() tapped from RideTrackingView")
     withAnimation {
         rideService.endRide()
         showRideSummary = true
@@ -154,6 +158,15 @@ private func endRideDirectly() {
     RideHaptics.milestone()
 }
 ```
+
+**Layout Integration:**
+```swift
+// Main body VStack - Phase 35B: Uses rideControls instead of rideButton
+rideControls
+    .padding(.bottom, 50)
+```
+
+**Note:** `rideControls` is now wired into the main layout, ensuring the End Ride button is visible whenever the ride is active or paused.
 
 **Code Removed:**
 ```swift
@@ -185,9 +198,12 @@ private func endRideDirectly() {
 
 3. `Views/Ride/RideTrackingView.swift`
    - Moved Host HUD lower (96pt from top)
-   - Added explicit End Ride button
+   - Created `rideControls` view that wraps main button + End Ride button
+   - **Wired `rideControls` into main layout** (replaced direct `rideButton` usage)
+   - Added explicit End Ride button (visible when ride is active/paused)
+   - Enhanced End Ride button styling (padding, buttonStyle)
    - Removed long-press gesture
-   - Added `endRideDirectly()` function
+   - Added `endRideDirectly()` function with debug logging
 
 ---
 

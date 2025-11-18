@@ -345,7 +345,10 @@ struct RideTrackingView: View {
                     Text("End Ride")
                         .font(.subheadline.weight(.semibold))
                         .foregroundColor(.red)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
                 }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -365,6 +368,7 @@ struct RideTrackingView: View {
     
     // Phase 35B: Direct end ride function
     private func endRideDirectly() {
+        print("🛑 endRideDirectly() tapped from RideTrackingView")
         withAnimation {
             rideService.endRide()
             showRideSummary = true
