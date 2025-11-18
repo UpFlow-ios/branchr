@@ -74,12 +74,12 @@ struct RideHostHUDView: View {
                 
                 // Connection pill + music badge
                 HStack(spacing: 8) {
-                    // Connection pill
+                    // Connection pill - Phase 35B: Show "Solo Ride" when disconnected but ride is active
                     HStack(spacing: 6) {
                         Circle()
-                            .fill(isConnected ? Color.green : Color.red)
+                            .fill(connectionStatusColor)
                             .frame(width: 8, height: 8)
-                        Text(isConnected ? "Connected" : "Disconnected")
+                        Text(connectionStatusLabel)
                             .font(.caption2.bold())
                             .foregroundColor(.white)
                     }
@@ -107,9 +107,32 @@ struct RideHostHUDView: View {
         }
         .background(Color.black.opacity(0.75))
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 6)
+        // Phase 35B: Removed shadow for flatter appearance
         .padding(.horizontal, 16)
         .padding(.top, 8)
+    }
+    
+    // Phase 35B: Solo ride detection - show "Solo Ride" instead of "Disconnected" when ride is active
+    // Note: This view doesn't have direct access to rideService, so we rely on the isConnected prop
+    // For solo rides, the parent should pass isConnected=false, and we'll show "Solo Ride" based on context
+    // However, since we need ride state, we'll use a computed property that checks if we're in a solo context
+    private var connectionStatusLabel: String {
+        // If not connected, assume it's a solo ride (parent should handle the logic)
+        // For now, we'll show "Solo Ride" when disconnected, but this could be enhanced
+        // with an additional parameter if needed
+        if !isConnected {
+            return "Solo Ride"
+        } else {
+            return "Connected"
+        }
+    }
+    
+    private var connectionStatusColor: Color {
+        if !isConnected {
+            return Color.branchrAccent
+        } else {
+            return Color.green
+        }
     }
 }
 

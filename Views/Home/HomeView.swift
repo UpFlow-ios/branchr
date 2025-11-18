@@ -122,13 +122,13 @@ struct HomeView: View {
                         .font(.subheadline)
                         .foregroundColor(theme.primaryText.opacity(0.7))
                     
-                    // Phase 29: Dynamic connection indicator with pulse animation
+                    // Phase 35B: Solo ride detection - show "Solo Ride" instead of "Disconnected" when ride is active
                     HStack(spacing: 8) {
                         Circle()
-                            .fill(connectionManager.isConnected ? Color.green : Color.red)
+                            .fill(connectionStatusColor)
                             .frame(width: 12, height: 12)
                             .shadow(
-                                color: connectionManager.isConnected ? .green.opacity(0.5) : .red.opacity(0.5),
+                                color: connectionStatusColor.opacity(0.5),
                                 radius: 8,
                                 x: 0,
                                 y: 0
@@ -141,9 +141,9 @@ struct HomeView: View {
                                 value: connectionManager.isConnected
                             )
                         
-                        Text(connectionManager.isConnected ? "Connected" : "Disconnected")
+                        Text(connectionStatusLabel)
                             .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundColor(connectionManager.isConnected ? .green : .red)
+                            .foregroundColor(connectionStatusColor)
                             .animation(.easeInOut, value: connectionManager.isConnected)
                     }
                     .padding(.horizontal, 20)
@@ -363,6 +363,31 @@ struct HomeView: View {
     
     // MARK: - Computed Properties
     // Phase 29: Connection status now handled inline with dynamic indicator
+    
+    // Phase 35B: Solo ride detection - show "Solo Ride" instead of "Disconnected" when ride is active
+    private var isSoloRide: Bool {
+        rideService.rideState == .active || rideService.rideState == .paused
+    }
+    
+    private var connectionStatusLabel: String {
+        if isSoloRide && !connectionManager.isConnected {
+            return "Solo Ride"
+        } else if connectionManager.isConnected {
+            return "Connected"
+        } else {
+            return "Disconnected"
+        }
+    }
+    
+    private var connectionStatusColor: Color {
+        if isSoloRide && !connectionManager.isConnected {
+            return Color.branchrAccent
+        } else if connectionManager.isConnected {
+            return .green
+        } else {
+            return .red
+        }
+    }
     
     // MARK: - Phase 28: SOS Alert Helpers
     

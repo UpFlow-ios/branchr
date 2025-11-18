@@ -10,115 +10,153 @@ import MapKit
 
 struct EnhancedRideSummaryView: View {
     let ride: RideRecord
-    @Environment(\.colorScheme) private var colorScheme
+    @ObservedObject private var theme = ThemeManager.shared
     @Environment(\.dismiss) private var dismiss
     @StateObject private var rideDataManager = RideDataManager.shared
     @State private var isSaved = false
     @State private var showFadeIn = false
 
-    var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 16) {
-
-                // 1. MINI MAP
-                if rideHasRoute {
-                    RideSummaryMapSection(locations: ride.route.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) })
-                        .frame(height: 180)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .padding(.top, 8)
-                } else {
-                    noRoutePlaceholder
-                }
-
-                // 2. SNAPSHOT
-                RideSnapshotRow(
-                    distanceMiles: ride.distance / 1609.34, // Convert meters to miles
-                    durationSeconds: ride.duration,
-                    avgSpeed: ride.averageSpeed * 2.237 // Convert m/s to mph
-                )
-
-                // 3. CHARTS / SPARKLINES
-                RideChartsSection(
-                    speedSamples: [], // TODO: Extract speed samples from ride if available
-                    distanceMiles: ride.distance / 1609.34
-                )
-
-                // 4. NOTES OR METADATA (optional)
-                if let date = ride.date as Date? {
-                    Text(date.formatted(date: .abbreviated, time: .shortened))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 4)
-                }
-
-                // 5. ACTION BUTTONS (Phase 35: Liquid Glass with Save/Discard)
-                VStack(spacing: 10) {
-                    if !isSaved {
-                        // Save Ride Button (Liquid Glass)
-                        Button {
-                            saveRide()
-                        } label: {
-                            Text("Save Ride")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .fill(colorScheme == .light ? Color.black : Color.yellow)
-                                        .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
-                                )
-                                .foregroundStyle(
-                                    colorScheme == .light ? Color.yellow : Color.black
-                                )
-                        }
-                        
-                        // Discard Ride Button (Liquid Glass)
-                        Button {
-                            discardRide()
-                        } label: {
-                            Text("Discard Ride")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .fill(.ultraThinMaterial)
-                                        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                                )
-                                .foregroundStyle(colorScheme == .light ? Color.primary : Color.white)
-                        }
-                    } else {
-                        // Already saved - show Done button
-                        Button {
-                            dismiss()
-                        } label: {
-                            Text("Done")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .fill(colorScheme == .light ? Color.black : Color.yellow)
-                                        .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
-                                )
-                                .foregroundStyle(
-                                    colorScheme == .light ? Color.yellow : Color.black
-                                )
-                        }
-                    }
-                }
-                .padding(.top, 2)
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 20)
+    // Computed properties for conversions
+    private var distanceMiles: Double {
+        ride.distance / 1609.34
+    }
+    
+    private var durationText: String {
+        let hours = Int(ride.duration) / 3600
+        let minutes = (Int(ride.duration) % 3600) / 60
+        let seconds = Int(ride.duration) % 60
+        
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%d:%02d", minutes, seconds)
         }
-        .presentationDetents([.large])
+    }
+    
+    private var averageSpeedMph: Double {
+        ride.averageSpeed * 2.237 // Convert m/s to mph
+    }
+    
+    private var averagePace: String {
+        guard distanceMiles > 0 else { return "N/A" }
+        let paceMinutes = Int(ride.duration / 60.0 / distanceMiles)
+        let paceSeconds = Int((ride.duration / distanceMiles).truncatingRemainder(dividingBy: 60))
+        return String(format: "%d:%02d min/mi", paceMinutes, paceSeconds)
+    }
+
+    var body: some View {
+        ZStack {
+            // Full-screen dark background
+            theme.primaryBackground.ignoresSafeArea()
+            
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 20) {
+                    // 1. PRIMARY STATS ROW
+                    HStack(spacing: 16) {
+                        PrimaryStatCard(
+                            icon: "location.fill",
+                            value: String(format: "%.2f", distanceMiles),
+                            unit: "mi",
+                            label: "Distance"
+                        )
+                        
+                        PrimaryStatCard(
+                            icon: "clock.fill",
+                            value: durationText,
+                            unit: nil,
+                            label: "Duration"
+                        )
+                        
+                        PrimaryStatCard(
+                            icon: "speedometer",
+                            value: String(format: "%.1f", averageSpeedMph),
+                            unit: "mph",
+                            label: "Avg Speed"
+                        )
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 20)
+                    
+                    // 2. RIDE INSIGHTS SECTION
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Ride Insights")
+                            .font(.headline)
+                            .foregroundColor(Color.branchrAccent)
+                            .padding(.horizontal, 16)
+                        
+                        VStack(spacing: 12) {
+                            InsightCard(
+                                icon: "figure.run",
+                                title: "Average Pace",
+                                value: averagePace
+                            )
+                            
+                            InsightCard(
+                                icon: "flame.fill",
+                                title: "Estimated Calories",
+                                value: ride.calories > 0 ? String(format: "%.0f cal", ride.calories) : "Coming soon"
+                            )
+                            
+                            InsightCard(
+                                icon: "map.fill",
+                                title: "Route Samples",
+                                value: "\(ride.route.count) points"
+                            )
+                            
+                            // Future charts note
+                            HStack(spacing: 8) {
+                                Image(systemName: "chart.line.uptrend.xyaxis")
+                                    .foregroundColor(Color.branchrAccent.opacity(0.7))
+                                Text("Speed and distance trend charts coming in future phases")
+                                    .font(.caption)
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.black.opacity(0.3))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.branchrAccent.opacity(0.3), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .padding(.horizontal, 16)
+                    }
+                    
+                    // 3. DONE BUTTON
+                    Button(action: {
+                        NotificationCenter.default.post(
+                            name: NSNotification.Name("EnhancedRideSummaryCloseRequested"),
+                            object: nil
+                        )
+                        dismiss()
+                    }) {
+                        Text("Done")
+                            .font(.headline)
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(Color.branchrAccent)
+                                    .shadow(color: Color.branchrAccent.opacity(0.3), radius: 8, x: 0, y: 4)
+                            )
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 20)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
         .opacity(showFadeIn ? 1.0 : 0.0)
         .onAppear {
-            // Phase 35: Check if ride is already saved
+            // Check if ride is already saved
             isSaved = rideDataManager.rides.contains { $0.id == ride.id }
             
-            // Phase 35: Auto-save only rides longer than 5 minutes
+            // Auto-save only rides longer than 5 minutes
             if !isSaved && ride.duration >= 300 {
                 saveRide(silent: true)
             }
@@ -129,33 +167,8 @@ struct EnhancedRideSummaryView: View {
             }
         }
     }
-
-    private var rideHasRoute: Bool {
-        !ride.route.isEmpty
-    }
-
-    @ViewBuilder
-    private var noRoutePlaceholder: some View {
-        RoundedRectangle(cornerRadius: 16)
-            .fill(Color(.systemGray6))
-            .frame(height: 160)
-            .overlay(
-                VStack(spacing: 6) {
-                    Image(systemName: "map")
-                        .font(.title2)
-                        .foregroundStyle(.secondary)
-                    Text("No route recorded")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Text("Try on device, not simulator.")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary.opacity(0.6))
-                }
-            )
-            .padding(.top, 8)
-    }
     
-    // MARK: - Phase 35: Save/Discard Actions
+    // MARK: - Save Action
     
     private func saveRide(silent: Bool = false) {
         // Check if already saved to avoid duplicates
@@ -184,11 +197,103 @@ struct EnhancedRideSummaryView: View {
         // Post notification for calendar refresh
         NotificationCenter.default.post(name: .branchrRidesDidChange, object: nil)
     }
+}
+
+// MARK: - Primary Stat Card Component
+
+struct PrimaryStatCard: View {
+    let icon: String
+    let value: String
+    let unit: String?
+    let label: String
+    @ObservedObject private var theme = ThemeManager.shared
     
-    private func discardRide() {
-        UINotificationFeedbackGenerator().notificationOccurred(.warning)
-        VoiceFeedbackService.shared.speak("Ride discarded")
-        dismiss()
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(Color.branchrAccent)
+            
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(value)
+                    .font(.headline.bold())
+                    .foregroundColor(.white)
+                
+                if let unit = unit {
+                    Text(unit)
+                        .font(.caption)
+                        .foregroundColor(Color.branchrAccent.opacity(0.7))
+                }
+            }
+            
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.black)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.branchrAccent.opacity(0.5), lineWidth: 1)
+                )
+                .shadow(color: Color.branchrAccent.opacity(0.2), radius: 8, x: 0, y: 4)
+        )
     }
 }
 
+// MARK: - Insight Card Component
+
+struct InsightCard: View {
+    let icon: String
+    let title: String
+    let value: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(Color.branchrAccent)
+                .frame(width: 32)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+                
+                Text(value)
+                    .font(.headline)
+                    .foregroundColor(.white)
+            }
+            
+            Spacer()
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.black)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.branchrAccent.opacity(0.3), lineWidth: 1)
+                )
+                .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+        )
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    EnhancedRideSummaryView(
+        ride: RideRecord(
+            distance: 5000, // meters
+            duration: 1800, // 30 minutes
+            averageSpeed: 2.78, // m/s (~10 mph)
+            calories: 250,
+            route: []
+        )
+    )
+    .preferredColorScheme(.dark)
+}

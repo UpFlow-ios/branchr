@@ -32,32 +32,36 @@ struct RideTrackingView: View {
     @ObservedObject private var connectionManager = ConnectionManager.shared // Phase 5: Connection status
     @ObservedObject private var musicSync = MusicSyncService.shared // Phase 5: Music status
     @Environment(\.dismiss) private var dismiss
+
     @State private var showRideSummary = false // Phase 31: Ride summary sheet
     @State private var lastAnnouncedDistance: Double = 0.0
     @State private var lastAnnouncedTime: TimeInterval = 0.0
-    
+
     // Phase 35B: Rainbow pulse countdown state
     @State private var countdown = 5
     @State private var progress: Double = 0
     @State private var isStopping = false
     @State private var countdownTimer: Timer?
     private let haptic = UINotificationFeedbackGenerator()
-    
+
     @State private var region = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
         span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
     )
-    
+
     // Phase 4: Selected rider for info panel
     @State private var selectedRider: UserAnnotation? = nil
-    
+
+    // Phase 35A: Store cancellables for notification subscription
+    @State private var cancellables = Set<AnyCancellable>()
+
     var body: some View {
         NavigationView {
             ZStack(alignment: .topLeading) {
-                // Background
+
+                // 1) MAP BACKGROUND
                 theme.primaryBackground.ignoresSafeArea()
-                
-                // Map View with custom black polyline
+
                 RideMapViewRepresentable(
                     region: $region,
                     coordinates: rideService.route,
@@ -69,17 +73,17 @@ struct RideTrackingView: View {
                 .onChange(of: rideService.route.count) { _ in
                     updateMapRegion()
                 }
-                
-                // Phase 5B: Main content VStack
+
+                // 2) MAIN VSTACK (HEADER + STATS + BUTTON)
                 VStack(spacing: 0) {
-                    // Phase 34: Header with yellow text
+                    // Header
                     HStack {
                         Text("Ride Tracking")
                             .font(.system(size: 24, weight: .bold, design: .rounded))
                             .foregroundColor(Color.branchrAccent)
-                        
+
                         Spacer()
-                        
+
                         Button(action: { dismiss() }) {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.title2)
@@ -89,27 +93,27 @@ struct RideTrackingView: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
-                    
+
                     Spacer()
-                    
-                    // Phase 34: Stats HUD with theme colors
+
+                    // Stats HUD
                     HStack(spacing: 30) {
                         RideTrackingStatCard(
                             icon: "location.fill",
-                            value: String(format: "%.2f", rideService.totalDistance / 1609.34), // Convert meters to miles
+                            value: String(format: "%.2f", rideService.totalDistance / 1609.34),
                             label: "Distance",
                             unit: "mi"
                         )
-                        
+
                         RideTrackingStatCard(
                             icon: "clock.fill",
                             value: formatDuration(rideService.duration),
                             label: "Time"
                         )
-                        
+
                         RideTrackingStatCard(
                             icon: "speedometer",
-                            value: String(format: "%.1f", rideService.averageSpeed * 0.621371), // Convert km/h to mph
+                            value: String(format: "%.1f", rideService.averageSpeed * 0.621371),
                             label: "Avg Speed",
                             unit: "mph"
                         )
@@ -118,17 +122,18 @@ struct RideTrackingView: View {
                     .background(
                         RoundedRectangle(cornerRadius: 16)
                             .fill(theme.isDarkMode ? Color.branchrAccent : Color.black)
+                            .opacity(0.9)
                     )
                     .foregroundColor(theme.isDarkMode ? Color.black : Color.branchrAccent)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 20)
-                    
-                    // Phase 35A: Unified ride button
-                    rideButton
+
+                    // Ride controls - Phase 35B: Added explicit End Ride button
+                    rideControls
                         .padding(.bottom, 50)
                 }
-                
-                // Phase 5B: Ride Host HUD overlay at top
+
+                // 3) HOST HUD OVERLAY (TOP-LEFT) - Phase 35B: Moved lower to avoid header overlap
                 if rideService.rideState == .active || rideService.rideState == .paused {
                     RideHostHUDView(
                         hostName: profileManager.currentDisplayName,
@@ -139,14 +144,15 @@ struct RideTrackingView: View {
                         isConnected: connectionManager.state == .connected,
                         isMusicOn: musicSync.currentTrack?.isPlaying ?? false
                     )
-                    .padding(.top, 12)
+                    .padding(.top, 96) // Phase 35B: Moved down to avoid header overlap
                     .padding(.leading, 16)
+                    .padding(.trailing, 40)
                     .onAppear {
                         print("🎛 RideHostHUDView visible – host HUD overlay active")
                     }
                 }
-                
-                // Phase 4: Rider Info Panel (slides up from bottom when rider is selected)
+
+                // 4) RIDER INFO PANEL (BOTTOM SHEET)
                 if let rider = selectedRider {
                     VStack {
                         Spacer()
@@ -166,33 +172,41 @@ struct RideTrackingView: View {
                         )
                     }
                 }
-                
-                // Phase 35B: Rainbow pulse overlay
-                if isStopping {
-                    RainbowPulseView(progress: $progress)
-                        .frame(width: 300, height: 300)
-                        .transition(.opacity)
-                        .onAppear { playCountdown() }
 
-                    Text("Stopping ride in \(countdown)")
-                        .font(.largeTitle.bold())
-                        .foregroundStyle(.white)
-                        .shadow(radius: 8)
-                        .transition(.opacity)
+                // 5) RAINBOW PULSE COUNTDOWN OVERLAY
+                if isStopping {
+                    ZStack {
+                        RainbowPulseView(progress: $progress)
+                            .frame(width: 300, height: 300)
+                            .transition(.opacity)
+
+                        Text("Stopping ride in \(countdown)")
+                            .font(.largeTitle.bold())
+                            .foregroundStyle(.white)
+                            .shadow(radius: 8)
+                            .transition(.opacity)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black.opacity(0.4).ignoresSafeArea())
+                    .onAppear { playCountdown() }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarHidden(true)
         }
         .onAppear {
-            // Request location permission if needed
+            print("🚴 RideTrackingView (Phase 5B) loaded")
             if rideService.rideState == .idle {
-                // Initialize map region with current location if available
                 updateMapRegion()
+            }
+
+            // Wire up voice commands
+            speechCommands.setEnabled(preferences.voiceCommandsEnabled)
+            if preferences.voiceCommandsEnabled {
+                speechCommands.startListening()
             }
         }
         .sheet(isPresented: $showRideSummary) {
-            // Phase 35C: Enhanced ride summary with mini map and charts
             if let rideRecord = createRideRecord() {
                 EnhancedRideSummaryView(ride: rideRecord)
                     .presentationDetents([.large])
@@ -202,15 +216,6 @@ struct RideTrackingView: View {
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
             }
-        }
-        .onAppear {
-            // Wire up voice commands
-            speechCommands.setEnabled(preferences.voiceCommandsEnabled)
-            if preferences.voiceCommandsEnabled {
-                speechCommands.startListening()
-            }
-            
-            // Phase 35.3: Removed countdown system - instant stop
         }
         .onDisappear {
             speechCommands.stopListening()
@@ -236,12 +241,11 @@ struct RideTrackingView: View {
             }
         }
         .onChange(of: rideService.totalDistance) { distance in
-            // Announce distance milestones (every 0.25 miles) if enabled
             if preferences.distanceUpdatesEnabled {
                 let miles = distance / 1609.34
                 let milestone = Int(miles / 0.25)
                 let lastMilestone = Int(lastAnnouncedDistance / 1609.34 / 0.25)
-                
+
                 if milestone > lastMilestone && milestone > 0 {
                     VoiceFeedbackService.shared.speak("Distance, \(String(format: "%.2f", miles)) miles")
                     lastAnnouncedDistance = distance
@@ -250,11 +254,10 @@ struct RideTrackingView: View {
             }
         }
         .onChange(of: rideService.duration) { duration in
-            // Announce speed updates every 60 seconds if enabled
             if preferences.paceOrSpeedUpdatesEnabled && rideService.rideState == .active {
                 let timeDiff = duration - lastAnnouncedTime
                 if timeDiff >= 60.0 {
-                    let speed = rideService.averageSpeed * 0.621371 // Convert to mph
+                    let speed = rideService.averageSpeed * 0.621371
                     VoiceFeedbackService.shared.speak("Average speed, \(String(format: "%.1f", speed)) miles per hour")
                     lastAnnouncedTime = duration
                     RideHaptics.milestone()
@@ -263,12 +266,11 @@ struct RideTrackingView: View {
         }
         .onChange(of: rideService.rideState) { state in
             if state == .ended && preferences.completionSummaryEnabled {
-                // Speak completion summary
                 let miles = rideService.totalDistance / 1609.34
                 let hours = Int(rideService.duration) / 3600
                 let minutes = (Int(rideService.duration) % 3600) / 60
                 let speed = rideService.averageSpeed * 0.621371
-                
+
                 var summary = "Ride complete. "
                 summary += "Total distance, \(String(format: "%.2f", miles)) miles. "
                 if hours > 0 {
@@ -277,43 +279,44 @@ struct RideTrackingView: View {
                     summary += "Time, \(minutes) minutes. "
                 }
                 summary += "Average speed, \(String(format: "%.1f", speed)) miles per hour."
-                
+
                 VoiceFeedbackService.shared.speak(summary)
                 RideHaptics.milestone()
             }
         }
     }
-    
+
     // MARK: - Helper Methods
-    
+
     private func updateMapRegion() {
         guard !rideService.route.isEmpty else { return }
-        
-        let lastCoordinate = rideService.route.last!
-        region = MKCoordinateRegion(
-            center: lastCoordinate,
-            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-        )
+
+        if let lastCoordinate = rideService.route.last {
+            region = MKCoordinateRegion(
+                center: lastCoordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+            )
+        }
     }
-    
+
     private func formatDuration(_ seconds: TimeInterval) -> String {
         let hours = Int(seconds) / 3600
         let minutes = (Int(seconds) % 3600) / 60
         let secs = Int(seconds) % 60
-        
+
         if hours > 0 {
             return String(format: "%d:%02d:%02d", hours, minutes, secs)
         } else {
             return String(format: "%d:%02d", minutes, secs)
         }
     }
-    
+
     private func speakStatus() {
         let miles = rideService.totalDistance / 1609.34
         let hours = Int(rideService.duration) / 3600
         let minutes = (Int(rideService.duration) % 3600) / 60
         let speed = rideService.averageSpeed * 0.621371
-        
+
         var status = "Current status. "
         status += "Distance, \(String(format: "%.2f", miles)) miles. "
         if hours > 0 {
@@ -322,13 +325,31 @@ struct RideTrackingView: View {
             status += "Time, \(minutes) minutes. "
         }
         status += "Average speed, \(String(format: "%.1f", speed)) miles per hour."
-        
+
         VoiceFeedbackService.shared.speak(status)
         RideHaptics.milestone()
     }
-    
+
     // MARK: - Phase 35A: Unified Ride Button
     
+    // Phase 35B: Ride controls with explicit End Ride button
+    private var rideControls: some View {
+        VStack(spacing: 8) {
+            rideButton
+            
+            // Phase 35B: Explicit End Ride button when ride is active or paused
+            if rideService.rideState == .active || rideService.rideState == .paused {
+                Button(role: .destructive) {
+                    endRideDirectly()
+                } label: {
+                    Text("End Ride")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(.red)
+                }
+            }
+        }
+    }
+
     private var rideButton: some View {
         Button(action: handleRideButtonTap) {
             Text(rideService.rideState.buttonTitle)
@@ -339,16 +360,19 @@ struct RideTrackingView: View {
                 .cornerRadius(15)
                 .shadow(radius: 8)
         }
-        .simultaneousGesture(
-            LongPressGesture(minimumDuration: 2.0)
-                .onEnded { _ in
-                    if rideService.rideState == .paused {
-                        withAnimation { startCountdown() }
-                    }
-                }
-        )
+        // Phase 35B: Removed long-press gesture for simpler UX
     }
     
+    // Phase 35B: Direct end ride function
+    private func endRideDirectly() {
+        withAnimation {
+            rideService.endRide()
+            showRideSummary = true
+        }
+        VoiceFeedbackService.shared.speak("Ride ended")
+        RideHaptics.milestone()
+    }
+
     private func handleRideButtonTap() {
         switch rideService.rideState {
         case .idle, .ended:
@@ -367,15 +391,15 @@ struct RideTrackingView: View {
             RideHaptics.milestone()
         }
     }
-    
+
     // MARK: - Phase 35B: Rainbow Pulse Countdown
-    
+
     private func startCountdown() {
         isStopping = true
         progress = 0
         countdown = 5
     }
-    
+
     private func playCountdown() {
         countdownTimer?.invalidate()
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [self] timer in
@@ -389,7 +413,7 @@ struct RideTrackingView: View {
             }
         }
     }
-    
+
     private func finishStop() {
         withAnimation {
             isStopping = false
@@ -398,18 +422,15 @@ struct RideTrackingView: View {
         }
         VoiceFeedbackService.shared.speak("Ride ended")
     }
-    
-    // Phase 35A: Store cancellables for notification subscription
-    @State private var cancellables = Set<AnyCancellable>()
-    
+
     // Phase 35C: Create RideRecord from service
     private func createRideRecord() -> RideRecord? {
         guard rideService.rideState == .ended else { return nil }
-        
+
         let avgSpeed = rideService.totalDistance > 0 && rideService.duration > 0
             ? rideService.totalDistance / rideService.duration // m/s
             : 0
-        
+
         return RideRecord(
             distance: rideService.totalDistance,
             duration: rideService.duration,
@@ -427,7 +448,7 @@ enum RideHaptics {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
     }
-    
+
     static func warning() {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.warning)
@@ -441,34 +462,34 @@ struct RideTrackingStatCard: View {
     let value: String
     let label: String
     let unit: String?
-    
+
     @ObservedObject private var theme = ThemeManager.shared
-    
+
     init(icon: String, value: String, label: String, unit: String? = nil) {
         self.icon = icon
         self.value = value
         self.label = label
         self.unit = unit
     }
-    
+
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.title3)
                 .foregroundColor(theme.isDarkMode ? Color.black : Color.branchrAccent)
-            
+
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(value)
                     .font(.headline.bold())
                     .foregroundColor(theme.isDarkMode ? Color.black : Color.branchrAccent)
-                
+
                 if let unit = unit {
                     Text(unit)
                         .font(.caption)
                         .foregroundColor((theme.isDarkMode ? Color.black : Color.branchrAccent).opacity(0.7))
                 }
             }
-            
+
             Text(label)
                 .font(.caption)
                 .foregroundColor((theme.isDarkMode ? Color.black : Color.branchrAccent).opacity(0.7))
@@ -483,4 +504,3 @@ struct RideTrackingStatCard: View {
     RideTrackingView()
         .preferredColorScheme(.dark)
 }
-
