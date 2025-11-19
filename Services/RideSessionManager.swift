@@ -329,7 +329,17 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor in
             let status = manager.authorizationStatus
-            locationManager.allowsBackgroundLocationUpdates = (status == .authorizedAlways)
+            // Only enable background updates if app is configured for it
+            #if targetEnvironment(simulator)
+            locationManager.allowsBackgroundLocationUpdates = false
+            #else
+            if let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String],
+               modes.contains("location") {
+                locationManager.allowsBackgroundLocationUpdates = (status == .authorizedAlways)
+            } else {
+                locationManager.allowsBackgroundLocationUpdates = false
+            }
+            #endif
         }
     }
     
@@ -340,7 +350,22 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = 5
         locationManager.pausesLocationUpdatesAutomatically = false
-        locationManager.allowsBackgroundLocationUpdates = locationManager.authorizationStatus == .authorizedAlways
+        
+        // IMPORTANT: Only enable background updates if the app is actually configured
+        // for background location in Info.plist / Capabilities.
+        #if targetEnvironment(simulator)
+        // Simulator cannot be made backgroundable, keep this off
+        locationManager.allowsBackgroundLocationUpdates = false
+        #else
+        if let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String],
+           modes.contains("location") {
+            locationManager.allowsBackgroundLocationUpdates = true
+        } else {
+            locationManager.allowsBackgroundLocationUpdates = false
+            print("⚠️ RideSessionManager: UIBackgroundModes does not contain 'location'; " +
+                  "allowsBackgroundLocationUpdates disabled to avoid assertion crash.")
+        }
+        #endif
     }
     
     private func beginActiveRide() {

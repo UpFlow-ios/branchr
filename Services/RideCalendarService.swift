@@ -16,11 +16,11 @@ import SwiftUI
  * Handles saving rides to the iOS Calendar app using EventKit.
  * Creates calendar events with ride details (distance, duration, route).
  */
-@MainActor
 final class RideCalendarService {
     static let shared = RideCalendarService()
     
     private let eventStore = EKEventStore()
+    private var hasRequestedAccess = false
     
     private init() {
         print("📆 RideCalendarService initialized")
@@ -29,121 +29,102 @@ final class RideCalendarService {
     // MARK: - Public Methods
     
     /// Save a ride to the iOS Calendar app
-    /// - Parameter ride: The ride record to save
-    /// - Returns: True if the event was saved successfully, false otherwise
-    func saveRideToCalendar(_ ride: RideRecord) async throws {
-        // Request calendar access
-        let granted = try await requestCalendarAccess()
+    /// - Parameters:
+    ///   - ride: The ride record to save
+    ///   - completion: Called with true if saved successfully, false otherwise
+    func saveRideToCalendar(_ ride: RideRecord, completion: @escaping (Bool) -> Void) {
+        // Request permission if needed
+        let status = EKEventStore.authorizationStatus(for: .event)
         
-        guard granted else {
-            print("⚠️ Calendar: Permission denied by user")
-            throw CalendarError.permissionDenied
-        }
-        
-        // Create event
-        let event = EKEvent(eventStore: eventStore)
-        event.title = formatRideTitle(ride)
-        event.notes = formatRideNotes(ride)
-        event.startDate = ride.date
-        event.endDate = ride.date.addingTimeInterval(ride.duration)
-        event.calendar = eventStore.defaultCalendarForNewEvents
-        event.isAllDay = false
-        
-        // Add location if route has coordinates
-        if let firstLocation = ride.route.first {
-            let location = CLLocation(latitude: firstLocation.latitude, longitude: firstLocation.longitude)
-            let geocoder = CLGeocoder()
-            // Note: Reverse geocoding is async, but we'll use coordinates as fallback
-            event.location = String(format: "%.4f, %.4f", firstLocation.latitude, firstLocation.longitude)
-        }
-        
-        print("📆 Calendar: attempting to save event with title '\(event.title)' from \(event.startDate) to \(event.endDate)")
-        
-        do {
-            try eventStore.save(event, span: .thisEvent, commit: true)
-            print("📆 Calendar event saved successfully for ride at \(ride.date)")
-        } catch {
-            print("❌ Calendar: failed to save event – \(error.localizedDescription)")
-            throw CalendarError.saveFailed(error)
+        switch status {
+        case .notDetermined:
+            print("📆 Calendar permission: requesting access...")
+            eventStore.requestAccess(to: .event) { granted, error in
+                print("📆 Calendar permission: granted=\(granted), error=\(String(describing: error))")
+                if granted {
+                    self.createEvent(for: ride, completion: completion)
+                } else {
+                    print("⚠️ Calendar: Permission denied - skipping calendar save")
+                    completion(false)
+                }
+            }
+            
+        case .authorized:
+            createEvent(for: ride, completion: completion)
+            
+        case .denied, .restricted:
+            print("⚠️ Calendar: Permission denied/restricted - skipping calendar save")
+            completion(false)
+            
+        @unknown default:
+            print("⚠️ Calendar: Unknown authorization status - skipping calendar save")
+            completion(false)
         }
     }
     
     // MARK: - Private Methods
     
-    private func requestCalendarAccess() async throws -> Bool {
-        let status = EKEventStore.authorizationStatus(for: .event)
-        
-        switch status {
-        case .authorized:
-            print("📆 Calendar permission: already granted")
-            return true
+    private func createEvent(for ride: RideRecord, completion: @escaping (Bool) -> Void) {
+        DispatchQueue.main.async {
+            let event = EKEvent(eventStore: self.eventStore)
             
-        case .notDetermined:
-            print("📆 Calendar permission: requesting access...")
-            let granted = try await eventStore.requestAccess(to: .event)
-            print("📆 Calendar permission: granted=\(granted), error=nil")
-            return granted
+            // Format title with distance and duration
+            let distanceMiles = ride.distance / 1609.34
+            let hours = Int(ride.duration) / 3600
+            let minutes = (Int(ride.duration) % 3600) / 60
             
-        case .denied, .restricted:
-            print("📆 Calendar permission: denied or restricted (status: \(status.rawValue))")
-            return false
+            let titleDistance = String(format: "%.2f", distanceMiles)
+            let titleDuration: String
+            if hours > 0 {
+                titleDuration = "\(hours)h \(minutes)m"
+            } else {
+                titleDuration = "\(minutes)m"
+            }
             
-        @unknown default:
-            print("📆 Calendar permission: unknown status (\(status.rawValue))")
-            return false
-        }
-    }
-    
-    private func formatRideTitle(_ ride: RideRecord) -> String {
-        let distanceMiles = ride.distance / 1609.34
-        let hours = Int(ride.duration) / 3600
-        let minutes = (Int(ride.duration) % 3600) / 60
-        
-        if hours > 0 {
-            return String(format: "🚴 Branchr Ride: %.2f mi (%dh %dm)", distanceMiles, hours, minutes)
-        } else {
-            return String(format: "🚴 Branchr Ride: %.2f mi (%dm)", distanceMiles, minutes)
-        }
-    }
-    
-    private func formatRideNotes(_ ride: RideRecord) -> String {
-        let distanceMiles = ride.distance / 1609.34
-        let distanceKm = ride.distance / 1000.0
-        let hours = Int(ride.duration) / 3600
-        let minutes = (Int(ride.duration) % 3600) / 60
-        let seconds = Int(ride.duration) % 60
-        let avgSpeedMph = ride.averageSpeed * 2.237 // m/s to mph
-        
-        var notes = "Branchr Ride Summary\n\n"
-        notes += "Distance: \(String(format: "%.2f", distanceMiles)) mi (\(String(format: "%.2f", distanceKm)) km)\n"
-        
-        if hours > 0 {
-            notes += "Duration: \(hours)h \(minutes)m \(seconds)s\n"
-        } else if minutes > 0 {
-            notes += "Duration: \(minutes)m \(seconds)s\n"
-        } else {
-            notes += "Duration: \(seconds)s\n"
-        }
-        
-        notes += String(format: "Average Speed: %.1f mph (%.1f km/h)\n", avgSpeedMph, ride.averageSpeed * 3.6)
-        notes += "Route Points: \(ride.route.count)\n"
-        
-        return notes
-    }
-}
-
-// MARK: - Calendar Errors
-
-enum CalendarError: LocalizedError {
-    case permissionDenied
-    case saveFailed(Error)
-    
-    var errorDescription: String? {
-        switch self {
-        case .permissionDenied:
-            return "Calendar permission was denied"
-        case .saveFailed(let error):
-            return "Failed to save calendar event: \(error.localizedDescription)"
+            event.title = "🚴 Branchr Ride: \(titleDistance) mi (\(titleDuration))"
+            
+            // Start/end times based on ride's recorded date + duration
+            let startDate = ride.date
+            let endDate = ride.date.addingTimeInterval(ride.duration)
+            event.startDate = startDate
+            event.endDate = endDate
+            event.calendar = self.eventStore.defaultCalendarForNewEvents
+            event.isAllDay = false
+            
+            // Optional notes/metadata (keep brief)
+            let avgSpeedMph = ride.averageSpeed * 2.237 // m/s to mph
+            let formattedDuration: String
+            if hours > 0 {
+                let mins = (Int(ride.duration) % 3600) / 60
+                let secs = Int(ride.duration) % 60
+                formattedDuration = "\(hours)h \(mins)m \(secs)s"
+            } else {
+                let mins = Int(ride.duration) / 60
+                let secs = Int(ride.duration) % 60
+                formattedDuration = "\(mins)m \(secs)s"
+            }
+            
+            event.notes = """
+            Distance: \(titleDistance) miles
+            Duration: \(formattedDuration)
+            Avg speed: \(String(format: "%.1f", avgSpeedMph)) mph
+            """
+            
+            // Add location if route has coordinates
+            if let firstLocation = ride.route.first {
+                event.location = String(format: "%.4f, %.4f", firstLocation.latitude, firstLocation.longitude)
+            }
+            
+            print("📆 Calendar: attempting to save event with title '\(event.title ?? "")' from \(event.startDate) to \(event.endDate)")
+            
+            do {
+                try self.eventStore.save(event, span: .thisEvent, commit: true)
+                print("📆 Calendar event saved successfully with title: \(event.title ?? "")")
+                completion(true)
+            } catch {
+                print("⚠️ Calendar: Failed to save event – \(error)")
+                completion(false)
+            }
         }
     }
 }

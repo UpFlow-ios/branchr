@@ -390,21 +390,31 @@ struct RideTrackingView: View {
     private func handleRideSummaryDone() {
         print("✅ handleRideSummaryDone() - Finalizing ride")
         
+        // 1. Grab the final ride record from the ride service
         guard let rideRecord = createRideRecord() else {
-            print("⚠️ handleRideSummaryDone: No ride record available")
-            // Still reset state even if no record
+            print("⚠️ handleRideSummaryDone(): No rideRecord available, performing safety reset only.")
+            RideSessionRecoveryService.shared.clearSession()
             rideService.resetRide()
             RideSessionManager.shared.resetRide()
-            withAnimation { showRideSummary = false }
+            DispatchQueue.main.async {
+                self.showRideSummary = false
+            }
             return
         }
         
-        // 1) Clear ride session recovery data (stops spammy "Saved ride session for recovery" logs)
+        // 2. Clear recovery data (we're done with this ride)
         RideSessionRecoveryService.shared.clearSession()
+        print("🗑️ Cleared ride session recovery data")
         
-        // 2) Save to RideDataManager and Firebase (only for rides >= 300 seconds)
+        // 3. Persist to local history (used by in-app calendar and stats)
+        //    Save ALL rides to local history, not just >= 300s
+        RideDataManager.shared.saveRide(rideRecord)
+        NotificationCenter.default.post(name: .branchrRidesDidChange, object: nil)
+        print("💾 Saved ride to local history: \(String(format: "%.2f", rideRecord.distance / 1609.34)) mi")
+        
+        // 4. Persist to Firebase only for "real" rides (>= 300 seconds),
+        //    preserving the existing behavior.
         if rideRecord.duration >= 300 {
-            RideDataManager.shared.saveRide(rideRecord)
             FirebaseRideService.shared.uploadRide(rideRecord) { error in
                 if let error = error {
                     print("❌ Failed to upload ride: \(error.localizedDescription)")
@@ -412,43 +422,30 @@ struct RideTrackingView: View {
                     print("☁️ Ride synced to Firebase successfully")
                 }
             }
-            NotificationCenter.default.post(name: .branchrRidesDidChange, object: nil)
         } else {
             print("📊 Skipping Firebase save (ride too short: \(String(format: "%.1f", rideRecord.duration))s < 300s)")
         }
         
-        // 3) Save to iOS Calendar app using EventKit (for ALL rides, even short test rides)
-        Task {
-            do {
-                try await RideCalendarService.shared.saveRideToCalendar(rideRecord)
-                print("📆 Calendar event saved successfully for ride at \(rideRecord.date)")
-                await MainActor.run {
+        // 5. Try to save to iOS Calendar via EventKit (non-blocking, graceful on failure)
+        RideCalendarService.shared.saveRideToCalendar(rideRecord) { success in
+            DispatchQueue.main.async {
+                if success {
                     VoiceFeedbackService.shared.speak("Ride stopped, saved to calendar")
-                }
-            } catch CalendarError.permissionDenied {
-                print("⚠️ Calendar: Permission denied - skipping calendar save")
-                await MainActor.run {
-                    VoiceFeedbackService.shared.speak("Ride stopped")
-                }
-            } catch {
-                print("❌ Calendar: Failed to save event – \(error.localizedDescription)")
-                await MainActor.run {
+                } else {
                     VoiceFeedbackService.shared.speak("Ride stopped")
                 }
             }
         }
         
-        // 4) Reset ride state to idle in BOTH services so HomeView shows "Start Ride" instead of "Pause Ride"
-        //    HomeView uses RideSessionManager.shared, RideTrackingView uses RideTrackingService.shared
+        // 6. Reset services to idle so HomeView shows "Start Ride"
         rideService.resetRide()
         RideSessionManager.shared.resetRide()
+        print("🔄 Ride finalized - state reset to idle in both services, recovery cleared")
         
-        // 5) Dismiss summary sheet
-        withAnimation {
-            showRideSummary = false
+        // 7. Close summary sheet
+        DispatchQueue.main.async {
+            self.showRideSummary = false
         }
-        
-        print("✅ Ride finalized - state reset to idle in both services, recovery cleared")
     }
 
     private func handleRideButtonTap() {
