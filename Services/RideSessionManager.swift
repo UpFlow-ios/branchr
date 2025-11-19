@@ -329,21 +329,42 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor in
             let status = manager.authorizationStatus
-            // Only enable background updates if app is configured for it
-            #if targetEnvironment(simulator)
-            locationManager.allowsBackgroundLocationUpdates = false
-            #else
-            if let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String],
-               modes.contains("location") {
-                locationManager.allowsBackgroundLocationUpdates = (status == .authorizedAlways)
-            } else {
-                locationManager.allowsBackgroundLocationUpdates = false
-            }
-            #endif
+            // Update background location updates based on capability and authorization
+            configureBackgroundLocationUpdates(authStatus: status)
         }
     }
     
     // MARK: Helpers
+    
+    /// Check if the app has background location capability configured
+    private func hasBackgroundLocationCapability() -> Bool {
+        guard let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] else {
+            return false
+        }
+        return modes.contains("location")
+    }
+    
+    /// Safely configure allowsBackgroundLocationUpdates based on capability and authorization
+    private func configureBackgroundLocationUpdates(authStatus: CLAuthorizationStatus) {
+        #if targetEnvironment(simulator)
+        // Simulator cannot be made backgroundable, keep this off
+        locationManager.allowsBackgroundLocationUpdates = false
+        print("📍 RideSessionManager: Background location updates DISABLED (simulator)")
+        #else
+        if hasBackgroundLocationCapability() && authStatus == .authorizedAlways {
+            locationManager.allowsBackgroundLocationUpdates = true
+            print("📍 RideSessionManager: Background location updates ENABLED")
+        } else {
+            locationManager.allowsBackgroundLocationUpdates = false
+            if !hasBackgroundLocationCapability() {
+                print("📍 RideSessionManager: Background location updates DISABLED (no UIBackgroundModes 'location')")
+            } else {
+                print("📍 RideSessionManager: Background location updates DISABLED (not authorizedAlways)")
+            }
+        }
+        #endif
+    }
+    
     private func configureLocationManager() {
         locationManager.delegate = self
         locationManager.activityType = .fitness
@@ -352,20 +373,9 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
         locationManager.pausesLocationUpdatesAutomatically = false
         
         // IMPORTANT: Only enable background updates if the app is actually configured
-        // for background location in Info.plist / Capabilities.
-        #if targetEnvironment(simulator)
-        // Simulator cannot be made backgroundable, keep this off
-        locationManager.allowsBackgroundLocationUpdates = false
-        #else
-        if let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String],
-           modes.contains("location") {
-            locationManager.allowsBackgroundLocationUpdates = true
-        } else {
-            locationManager.allowsBackgroundLocationUpdates = false
-            print("⚠️ RideSessionManager: UIBackgroundModes does not contain 'location'; " +
-                  "allowsBackgroundLocationUpdates disabled to avoid assertion crash.")
-        }
-        #endif
+        // for background location in Info.plist / Capabilities AND user has authorizedAlways.
+        let authStatus = locationManager.authorizationStatus
+        configureBackgroundLocationUpdates(authStatus: authStatus)
     }
     
     private func beginActiveRide() {

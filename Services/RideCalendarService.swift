@@ -88,7 +88,19 @@ final class RideCalendarService {
             let endDate = ride.date.addingTimeInterval(ride.duration)
             event.startDate = startDate
             event.endDate = endDate
-            event.calendar = self.eventStore.defaultCalendarForNewEvents
+            
+            // Use default calendar, or first available calendar if default is nil
+            if let defaultCalendar = self.eventStore.defaultCalendarForNewEvents {
+                event.calendar = defaultCalendar
+            } else if let firstCalendar = self.eventStore.calendars(for: .event).first {
+                event.calendar = firstCalendar
+                print("⚠️ Calendar: Using first available calendar (default was nil)")
+            } else {
+                print("❌ Calendar: No calendars available - cannot save event")
+                completion(false)
+                return
+            }
+            
             event.isAllDay = false
             
             // Optional notes/metadata (keep brief)
@@ -118,11 +130,11 @@ final class RideCalendarService {
             print("📆 Calendar: attempting to save event with title '\(event.title ?? "")' from \(event.startDate) to \(event.endDate)")
             
             do {
-                try self.eventStore.save(event, span: .thisEvent, commit: true)
+                try self.eventStore.save(event, span: .thisEvent)
                 print("📆 Calendar event saved successfully with title: \(event.title ?? "")")
                 completion(true)
             } catch {
-                print("⚠️ Calendar: Failed to save event – \(error)")
+                print("⚠️ Calendar save error: \(error)")
                 completion(false)
             }
         }

@@ -80,6 +80,37 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
         setupLocationManager()
     }
     
+    // MARK: - Background Location Helper
+    
+    /// Check if the app has background location capability configured
+    private func hasBackgroundLocationCapability() -> Bool {
+        guard let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] else {
+            return false
+        }
+        return modes.contains("location")
+    }
+    
+    /// Safely configure allowsBackgroundLocationUpdates based on capability and authorization
+    private func configureBackgroundLocationUpdates(authStatus: CLAuthorizationStatus) {
+        #if targetEnvironment(simulator)
+        // Simulator cannot be made backgroundable, keep this off
+        locationManager.allowsBackgroundLocationUpdates = false
+        print("📍 RideTrackingService: Background location updates DISABLED (simulator)")
+        #else
+        if hasBackgroundLocationCapability() && authStatus == .authorizedAlways {
+            locationManager.allowsBackgroundLocationUpdates = true
+            print("📍 RideTrackingService: Background location updates ENABLED")
+        } else {
+            locationManager.allowsBackgroundLocationUpdates = false
+            if !hasBackgroundLocationCapability() {
+                print("📍 RideTrackingService: Background location updates DISABLED (no UIBackgroundModes 'location')")
+            } else {
+                print("📍 RideTrackingService: Background location updates DISABLED (not authorizedAlways)")
+            }
+        }
+        #endif
+    }
+    
     private func setupLocationManager() {
         locationManager.delegate = self
         locationManager.activityType = .fitness
@@ -87,16 +118,10 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
         locationManager.distanceFilter = 5.0 // Update every 5 meters
         locationManager.pausesLocationUpdatesAutomatically = false
         
-        // Only enable background location updates if we have "Always" permission
-        // and proper background capabilities
+        // IMPORTANT: Only enable background updates if the app is actually configured
+        // for background location in Info.plist / Capabilities.
         let authStatus = locationManager.authorizationStatus
-        if authStatus == .authorizedAlways {
-            // Only set if we have Always permission
-            locationManager.allowsBackgroundLocationUpdates = true
-        } else {
-            // For "When In Use" permission, background updates are not allowed
-            locationManager.allowsBackgroundLocationUpdates = false
-        }
+        configureBackgroundLocationUpdates(authStatus: authStatus)
     }
     
     // MARK: - Public Methods
@@ -127,12 +152,8 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
             // Wait for authorization callback before starting
             return
         } else if status == .authorizedWhenInUse || status == .authorizedAlways {
-            // Update background location setting based on permission
-            if status == .authorizedAlways {
-                locationManager.allowsBackgroundLocationUpdates = true
-            } else {
-                locationManager.allowsBackgroundLocationUpdates = false
-            }
+            // Update background location setting based on capability and permission
+            configureBackgroundLocationUpdates(authStatus: status)
             
             rideState = .active
             startTime = Date()
@@ -273,16 +294,20 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
         
-        // Update background location updates based on permission level
-        if status == .authorizedAlways {
-            locationManager.allowsBackgroundLocationUpdates = true
-            print("✅ Location permission: Always (background updates enabled)")
-        } else if status == .authorizedWhenInUse {
-            locationManager.allowsBackgroundLocationUpdates = false
+        // Update background location updates based on capability and permission level
+        configureBackgroundLocationUpdates(authStatus: status)
+        
+        switch status {
+        case .authorizedAlways:
+            print("✅ Location permission: Always")
+        case .authorizedWhenInUse:
             print("✅ Location permission: When In Use (foreground only)")
-        } else {
-            locationManager.allowsBackgroundLocationUpdates = false
-            print("⚠️ Location permission denied")
+        case .denied, .restricted:
+            print("⚠️ Location permission denied or restricted")
+        case .notDetermined:
+            print("📍 Location permission: Not determined")
+        @unknown default:
+            print("⚠️ Location permission: Unknown status")
         }
         
         if status == .authorizedWhenInUse || status == .authorizedAlways {

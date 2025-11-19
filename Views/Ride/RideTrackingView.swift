@@ -431,19 +431,19 @@ struct RideTrackingView: View {
             DispatchQueue.main.async {
                 if success {
                     VoiceFeedbackService.shared.speak("Ride stopped, saved to calendar")
+                    print("✅ Ride finalized - calendar event saved")
                 } else {
                     VoiceFeedbackService.shared.speak("Ride stopped")
+                    print("⚠️ Ride finalized - calendar save skipped or failed")
                 }
             }
         }
         
-        // 6. Reset services to idle so HomeView shows "Start Ride"
-        rideService.resetRide()
-        RideSessionManager.shared.resetRide()
-        print("🔄 Ride finalized - state reset to idle in both services, recovery cleared")
-        
-        // 7. Close summary sheet
+        // 6. Reset services to idle so HomeView shows "Start Ride" (on main thread)
         DispatchQueue.main.async {
+            self.rideService.resetRide()
+            RideSessionManager.shared.resetRide()
+            print("🔄 Ride reset")
             self.showRideSummary = false
         }
     }
