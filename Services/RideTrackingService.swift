@@ -64,6 +64,11 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
     @Published var averageSpeed: Double = 0.0 // in km/h
     @Published var currentSpeed: Double = 0.0 // in km/h
     
+    // Phase 36: Published metrics for UI
+    @Published var totalDistanceMiles: Double = 0.0
+    @Published var totalDurationSeconds: TimeInterval = 0.0
+    @Published var averageSpeedMph: Double = 0.0
+    
     // MARK: - Private Properties
     
     private var locationManager = CLLocationManager()
@@ -72,6 +77,9 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
     private var lastPauseTime: Date?
     private var timer: Timer?
     private var lastLocation: CLLocation?
+    
+    // Phase 36: Store full CLLocation objects for accurate metrics calculation
+    private var routeLocations: [CLLocation] = []
     
     // MARK: - Initialization
     
@@ -138,12 +146,16 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
             return
         }
         
-        // Reset tracking data
+        // Phase 36: Reset tracking data including route locations
         totalDistance = 0.0
         duration = 0.0
         route.removeAll()
+        routeLocations.removeAll()
         pausedTime = 0.0
         lastLocation = nil
+        totalDistanceMiles = 0.0
+        totalDurationSeconds = 0.0
+        averageSpeedMph = 0.0
         
         // Request location authorization if needed
         let status = locationManager.authorizationStatus
@@ -214,17 +226,22 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
         locationManager.stopUpdatingLocation()
         stopTimer()
         
-        // Calculate final duration
+        // Phase 36: Calculate final duration
         if let start = startTime {
             duration = Date().timeIntervalSince(start) - pausedTime
         }
         
-        // Calculate final average speed
+        // Phase 36: Compute final metrics from all route locations
+        updateMetrics()
+        
+        // Calculate final average speed (backward compatibility)
         if duration > 0 {
             averageSpeed = (totalDistance / duration) * 3.6 // m/s to km/h
         }
         
-        print("🏁 Ride ended - Distance: \(String(format: "%.2f", totalDistance/1000)) km, Duration: \(formatTime(duration))")
+        // Phase 36: Log final metrics
+        print("📊 Ride finalized metrics – distance: \(String(format: "%.2f", totalDistanceMiles)) mi, duration: \(String(format: "%.0f", totalDurationSeconds))s, avg: \(String(format: "%.1f", averageSpeedMph)) mph, route points: \(route.count)")
+        print("🏁 Ride ended - Distance: \(String(format: "%.2f", totalDistance/1000)) km (\(String(format: "%.2f", totalDistanceMiles)) mi), Duration: \(formatTime(duration))")
     }
     
     /**
@@ -237,12 +254,16 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
         totalDistance = 0.0
         duration = 0.0
         route.removeAll()
+        routeLocations.removeAll()
         pausedTime = 0.0
         startTime = nil
         lastPauseTime = nil
         lastLocation = nil
         averageSpeed = 0.0
         currentSpeed = 0.0
+        totalDistanceMiles = 0.0
+        totalDurationSeconds = 0.0
+        averageSpeedMph = 0.0
         print("🔄 Ride reset")
     }
     
@@ -253,6 +274,8 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self, let start = self.startTime else { return }
             self.duration = Date().timeIntervalSince(start) - self.pausedTime
+            // Phase 36: Update metrics when duration changes
+            self.updateMetrics()
         }
     }
     
@@ -271,7 +294,10 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
             return
         }
         
-        // Calculate distance from last location
+        // Phase 36: Store full CLLocation for accurate metrics
+        routeLocations.append(newLocation)
+        
+        // Calculate distance from last location (for immediate UI updates)
         if let last = lastLocation {
             let distance = newLocation.distance(from: last)
             totalDistance += distance
@@ -280,9 +306,45 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
             currentSpeed = newLocation.speed >= 0 ? newLocation.speed * 3.6 : 0.0
         }
         
-        // Add to route
+        // Add to route (for map display)
         route.append(newLocation.coordinate)
         lastLocation = newLocation
+        
+        // Phase 36: Recompute metrics using calculator
+        updateMetrics()
+    }
+    
+    // Phase 36: Update metrics from route locations
+    private func updateMetrics() {
+        guard !routeLocations.isEmpty else {
+            // No locations yet - set zero metrics but preserve duration
+            totalDistance = 0.0
+            totalDistanceMiles = 0.0
+            totalDurationSeconds = duration
+            averageSpeedMph = 0.0
+            averageSpeed = 0.0
+            return
+        }
+        
+        let metrics = RideMetricsCalculator.calculateMetrics(
+            from: routeLocations,
+            startTime: startTime,
+            duration: duration
+        )
+        
+        // Update published properties
+        totalDistance = metrics.totalDistanceMeters
+        totalDistanceMiles = metrics.totalDistanceMiles
+        totalDurationSeconds = metrics.totalDurationSeconds
+        
+        // Average speed: convert from m/s to mph
+        averageSpeedMph = metrics.averageSpeedMph
+        averageSpeed = metrics.averageSpeedMetersPerSecond * 3.6 // m/s to km/h
+        
+        // Phase 36: Log metrics update (only occasionally to avoid spam)
+        if routeLocations.count % 10 == 0 {
+            print("📊 RideTrackingService: live metrics updated – distance: \(String(format: "%.2f", metrics.totalDistanceMiles)) mi, avg: \(String(format: "%.1f", metrics.averageSpeedMph)) mph")
+        }
     }
     
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -375,14 +437,6 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
     }
     
     // MARK: - Phase 5: HUD Helper Methods
-    
-    /**
-     * Get total distance in miles
-     * Phase 5: Converts meters to miles
-     */
-    var totalDistanceMiles: Double {
-        return totalDistance / 1609.34 // meters to miles
-    }
     
     /**
      * Get current speed in mph

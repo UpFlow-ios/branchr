@@ -97,24 +97,24 @@ struct RideTrackingView: View {
 
                     Spacer()
 
-                    // Stats HUD
+                    // Stats HUD - Phase 36: Use real metrics from calculator
                     HStack(spacing: 30) {
                         RideTrackingStatCard(
                             icon: "location.fill",
-                            value: String(format: "%.2f", rideService.totalDistance / 1609.34),
+                            value: String(format: "%.2f", rideService.totalDistanceMiles),
                             label: "Distance",
                             unit: "mi"
                         )
 
                         RideTrackingStatCard(
                             icon: "clock.fill",
-                            value: formatDuration(rideService.duration),
+                            value: formatDuration(rideService.totalDurationSeconds > 0 ? rideService.totalDurationSeconds : rideService.duration),
                             label: "Time"
                         )
 
                         RideTrackingStatCard(
                             icon: "speedometer",
-                            value: String(format: "%.1f", rideService.averageSpeed * 0.621371),
+                            value: String(format: "%.1f", rideService.averageSpeedMph),
                             label: "Avg Speed",
                             unit: "mph"
                         )
@@ -498,18 +498,24 @@ struct RideTrackingView: View {
         VoiceFeedbackService.shared.speak("Ride ended")
     }
 
-    // Phase 35C: Create RideRecord from service
+    // Phase 36: Create RideRecord from service with accurate metrics
     private func createRideRecord() -> RideRecord? {
         guard rideService.rideState == .ended else { return nil }
 
-        let avgSpeed = rideService.totalDistance > 0 && rideService.duration > 0
-            ? rideService.totalDistance / rideService.duration // m/s
-            : 0
+        // Phase 36: Use final metrics from calculator for accuracy
+        // The service already has computed metrics from routeLocations
+        let distanceMeters = rideService.totalDistance
+        let durationSeconds = rideService.totalDurationSeconds > 0 ? rideService.totalDurationSeconds : rideService.duration
+        let avgSpeedMps = rideService.averageSpeedMph > 0 
+            ? rideService.averageSpeedMph / 2.237 // Convert mph to m/s
+            : (distanceMeters > 0 && durationSeconds > 0 ? distanceMeters / durationSeconds : 0.0)
+
+        print("📊 Creating RideRecord – distance: \(String(format: "%.2f", distanceMeters/1609.34)) mi, duration: \(String(format: "%.0f", durationSeconds))s, avg speed: \(String(format: "%.1f", avgSpeedMps * 2.237)) mph")
 
         return RideRecord(
-            distance: rideService.totalDistance,
-            duration: rideService.duration,
-            averageSpeed: avgSpeed,
+            distance: distanceMeters,
+            duration: durationSeconds,
+            averageSpeed: avgSpeedMps,
             calories: 0,
             route: rideService.route
         )
