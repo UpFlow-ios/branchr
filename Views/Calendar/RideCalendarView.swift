@@ -255,8 +255,12 @@ struct DayStatsSheet: View {
             }
             .sheet(isPresented: $showRideSummary) {
                 if let ride = selectedRide {
-                    EnhancedRideSummaryView(ride: ride, onDone: nil)
+                    // Phase 37: Show RideDetailView instead of EnhancedRideSummaryView for calendar rides
+                    RideDetailView(ride: ride)
                         .presentationDetents([.large])
+                        .onAppear {
+                            print("📆 RideCalendarView: selected ride id \(ride.id)")
+                        }
                 }
             }
         }
