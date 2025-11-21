@@ -182,6 +182,86 @@ class RideDataManager: ObservableObject {
             totalDuration: totalDuration
         )
     }
+    
+    // MARK: - Phase 38: Trend Data & Aggregation
+    
+    /// Compute daily trend data for the last N days
+    /// Groups rides by calendar day and aggregates distance, duration, and average speed
+    /// Returns points sorted by date ascending, including days with zero rides
+    func recentDailyTrend(lastNDays: Int = 7) -> [RideTrendPoint] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        
+        // Generate all days in the range (including days with no rides)
+        var trendPoints: [RideTrendPoint] = []
+        
+        for dayOffset in (0..<lastNDays).reversed() {
+            guard let day = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            let dayStart = calendar.startOfDay(for: day)
+            let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
+            
+            // Filter rides for this day
+            let dayRides = rides.filter { ride in
+                ride.date >= dayStart && ride.date < dayEnd
+            }
+            
+            // Aggregate metrics
+            let totalDistanceMeters = dayRides.reduce(0.0) { $0 + $1.distance }
+            let totalDistanceMiles = totalDistanceMeters / 1609.34
+            let totalDurationSeconds = dayRides.reduce(0.0) { $0 + $1.duration }
+            
+            // Calculate average speed: total distance / total time (convert to mph)
+            let averageSpeedMph: Double
+            if totalDurationSeconds > 0 && totalDistanceMiles > 0 {
+                let avgSpeedMps = totalDistanceMeters / totalDurationSeconds
+                averageSpeedMph = avgSpeedMps * 2.237 // m/s to mph
+            } else {
+                averageSpeedMph = 0.0
+            }
+            
+            trendPoints.append(RideTrendPoint(
+                date: dayStart,
+                totalDistanceMiles: totalDistanceMiles,
+                totalDurationSeconds: totalDurationSeconds,
+                averageSpeedMph: averageSpeedMph
+            ))
+        }
+        
+        print("📊 RideDataManager: computed daily trend for \(trendPoints.count) days")
+        return trendPoints
+    }
+    
+    /// Compute weekly summary comparing this week vs last week
+    /// Uses calendar weeks starting on Sunday (standard iOS calendar)
+    /// Returns (thisWeekMiles, lastWeekMiles)
+    func weeklySummary() -> (thisWeekMiles: Double, lastWeekMiles: Double) {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // Get start of this week (Sunday)
+        let thisWeekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today))!
+        let thisWeekEnd = calendar.date(byAdding: .day, value: 7, to: thisWeekStart)!
+        
+        // Get start of last week
+        let lastWeekStart = calendar.date(byAdding: .day, value: -7, to: thisWeekStart)!
+        let lastWeekEnd = thisWeekStart
+        
+        // Filter rides for this week
+        let thisWeekRides = rides.filter { ride in
+            ride.date >= thisWeekStart && ride.date < thisWeekEnd
+        }
+        let thisWeekMiles = thisWeekRides.reduce(0.0) { $0 + ($1.distance / 1609.34) }
+        
+        // Filter rides for last week
+        let lastWeekRides = rides.filter { ride in
+            ride.date >= lastWeekStart && ride.date < lastWeekEnd
+        }
+        let lastWeekMiles = lastWeekRides.reduce(0.0) { $0 + ($1.distance / 1609.34) }
+        
+        print("📊 RideDataManager: weekly summary – thisWeek=\(String(format: "%.2f", thisWeekMiles)), lastWeek=\(String(format: "%.2f", lastWeekMiles))")
+        
+        return (thisWeekMiles, lastWeekMiles)
+    }
 }
 
 // MARK: - Phase 34: Day Ride Summary
@@ -205,6 +285,24 @@ struct DayRideSummary {
         } else {
             return "\(minutes)m"
         }
+    }
+}
+
+// MARK: - Phase 38: Ride Trend Point
+
+struct RideTrendPoint: Identifiable {
+    let id: UUID
+    let date: Date // normalized to the day
+    let totalDistanceMiles: Double
+    let totalDurationSeconds: TimeInterval
+    let averageSpeedMph: Double // distance / time for that day (or 0 if time == 0)
+    
+    init(id: UUID = UUID(), date: Date, totalDistanceMiles: Double, totalDurationSeconds: TimeInterval, averageSpeedMph: Double) {
+        self.id = id
+        self.date = date
+        self.totalDistanceMiles = totalDistanceMiles
+        self.totalDurationSeconds = totalDurationSeconds
+        self.averageSpeedMph = averageSpeedMph
     }
 }
 

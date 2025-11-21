@@ -16,6 +16,7 @@ struct EnhancedRideSummaryView: View {
     @StateObject private var rideDataManager = RideDataManager.shared
     @State private var isSaved = false
     @State private var showFadeIn = false
+    @State private var showRideInsights = false // Phase 38: Ride Insights sheet
     
     init(ride: RideRecord, onDone: (() -> Void)? = nil) {
         self.ride = ride
@@ -109,25 +110,34 @@ struct EnhancedRideSummaryView: View {
                                 value: "\(ride.route.count) points"
                             )
                             
-                            // Future charts note
-                            HStack(spacing: 8) {
-                                Image(systemName: "chart.line.uptrend.xyaxis")
-                                    .foregroundColor(Color.branchrAccent.opacity(0.7))
-                                Text("Speed and distance trend charts coming in future phases")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.7))
+                            // Phase 38: View Ride Insights button
+                            Button(action: {
+                                showRideInsights = true
+                            }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "chart.line.uptrend.xyaxis")
+                                        .foregroundColor(theme.accentColor)
+                                    Text("View Ride Insights")
+                                        .font(.subheadline.bold())
+                                        .foregroundColor(theme.primaryText)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundColor(theme.secondaryText)
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(theme.cardBackground)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(theme.accentColor.opacity(0.3), lineWidth: 1)
+                                        )
+                                )
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.black.opacity(0.3))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.branchrAccent.opacity(0.3), lineWidth: 1)
-                                    )
-                            )
+                            .buttonStyle(PlainButtonStyle())
                         }
                         .padding(.horizontal, 16)
                     }
@@ -143,13 +153,13 @@ struct EnhancedRideSummaryView: View {
                     }) {
                         Text("Done")
                             .font(.headline)
-                            .foregroundColor(.black)
+                            .foregroundColor(theme.isDarkMode ? .black : .black)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(
                                 RoundedRectangle(cornerRadius: 14)
-                                    .fill(Color.branchrAccent)
-                                    .shadow(color: Color.branchrAccent.opacity(0.3), radius: 8, x: 0, y: 4)
+                                    .fill(theme.brandYellow)
+                                    .shadow(color: theme.brandYellow.opacity(0.3), radius: 8, x: 0, y: 4)
                             )
                     }
                     .padding(.horizontal, 16)
@@ -159,6 +169,10 @@ struct EnhancedRideSummaryView: View {
         }
         .preferredColorScheme(.dark)
         .opacity(showFadeIn ? 1.0 : 0.0)
+        .sheet(isPresented: $showRideInsights) {
+            RideInsightsView()
+                .presentationDetents([.large])
+        }
         .onAppear {
             // Check if ride is already saved
             isSaved = rideDataManager.rides.contains { $0.id == ride.id }
@@ -219,34 +233,34 @@ struct PrimaryStatCard: View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.title3)
-                .foregroundColor(Color.branchrAccent)
+                .foregroundColor(theme.accentColor)
             
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(value)
                     .font(.headline.bold())
-                    .foregroundColor(.white)
+                    .foregroundColor(theme.primaryText)
                 
                 if let unit = unit {
                     Text(unit)
                         .font(.caption)
-                        .foregroundColor(Color.branchrAccent.opacity(0.7))
+                        .foregroundColor(theme.accentColor.opacity(0.7))
                 }
             }
             
             Text(label)
                 .font(.caption)
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundColor(theme.secondaryText)
         }
         .frame(maxWidth: .infinity)
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.black)
+                .fill(theme.cardBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.branchrAccent.opacity(0.5), lineWidth: 1)
+                        .stroke(theme.accentColor.opacity(0.5), lineWidth: 1)
                 )
-                .shadow(color: Color.branchrAccent.opacity(0.2), radius: 8, x: 0, y: 4)
+                .shadow(color: theme.accentColor.opacity(0.2), radius: 8, x: 0, y: 4)
         )
     }
 }
@@ -257,22 +271,23 @@ struct InsightCard: View {
     let icon: String
     let title: String
     let value: String
+    @ObservedObject private var theme = ThemeManager.shared
     
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.title3)
-                .foregroundColor(Color.branchrAccent)
+                .foregroundColor(theme.accentColor)
                 .frame(width: 32)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(theme.secondaryText)
                 
                 Text(value)
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(theme.primaryText)
             }
             
             Spacer()
@@ -280,12 +295,12 @@ struct InsightCard: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.black)
+                .fill(theme.cardBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.branchrAccent.opacity(0.3), lineWidth: 1)
+                        .stroke(theme.accentColor.opacity(0.3), lineWidth: 1)
                 )
-                .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+                .shadow(color: theme.primaryBackground.opacity(0.3), radius: 4, x: 0, y: 2)
         )
     }
 }
