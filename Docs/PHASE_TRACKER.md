@@ -46,6 +46,10 @@ This file tracks all completed phases in chronological order.
 - Phase 35.9 – Critical Fixes (✅ completed)
 - Phase 35.10 – Group Ride Button Removal (✅ completed)
 - Phase 35.11 – Auto Start Fix (✅ completed)
+- Phase 36 – Real Ride Metrics & Route Visualization (✅ completed)
+- Phase 37 – Calendar Ride Detail Route Preview & Theme Polish (✅ completed)
+- Phase 38 – Ride Insights Charts & Weekly Stats (✅ completed)
+- Phase 38B – RideInsightsView duplication fix & build cleanup (✅ completed)
 
 ---
 
