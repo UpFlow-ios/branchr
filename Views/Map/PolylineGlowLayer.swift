@@ -17,17 +17,16 @@ import MapKit
 class RainbowPolylineRenderer: MKPolylineRenderer {
     
     override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
-        // Phase 35.7: Enhanced saturation for more vibrant rainbow
-        let baseColors: [UIColor] = [
-            .systemRed,
-            .systemOrange,
-            .systemYellow,
-            .systemGreen,
-            .systemCyan,
-            .systemBlue,
-            .systemPurple
+        // VIBRANT rainbow colors for the route polyline (not pastel)
+        let vibrantRainbowColors: [UIColor] = [
+            UIColor(red: 1.00, green: 0.15, blue: 0.35, alpha: 1.0), // hot pink / red
+            UIColor(red: 1.00, green: 0.55, blue: 0.00, alpha: 1.0), // orange
+            UIColor(red: 1.00, green: 0.92, blue: 0.00, alpha: 1.0), // bright yellow
+            UIColor(red: 0.00, green: 0.85, blue: 0.35, alpha: 1.0), // bright green
+            UIColor(red: 0.00, green: 0.45, blue: 1.00, alpha: 1.0), // strong blue
+            UIColor(red: 0.55, green: 0.20, blue: 1.00, alpha: 1.0)  // purple
         ]
-        let colors: [UIColor] = baseColors.map { $0.withAlphaComponent(0.95) }
+        let colors = vibrantRainbowColors
         
         // Create gradient
         let colorSpace = CGColorSpaceCreateDeviceRGB()
@@ -37,8 +36,15 @@ class RainbowPolylineRenderer: MKPolylineRenderer {
             return
         }
         
-        // Save context state
+        // Ensure we have a path before touching the context state
+        guard let path = self.path else {
+            super.draw(mapRect, zoomScale: zoomScale, in: context)
+            return
+        }
+        
+        // Save context state for primary gradient stroke
         context.saveGState()
+        defer { context.restoreGState() }
         
         // Set line properties
         context.setLineWidth(lineWidth / zoomScale)
@@ -46,10 +52,6 @@ class RainbowPolylineRenderer: MKPolylineRenderer {
         context.setLineJoin(.round)
         
         // Draw the polyline path
-        guard let path = self.path else {
-            super.draw(mapRect, zoomScale: zoomScale, in: context)
-            return
-        }
         context.addPath(path)
         context.replacePathWithStrokedPath()
         context.clip()
@@ -67,15 +69,12 @@ class RainbowPolylineRenderer: MKPolylineRenderer {
             options: [.drawsBeforeStartLocation, .drawsAfterEndLocation]
         )
         
-        // Restore context
-        context.restoreGState()
-        
         // Add outer glow effect
         context.saveGState()
         context.setLineWidth((lineWidth + 4) / zoomScale)
         context.setLineCap(.round)
         context.setLineJoin(.round)
-        context.addPath(self.path)
+        context.addPath(path)
         context.setStrokeColor(UIColor.white.withAlphaComponent(0.3).cgColor)
         context.setShadow(offset: .zero, blur: 8, color: UIColor.white.withAlphaComponent(0.5).cgColor)
         context.strokePath()

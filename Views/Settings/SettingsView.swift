@@ -12,9 +12,11 @@ struct SettingsView: View {
     @ObservedObject var modeManager = ModeManager.shared
     @ObservedObject var cloudSync = RideCloudSyncService.shared
     @ObservedObject var watchService = WatchConnectivityService.shared
+    @ObservedObject var userPreferences = UserPreferenceManager.shared
     @State private var showingModeSelection = false
     @State private var showingSafetySettings = false
     @State private var showingVoiceSettings = false
+    @State private var showingCalendarSettings = false
     
     var body: some View {
         // Phase 30: Static Settings View (no ScrollView, no logo)
@@ -39,6 +41,27 @@ struct SettingsView: View {
                         }
                         .foregroundColor(theme.primaryText)
                     }
+                }
+                
+                // Phase 40: Calendar & Export Section
+                SectionCard(title: "Calendar & Export") {
+                    Button(action: {
+                        showingCalendarSettings = true
+                    }) {
+                        HStack {
+                            Image(systemName: "calendar")
+                            Text("Ride Calendar")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                        }
+                        .foregroundColor(theme.primaryText)
+                    }
+                }
+                
+                // Phase 41: Ride Goals Section
+                SectionCard(title: "Ride Goals") {
+                    weeklyGoalEditor
                 }
                 
                 // Theme Settings
@@ -96,6 +119,9 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showingVoiceSettings) {
             VoiceSettingsView()
+        }
+        .sheet(isPresented: $showingCalendarSettings) {
+            CalendarSettingsView()
         }
     }
     
@@ -189,6 +215,36 @@ struct SettingsView: View {
                 Image(systemName: "applewatch.slash")
                     .foregroundColor(theme.secondaryText)
             }
+        }
+    }
+    
+    // MARK: - Phase 41: Weekly Goal Editor
+    private var weeklyGoalEditor: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Weekly Distance Goal")
+                    .foregroundColor(theme.primaryText)
+                Spacer()
+                Text("\(String(format: "%.0f", userPreferences.weeklyDistanceGoalMiles)) mi")
+                    .font(.subheadline.bold())
+                    .foregroundColor(theme.accentColor)
+            }
+            
+            Stepper(
+                value: Binding(
+                    get: { userPreferences.weeklyDistanceGoalMiles },
+                    set: { newValue in
+                        userPreferences.weeklyDistanceGoalMiles = newValue
+                    }
+                ),
+                in: 5...200,
+                step: 5
+            ) {
+                Text("Adjust goal")
+                    .font(.caption)
+                    .foregroundColor(theme.secondaryText)
+            }
+            .tint(theme.accentColor)
         }
     }
 }

@@ -29,25 +29,29 @@ struct branchrApp: App {
         setenv("OS_ACTIVITY_MODE", "disable", 1)
         #endif
         
-        // Phase 34: Enable Firebase Auth persistence and auto-sign-in
-        // Check if user is already signed in
-        if let currentUser = Auth.auth().currentUser {
-            print("✅ User session restored: \(currentUser.uid)")
-            // Load profile from Firebase
-            FirebaseProfileService.shared.fetchProfile(uid: currentUser.uid)
-        } else {
-            // Phase 34G: Sign in anonymously with Firebase config guard
-            print("⚠️ No existing session, signing in anonymously...")
-            signInAnonymouslyWithGuard()
+        // Phase 39: Defer heavy initialization to avoid blocking app launch
+        // This ensures the app UI appears quickly even if Firebase is slow
+        Task { @MainActor in
+            // Phase 34: Enable Firebase Auth persistence and auto-sign-in
+            // Check if user is already signed in
+            if let currentUser = Auth.auth().currentUser {
+                print("✅ User session restored: \(currentUser.uid)")
+                // Load profile from Firebase
+                FirebaseProfileService.shared.fetchProfile(uid: currentUser.uid)
+            } else {
+                // Phase 34G: Sign in anonymously with Firebase config guard
+                print("⚠️ No existing session, signing in anonymously...")
+                branchrApp.signInAnonymouslyWithGuard()
+            }
+            
+            // Phase 28: Configure FCM notifications
+            FCMService.shared.configureNotifications()
+            print("☁️ Firebase + FCM configured")
+            
+            // Validate MusicKit access on app launch
+            // This will configure MusicKit and request user authorization
+            MusicKitService.validateMusicKitAccess()
         }
-        
-        // Phase 28: Configure FCM notifications
-        FCMService.shared.configureNotifications()
-        print("☁️ Firebase + FCM configured")
-        
-        // Validate MusicKit access on app launch
-        // This will configure MusicKit and request user authorization
-        MusicKitService.validateMusicKitAccess()
     }
     
     // MARK: - Phase 35: Session Recovery
@@ -81,7 +85,8 @@ struct branchrApp: App {
     // MARK: - Phase 34G: Anonymous Sign-In with Firebase Guard
     
     /// Sign in anonymously, ensuring Firebase is configured first (Phase 34H: Hardened with retry)
-    private func signInAnonymouslyWithGuard() {
+    /// Phase 39: Made static so it can be called from init() Task
+    private static func signInAnonymouslyWithGuard() {
         let attempt: () -> Void = {
             Auth.auth().signInAnonymously { result, error in
                 if let error = error {

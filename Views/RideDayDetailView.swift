@@ -15,6 +15,7 @@ struct RideDayDetailView: View {
     let rides: [RideRecord]
     let rideDataManager: RideDataManager
     
+    @ObservedObject private var theme = ThemeManager.shared
     @Environment(\.dismiss) private var dismiss
     @State private var selectedRide: RideRecord?
     
@@ -46,22 +47,22 @@ struct RideDayDetailView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Header
+                    // Header - Phase 37: Use theme-aware colors
                     VStack(spacing: 8) {
                         Text(formattedDate)
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(.white)
+                            .foregroundColor(theme.primaryText)
                             .multilineTextAlignment(.center)
                         
                         if rides.isEmpty {
                             Text("No rides recorded")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(theme.secondaryText)
                         } else {
                             Text("\(rides.count) ride\(rides.count == 1 ? "" : "s")")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(theme.secondaryText)
                         }
                     }
                     .padding(.top)
@@ -87,14 +88,14 @@ struct RideDayDetailView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 32)
             }
-            .background(Color.black)
+            .background(theme.primaryBackground.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") {
                         dismiss()
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(theme.accentColor)
                 }
             }
         }
@@ -115,24 +116,25 @@ struct StatRowView: View {
     let icon: String
     let title: String
     let value: String
+    @ObservedObject private var theme = ThemeManager.shared
     
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.title3)
-                .foregroundColor(.green)
+                .foregroundColor(theme.accentColor)
                 .frame(width: 30)
             
             Text(title)
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(theme.secondaryText)
             
             Spacer()
             
             Text(value)
                 .font(.headline)
                 .fontWeight(.semibold)
-                .foregroundColor(.white)
+                .foregroundColor(theme.primaryText)
         }
     }
 }
@@ -140,18 +142,19 @@ struct StatRowView: View {
 // MARK: - Day Summary Card
 struct DaySummaryCard: View {
     let stats: DayStats
+    @ObservedObject private var theme = ThemeManager.shared
     
     var body: some View {
         VStack(spacing: 16) {
             HStack {
                 Image(systemName: "calendar.badge.clock")
                     .font(.title2)
-                    .foregroundColor(.green)
+                    .foregroundColor(theme.accentColor)
                 
                 Text("Day Summary")
                     .font(.headline)
                     .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(theme.primaryText)
                 
                 Spacer()
             }
@@ -183,7 +186,7 @@ struct DaySummaryCard: View {
             }
         }
         .padding(20)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
     }
 }
 
@@ -191,6 +194,7 @@ struct DaySummaryCard: View {
 struct RideRowView: View {
     let ride: RideRecord
     let onTap: () -> Void
+    @ObservedObject private var theme = ThemeManager.shared
     
     var body: some View {
         Button(action: onTap) {
@@ -200,11 +204,11 @@ struct RideRowView: View {
                     Text(timeFormatter.string(from: ride.date))
                         .font(.headline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.white)
+                        .foregroundColor(theme.primaryText)
                     
                     Text(ride.formattedDuration)
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(theme.secondaryText)
                 }
                 .frame(width: 80, alignment: .leading)
                 
@@ -213,11 +217,11 @@ struct RideRowView: View {
                     Text(ride.formattedDistance)
                         .font(.body)
                         .fontWeight(.semibold)
-                        .foregroundColor(.white)
+                        .foregroundColor(theme.primaryText)
                     
                     Text(ride.formattedAverageSpeed)
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(theme.secondaryText)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
@@ -226,21 +230,21 @@ struct RideRowView: View {
                     Text(ride.formattedCalories)
                         .font(.body)
                         .fontWeight(.semibold)
-                        .foregroundColor(.orange)
+                        .foregroundColor(theme.accentColor)
                     
                     Text("burned")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(theme.secondaryText)
                 }
                 .frame(width: 80, alignment: .trailing)
                 
                 // Arrow
                 Image(systemName: "chevron.right")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(theme.secondaryText)
             }
             .padding(16)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -254,24 +258,26 @@ struct RideRowView: View {
 
 // MARK: - Empty State View
 struct EmptyStateView: View {
+    @ObservedObject private var theme = ThemeManager.shared
+    
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "bicycle")
                 .font(.system(size: 48))
-                .foregroundColor(.gray)
+                .foregroundColor(theme.secondaryText)
             
             Text("No Rides Today")
                 .font(.title2)
                 .fontWeight(.semibold)
-                .foregroundColor(.white)
+                .foregroundColor(theme.primaryText)
             
             Text("Start tracking your rides to see them here")
                 .font(.body)
-                .foregroundColor(.gray)
+                .foregroundColor(theme.secondaryText)
                 .multilineTextAlignment(.center)
         }
         .padding(40)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
     }
 }
 

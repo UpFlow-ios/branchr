@@ -182,6 +182,187 @@ class RideDataManager: ObservableObject {
             totalDuration: totalDuration
         )
     }
+    
+    // MARK: - Phase 38: Trend Data & Aggregation
+    
+    /// Compute daily trend data for the last N days
+    /// Groups rides by calendar day and aggregates distance, duration, and average speed
+    /// Returns points sorted by date ascending, including days with zero rides
+    func recentDailyTrend(lastNDays: Int = 7) -> [RideTrendPoint] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        
+        // Generate all days in the range (including days with no rides)
+        var trendPoints: [RideTrendPoint] = []
+        
+        for dayOffset in (0..<lastNDays).reversed() {
+            guard let day = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            let dayStart = calendar.startOfDay(for: day)
+            let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
+            
+            // Filter rides for this day
+            let dayRides = rides.filter { ride in
+                ride.date >= dayStart && ride.date < dayEnd
+            }
+            
+            // Aggregate metrics
+            let totalDistanceMeters = dayRides.reduce(0.0) { $0 + $1.distance }
+            let totalDistanceMiles = totalDistanceMeters / 1609.34
+            let totalDurationSeconds = dayRides.reduce(0.0) { $0 + $1.duration }
+            
+            // Calculate average speed: total distance / total time (convert to mph)
+            let averageSpeedMph: Double
+            if totalDurationSeconds > 0 && totalDistanceMiles > 0 {
+                let avgSpeedMps = totalDistanceMeters / totalDurationSeconds
+                averageSpeedMph = avgSpeedMps * 2.237 // m/s to mph
+            } else {
+                averageSpeedMph = 0.0
+            }
+            
+            trendPoints.append(RideTrendPoint(
+                date: dayStart,
+                totalDistanceMiles: totalDistanceMiles,
+                totalDurationSeconds: totalDurationSeconds,
+                averageSpeedMph: averageSpeedMph
+            ))
+        }
+        
+        print("📊 RideDataManager: computed daily trend for \(trendPoints.count) days")
+        return trendPoints
+    }
+    
+    /// Compute weekly summary comparing this week vs last week
+    /// Uses calendar weeks starting on Sunday (standard iOS calendar)
+    /// Returns (thisWeekMiles, lastWeekMiles)
+    func weeklySummary() -> (thisWeekMiles: Double, lastWeekMiles: Double) {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // Get start of this week (Sunday)
+        let thisWeekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today))!
+        let thisWeekEnd = calendar.date(byAdding: .day, value: 7, to: thisWeekStart)!
+        
+        // Get start of last week
+        let lastWeekStart = calendar.date(byAdding: .day, value: -7, to: thisWeekStart)!
+        let lastWeekEnd = thisWeekStart
+        
+        // Filter rides for this week
+        let thisWeekRides = rides.filter { ride in
+            ride.date >= thisWeekStart && ride.date < thisWeekEnd
+        }
+        let thisWeekMiles = thisWeekRides.reduce(0.0) { $0 + ($1.distance / 1609.34) }
+        
+        // Filter rides for last week
+        let lastWeekRides = rides.filter { ride in
+            ride.date >= lastWeekStart && ride.date < lastWeekEnd
+        }
+        let lastWeekMiles = lastWeekRides.reduce(0.0) { $0 + ($1.distance / 1609.34) }
+        
+        print("📊 RideDataManager: weekly summary – thisWeek=\(String(format: "%.2f", thisWeekMiles)), lastWeek=\(String(format: "%.2f", lastWeekMiles))")
+        
+        return (thisWeekMiles, lastWeekMiles)
+    }
+    
+    // MARK: - Phase 41: Weekly Goal & Streak Helpers
+    
+    /// Compute total distance for the current calendar week (starting Sunday)
+    /// - Returns: Total distance in miles, rounded to 2 decimal places
+    func totalDistanceThisWeek() -> Double {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // Get start of this week (Sunday)
+        let thisWeekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today))!
+        let thisWeekEnd = calendar.date(byAdding: .day, value: 7, to: thisWeekStart)!
+        
+        // Filter rides for this week
+        let thisWeekRides = rides.filter { ride in
+            ride.date >= thisWeekStart && ride.date < thisWeekEnd
+        }
+        
+        let totalMeters = thisWeekRides.reduce(0.0) { $0 + $1.distance }
+        let totalMiles = totalMeters / 1609.34
+        let rounded = (totalMiles * 100).rounded() / 100 // Round to 2 decimal places
+        
+        print("📊 RideDataManager: totalDistanceThisWeek = \(String(format: "%.2f", rounded)) mi")
+        return rounded
+    }
+    
+    /// Compute consecutive days with at least one ride, ending on today
+    /// - Returns: Number of consecutive days (0 if no recent rides)
+    func currentStreakDays() -> Int {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        
+        // Group rides by day
+        var ridesByDay: [Date: [RideRecord]] = [:]
+        for ride in rides {
+            let day = calendar.startOfDay(for: ride.date)
+            ridesByDay[day, default: []].append(ride)
+        }
+        
+        // Count consecutive days backward from today
+        var streak = 0
+        var currentDay = today
+        
+        while true {
+            if ridesByDay[currentDay] != nil && !ridesByDay[currentDay]!.isEmpty {
+                streak += 1
+                // Move to previous day
+                if let previousDay = calendar.date(byAdding: .day, value: -1, to: currentDay) {
+                    currentDay = previousDay
+                } else {
+                    break
+                }
+            } else {
+                // No rides on this day - streak ends
+                break
+            }
+        }
+        
+        print("📊 RideDataManager: currentStreakDays = \(streak)")
+        return streak
+    }
+    
+    /// Compute the longest streak of consecutive days with at least one ride in entire history
+    /// - Returns: Number of days in the best streak (0 if no rides)
+    func bestStreakDays() -> Int {
+        let calendar = Calendar.current
+        
+        // Group rides by day
+        var ridesByDay: Set<Date> = []
+        for ride in rides {
+            let day = calendar.startOfDay(for: ride.date)
+            ridesByDay.insert(day)
+        }
+        
+        guard !ridesByDay.isEmpty else {
+            return 0
+        }
+        
+        // Sort days chronologically
+        let sortedDays = ridesByDay.sorted()
+        
+        // Find longest consecutive sequence
+        var bestStreak = 1
+        var currentStreak = 1
+        
+        for i in 1..<sortedDays.count {
+            // Check if this day is exactly one day after the previous day
+            if let daysBetween = calendar.dateComponents([.day], from: sortedDays[i - 1], to: sortedDays[i]).day,
+               daysBetween == 1 {
+                // Consecutive day - continue streak
+                currentStreak += 1
+                bestStreak = max(bestStreak, currentStreak)
+            } else {
+                // Not consecutive - reset streak
+                currentStreak = 1
+            }
+        }
+        
+        print("📊 RideDataManager: bestStreakDays = \(bestStreak)")
+        return bestStreak
+    }
 }
 
 // MARK: - Phase 34: Day Ride Summary
@@ -205,6 +386,24 @@ struct DayRideSummary {
         } else {
             return "\(minutes)m"
         }
+    }
+}
+
+// MARK: - Phase 38: Ride Trend Point
+
+struct RideTrendPoint: Identifiable {
+    let id: UUID
+    let date: Date // normalized to the day
+    let totalDistanceMiles: Double
+    let totalDurationSeconds: TimeInterval
+    let averageSpeedMph: Double // distance / time for that day (or 0 if time == 0)
+    
+    init(id: UUID = UUID(), date: Date, totalDistanceMiles: Double, totalDurationSeconds: TimeInterval, averageSpeedMph: Double) {
+        self.id = id
+        self.date = date
+        self.totalDistanceMiles = totalDistanceMiles
+        self.totalDurationSeconds = totalDurationSeconds
+        self.averageSpeedMph = averageSpeedMph
     }
 }
 

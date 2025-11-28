@@ -35,6 +35,7 @@ struct VoiceSettingsView: View {
                         headerSection
                         voiceAssistantSection
                         voiceCommandsSection
+                        voiceCoachSection // Phase 39
                         audioAnnouncementsSection
                         musicSyncSection
                         hapticFeedbackSection
@@ -72,7 +73,7 @@ struct VoiceSettingsView: View {
         VStack(spacing: 12) {
             Image(systemName: "mic.fill")
                 .font(.system(size: 48))
-                .foregroundColor(.blue)
+                .foregroundColor(theme.accentColor)
             
             Text("Voice Assistant")
                 .font(.title2)
@@ -85,8 +86,7 @@ struct VoiceSettingsView: View {
                 .multilineTextAlignment(.center)
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(16)
+        .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
     }
     
     // MARK: - Voice Assistant Section
@@ -94,18 +94,18 @@ struct VoiceSettingsView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Voice Assistant")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(theme.primaryText)
             
             Toggle("Enable Voice Assistant", isOn: $preferenceManager.voiceAssistantEnabled)
-                .toggleStyle(SwitchToggleStyle(tint: .blue))
-                .foregroundColor(.white)
+                .toggleStyle(SwitchToggleStyle(tint: theme.accentColor))
+                .foregroundColor(theme.primaryText)
             
             if preferenceManager.voiceAssistantEnabled {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Features:")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.gray)
+                        .foregroundColor(theme.secondaryText)
                     
                     FeatureRow(icon: "speaker.wave.2.fill", text: "Real-time distance announcements")
                     FeatureRow(icon: "speedometer", text: "Speed and progress updates")
@@ -115,8 +115,7 @@ struct VoiceSettingsView: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(16)
+        .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
     }
     
     // MARK: - Voice Commands Section
@@ -124,18 +123,18 @@ struct VoiceSettingsView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Voice Commands")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(theme.primaryText)
             
             Toggle("Enable Voice Commands", isOn: $preferenceManager.voiceCommandsEnabled)
-                .toggleStyle(SwitchToggleStyle(tint: .green))
-                .foregroundColor(.white)
+                .toggleStyle(SwitchToggleStyle(tint: theme.accentColor))
+                .foregroundColor(theme.primaryText)
             
             if preferenceManager.voiceCommandsEnabled {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Available Commands:")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.gray)
+                        .foregroundColor(theme.secondaryText)
                     
                     CommandRow(command: "Pause tracking", description: "Pause your ride")
                     CommandRow(command: "Resume ride", description: "Continue your ride")
@@ -148,14 +147,42 @@ struct VoiceSettingsView: View {
                     Button("Grant Microphone Permission") {
                         requestMicrophonePermission()
                     }
-                    .foregroundColor(.orange)
+                    .foregroundColor(theme.accentColor)
                     .padding(.top, 8)
                 }
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(16)
+        .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
+    }
+    
+    // MARK: - Voice Coach Section (Phase 39)
+    private var voiceCoachSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Voice Coach")
+                .font(.headline)
+                .foregroundColor(theme.primaryText)
+            
+            Toggle("Enable Voice Coach ride updates", isOn: $preferenceManager.voiceCoachEnabled)
+                .toggleStyle(SwitchToggleStyle(tint: theme.accentColor))
+                .foregroundColor(theme.primaryText)
+            
+            if preferenceManager.voiceCoachEnabled {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Features:")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(theme.secondaryText)
+                    
+                    FeatureRow(icon: "clock.fill", text: "Periodic updates every 2 minutes")
+                    FeatureRow(icon: "location.fill", text: "Distance updates every 0.5 miles")
+                    FeatureRow(icon: "speedometer", text: "Real-time distance, time, and speed")
+                }
+                .padding(.leading, 16)
+            }
+        }
+        .padding()
+        .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
     }
     
     // MARK: - Audio Announcements Section
@@ -163,21 +190,20 @@ struct VoiceSettingsView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Audio Announcements")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(theme.primaryText)
             
             Toggle("Enable Audio Announcements", isOn: $preferenceManager.audioAnnouncementsEnabled)
-                .toggleStyle(SwitchToggleStyle(tint: .purple))
-                .foregroundColor(.white)
+                .toggleStyle(SwitchToggleStyle(tint: theme.accentColor))
+                .foregroundColor(theme.primaryText)
             
             if preferenceManager.audioAnnouncementsEnabled {
                 Text("Hear announcements every 0.5 miles during your ride")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(theme.secondaryText)
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(16)
+        .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
     }
     
     // MARK: - Music Sync Section
@@ -185,21 +211,20 @@ struct VoiceSettingsView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Music Sync")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(theme.primaryText)
             
             Toggle("Enable Music Sync", isOn: $preferenceManager.musicSyncEnabled)
-                .toggleStyle(SwitchToggleStyle(tint: .orange))
-                .foregroundColor(.white)
+                .toggleStyle(SwitchToggleStyle(tint: theme.accentColor))
+                .foregroundColor(theme.primaryText)
             
             if preferenceManager.musicSyncEnabled {
                 Text("Sync music playback with group rides")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(theme.secondaryText)
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(16)
+        .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
     }
     
     // MARK: - Haptic Feedback Section
@@ -207,21 +232,20 @@ struct VoiceSettingsView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Haptic Feedback")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(theme.primaryText)
             
             Toggle("Enable Haptic Feedback", isOn: $preferenceManager.hapticFeedbackEnabled)
-                .toggleStyle(SwitchToggleStyle(tint: .pink))
-                .foregroundColor(.white)
+                .toggleStyle(SwitchToggleStyle(tint: theme.accentColor))
+                .foregroundColor(theme.primaryText)
             
             if preferenceManager.hapticFeedbackEnabled {
                 Text("Feel vibrations for ride milestones and notifications")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(theme.secondaryText)
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(16)
+        .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
     }
     
     // MARK: - Reset Section
@@ -230,45 +254,43 @@ struct VoiceSettingsView: View {
             Button("Reset to Defaults") {
                 preferenceManager.resetToDefaults()
             }
-            .foregroundColor(.red)
+            .foregroundColor(theme.errorColor)
             .padding()
             .frame(maxWidth: .infinity)
-            .background(Color.red.opacity(0.1))
-            .cornerRadius(12)
+            .background(theme.errorColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(16)
+        .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
     }
     
     // MARK: - Helper Views
     private func FeatureRow(icon: String, text: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .foregroundColor(.blue)
+                .foregroundColor(theme.accentColor)
                 .frame(width: 16)
             
             Text(text)
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(theme.secondaryText)
         }
     }
     
     private func CommandRow(command: String, description: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "mic.fill")
-                .foregroundColor(.green)
+                .foregroundColor(theme.accentColor)
                 .frame(width: 16)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("\"\(command)\"")
                     .font(.subheadline)
                     .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(theme.primaryText)
                 
                 Text(description)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(theme.secondaryText)
             }
         }
     }

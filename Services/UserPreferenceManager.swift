@@ -81,6 +81,30 @@ class UserPreferenceManager: ObservableObject {
         }
     }
     
+    // Phase 39: Voice Coach ride updates
+    @Published var voiceCoachEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(voiceCoachEnabled, forKey: "voiceCoachEnabled")
+            print("Branchr: Voice Coach preference updated: \(voiceCoachEnabled)")
+        }
+    }
+    
+    // Phase 40: Preferred calendar for ride events
+    @Published var preferredCalendarIdentifier: String? {
+        didSet {
+            UserDefaults.standard.set(preferredCalendarIdentifier, forKey: "preferredCalendarIdentifier")
+            print("Branchr: Preferred calendar identifier updated: \(preferredCalendarIdentifier ?? "nil")")
+        }
+    }
+    
+    // Phase 41: Weekly distance goal in miles
+    @Published var weeklyDistanceGoalMiles: Double {
+        didSet {
+            UserDefaults.standard.set(weeklyDistanceGoalMiles, forKey: "weeklyDistanceGoalMiles")
+            print("Branchr: Weekly distance goal updated: \(String(format: "%.1f", weeklyDistanceGoalMiles)) mi")
+        }
+    }
+    
     // MARK: - Private Properties
     private let userDefaults = UserDefaults.standard
     
@@ -97,6 +121,12 @@ class UserPreferenceManager: ObservableObject {
         self.distanceUpdatesEnabled = userDefaults.object(forKey: "distanceUpdatesEnabled") as? Bool ?? true
         self.paceOrSpeedUpdatesEnabled = userDefaults.object(forKey: "paceOrSpeedUpdatesEnabled") as? Bool ?? true
         self.completionSummaryEnabled = userDefaults.object(forKey: "completionSummaryEnabled") as? Bool ?? true
+        // Phase 39: Voice Coach (default ON)
+        self.voiceCoachEnabled = userDefaults.object(forKey: "voiceCoachEnabled") as? Bool ?? true
+        // Phase 40: Preferred calendar (default nil - uses system default)
+        self.preferredCalendarIdentifier = userDefaults.string(forKey: "preferredCalendarIdentifier")
+        // Phase 41: Weekly distance goal (default 25.0 miles)
+        self.weeklyDistanceGoalMiles = userDefaults.object(forKey: "weeklyDistanceGoalMiles") as? Double ?? 25.0
         
         print("Branchr UserPreferenceManager initialized")
         print("Branchr: Voice assistant enabled: \(voiceAssistantEnabled)")
@@ -114,6 +144,9 @@ class UserPreferenceManager: ObservableObject {
         musicSyncEnabled = true
         hapticFeedbackEnabled = true
         darkModeEnabled = false
+        voiceCoachEnabled = true // Phase 39
+        preferredCalendarIdentifier = nil // Phase 40: Reset to system default
+        weeklyDistanceGoalMiles = 25.0 // Phase 41: Reset to default goal
         
         print("Branchr: All preferences reset to defaults")
     }

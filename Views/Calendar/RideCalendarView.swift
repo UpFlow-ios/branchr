@@ -23,6 +23,7 @@ struct RideCalendarView: View {
     @State private var showNoRidesAlert = false
     @State private var noRidesMessage: String? = nil
     @State private var refreshTrigger = UUID()
+    @State private var showRideInsights = false // Phase 38: Ride Insights sheet
     
     let calendar = Calendar.current
     let columns = Array(repeating: GridItem(.flexible()), count: 7)
@@ -73,6 +74,17 @@ struct RideCalendarView: View {
             .background(theme.primaryBackground.ignoresSafeArea())
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showRideInsights = true
+                        print("📊 RideCalendarView: opening RideInsightsView")
+                    } label: {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .foregroundColor(theme.accentColor)
+                    }
+                }
+            }
             .sheet(isPresented: $showStatsSheet) {
                 if let day = selectedDay,
                    let summary = rideDataManager.summary(for: day) {
@@ -91,6 +103,10 @@ struct RideCalendarView: View {
             }
             .onAppear {
                 rideDataManager.rides = rideDataManager.loadRides()
+            }
+            .sheet(isPresented: $showRideInsights) {
+                RideInsightsView()
+                    .presentationDetents([.large])
             }
             .onReceive(NotificationCenter.default.publisher(for: .branchrRidesDidChange)) { _ in
                 // Refresh rides when notification is received
@@ -255,8 +271,12 @@ struct DayStatsSheet: View {
             }
             .sheet(isPresented: $showRideSummary) {
                 if let ride = selectedRide {
-                    EnhancedRideSummaryView(ride: ride)
+                    // Phase 37: Show RideDetailView instead of EnhancedRideSummaryView for calendar rides
+                    RideDetailView(ride: ride)
                         .presentationDetents([.large])
+                        .onAppear {
+                            print("📆 RideCalendarView: selected ride id \(ride.id)")
+                        }
                 }
             }
         }

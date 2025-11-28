@@ -128,6 +128,42 @@ final class ThemeManager: ObservableObject {
         isDarkMode ? Color.red : Color.black
     }
     
+    // MARK: - Phase 41E: Weekly Goal Gradient Colors
+    /// Warm yellow gradient start (close to brand yellow)
+    var goalGradientStart: Color {
+        Color(hex: "#FFD500") // Brand yellow
+    }
+    
+    /// Soft orange/pink gradient middle
+    var goalGradientMid: Color {
+        Color(hex: "#FF6B6B") // Soft coral/pink
+    }
+    
+    /// Violet/purple gradient end
+    var goalGradientEnd: Color {
+        Color(hex: "#9B59B6") // Soft purple
+    }
+    
+    // MARK: - Phase 41E: Neutral Accent Color
+    /// Neutral gray accent for tertiary UI elements (tracks, borders, etc.)
+    /// Light mode: cooler light grey for tracks/borders
+    /// Dark mode: slightly lighter gray than primary background for layered cards
+    var neutralAccent: Color {
+        isDarkMode 
+            ? Color(red: 0.18, green: 0.18, blue: 0.18) // Lighter than black for card separation
+            : Color(red: 0.86, green: 0.86, blue: 0.90) // Cooler light grey for tracks/borders
+    }
+    
+    // MARK: - Phase 41F: Surface Background
+    /// Surface background for cards that float above the primary background
+    /// Light mode: near-black to match primary action buttons
+    /// Dark mode: slightly lighter than primaryBackground for card separation
+    var surfaceBackground: Color {
+        isDarkMode
+            ? Color(red: 0.12, green: 0.12, blue: 0.12) // Slightly lighter than black for cards
+            : Color(red: 0.04, green: 0.04, blue: 0.04) // Near-black for cards in light mode (Phase 41I: matches action buttons)
+    }
+    
     // MARK: - Border Colors
     var borderColor: Color {
         isDarkMode ? Color.gray.opacity(0.3) : Color.black.opacity(0.2)

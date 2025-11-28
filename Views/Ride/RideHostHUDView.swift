@@ -22,94 +22,153 @@ struct RideHostHUDView: View {
     @ObservedObject private var theme = ThemeManager.shared
     
     var body: some View {
-        VStack {
-            HStack(alignment: .center, spacing: 12) {
-                // Avatar
-                ZStack {
-                    if let uiImage = hostImage {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFill()
-                    } else {
-                        Circle()
-                            .fill(theme.brandYellow)
-                        Text(String(hostName.prefix(1)).uppercased())
-                            .font(.headline.bold())
-                            .foregroundColor(.black)
-                    }
-                }
-                .frame(width: 40, height: 40)
-                .clipShape(Circle())
-                .overlay(
-                    Circle()
-                        .stroke(Color.green, lineWidth: 3) // host ring
-                )
-                
-                // Host name + badge + stats
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        Text(hostName)
-                            .font(.headline)
-                            .foregroundColor(.white)
-                        
-                        Text("Host")
-                            .font(.caption.bold())
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(theme.brandYellow)
-                            .foregroundColor(.black)
-                            .clipShape(Capsule())
-                    }
-                    
-                    HStack(spacing: 10) {
-                        Label("\(String(format: "%.2f", distanceMiles)) mi", systemImage: "location.north.line")
-                        Label("\(String(format: "%.0f", speedMph)) mph", systemImage: "speedometer")
-                        Label(durationText, systemImage: "clock")
-                    }
-                    .font(.caption2)
-                    .foregroundColor(.white.opacity(0.8))
-                }
-                
-                Spacer()
-                
-                // Connection pill + music badge
+        // Phase 43: Compact horizontal pill matching Ride + Home design
+        HStack(alignment: .center, spacing: 12) {
+            // Left: Avatar
+            avatarView
+            
+            // Center-left: Host name + metrics
+            VStack(alignment: .leading, spacing: 4) {
+                // Host name + role badge
                 HStack(spacing: 8) {
-                    // Connection pill
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(isConnected ? Color.green : Color.red)
-                            .frame(width: 8, height: 8)
-                        Text(isConnected ? "Connected" : "Disconnected")
-                            .font(.caption2.bold())
-                            .foregroundColor(.white)
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(Capsule())
+                    Text(hostName)
+                        .font(.subheadline.bold())
+                        .foregroundColor(Color.white)
                     
-                    // Optional music badge
-                    if isMusicOn {
-                        HStack(spacing: 4) {
-                            Image(systemName: "music.note.list")
-                            Text("DJ On")
-                                .font(.caption2.bold())
-                        }
+                    // Host badge pill
+                    Text("Host")
+                        .font(.caption.bold())
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 3)
                         .background(theme.brandYellow)
                         .foregroundColor(.black)
                         .clipShape(Capsule())
-                    }
+                }
+                
+                // Metrics row
+                HStack(spacing: 12) {
+                    metricLabel(icon: "location.north.line", text: String(format: "%.2f mi", distanceMiles))
+                    metricLabel(icon: "speedometer", text: String(format: "%.0f mph", speedMph))
+                    metricLabel(icon: "clock", text: durationText)
                 }
             }
-            .padding(12)
+            
+            Spacer()
+            
+            // Right: Ride mode + status indicators
+            HStack(spacing: 8) {
+                // Ride mode pill
+                rideModePill
+                
+                // Music badge (if active)
+                if isMusicOn {
+                    musicBadge
+                }
+            }
         }
-        .background(Color.black.opacity(0.75))
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 6)
         .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(theme.surfaceBackground)
+                .shadow(
+                    color: theme.isDarkMode ? .clear : Color.black.opacity(0.25),
+                    radius: theme.isDarkMode ? 0 : 18,
+                    x: 0,
+                    y: theme.isDarkMode ? 0 : 8
+                )
+        )
+    }
+    
+    // Phase 43: Avatar view with host ring
+    private var avatarView: some View {
+        ZStack {
+            if let uiImage = hostImage {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Circle()
+                    .fill(theme.brandYellow)
+                Text(String(hostName.prefix(1)).uppercased())
+                    .font(.headline.bold())
+                    .foregroundColor(.black)
+            }
+        }
+        .frame(width: 44, height: 44)
+        .clipShape(Circle())
+        .overlay(
+            Circle()
+                .stroke(connectionStatusColor, lineWidth: 2.5) // Phase 43: Use connection color for ring
+        )
+    }
+    
+    // Phase 43: Metric label helper
+    private func metricLabel(icon: String, text: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundColor(theme.brandYellow)
+            Text(text)
+                .font(.caption)
+                .foregroundColor(Color.white.opacity(0.85))
+        }
+    }
+    
+    // Phase 43: Ride mode pill
+    private var rideModePill: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(connectionStatusColor)
+                .frame(width: 8, height: 8)
+            Text(connectionStatusLabel)
+                .font(.caption.bold())
+                .foregroundColor(Color.white)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.12))
+        )
+    }
+    
+    // Phase 43: Music badge
+    private var musicBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "music.note.list")
+                .font(.caption2)
+            Text("DJ")
+                .font(.caption.bold())
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(theme.brandYellow)
+        .foregroundColor(.black)
+        .clipShape(Capsule())
+    }
+    
+    // Phase 35B: Solo ride detection - show "Solo Ride" instead of "Disconnected" when ride is active
+    // Note: This view doesn't have direct access to rideService, so we rely on the isConnected prop
+    // For solo rides, the parent should pass isConnected=false, and we'll show "Solo Ride" based on context
+    // However, since we need ride state, we'll use a computed property that checks if we're in a solo context
+    private var connectionStatusLabel: String {
+        // If not connected, assume it's a solo ride (parent should handle the logic)
+        // For now, we'll show "Solo Ride" when disconnected, but this could be enhanced
+        // with an additional parameter if needed
+        if !isConnected {
+            return "Solo Ride"
+        } else {
+            return "Connected"
+        }
+    }
+    
+    private var connectionStatusColor: Color {
+        if !isConnected {
+            return Color.branchrAccent
+        } else {
+            return Color.green
+        }
     }
 }
 

@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// View displaying AI-powered ride insights and goal recommendations
-struct RideInsightsView: View {
+struct LegacyRideInsightsView: View {
     
     // MARK: - Properties
     let ride: RideRecord
@@ -286,7 +286,7 @@ struct RideInsightsView: View {
         achievementBadge: "⭐ Distance Explorer"
     )
     
-    return RideInsightsView(
+    return LegacyRideInsightsView(
         ride: sampleRide,
         insight: sampleInsight,
         achievementTracker: AchievementTracker(),

@@ -107,6 +107,10 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
             guard let self = self, granted else { return }
             self.beginActiveRide()
             VoiceFeedbackService.shared.speak("Ride started")
+            
+            // Phase 39: Start Voice Coach for periodic updates
+            VoiceCoachService.shared.start()
+            
             print("🚴 Solo ride started")
         }
     }
@@ -153,6 +157,10 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
                 self.listenForGroupRideUpdates()
                 self.listenForCommands()
                 VoiceFeedbackService.shared.speak("Group ride started")
+                
+                // Phase 39: Start Voice Coach for periodic updates
+                VoiceCoachService.shared.start()
+                
                 print("🚴 Group ride started (host)")
             }
         }
@@ -207,6 +215,10 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
         if !processingRemoteCommand {
             VoiceFeedbackService.shared.speak("Ride paused")
         }
+        
+        // Phase 39: Stop Voice Coach when paused
+        VoiceCoachService.shared.stop()
+        
         print("⏸ Ride paused")
     }
     
@@ -228,6 +240,10 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
         if !processingRemoteCommand {
             VoiceFeedbackService.shared.speak("Ride resumed")
         }
+        
+        // Phase 39: Resume Voice Coach when ride resumes
+        VoiceCoachService.shared.start()
+        
         print("▶️ Ride resumed")
     }
     
@@ -285,6 +301,9 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
         // Phase 35.1: Show summary only when actually ending (not just pausing)
         showSummary = true
         
+        // Phase 39: Stop Voice Coach when ride ends
+        VoiceCoachService.shared.stop()
+        
         if !processingRemoteCommand {
             let distanceMiles = totalDistance / 1609.34
             VoiceFeedbackService.shared.speak(String(format: "Ride ended. %.1f miles in %@", distanceMiles, formatTime(duration)))
@@ -297,6 +316,9 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
         rideState = .idle
         isGroupRide = false
         isHost = false
+        
+        // Phase 39: Stop Voice Coach when ride is reset
+        VoiceCoachService.shared.stop()
         groupRideId = nil
         hostDisplayName = nil
         showSummary = false
@@ -329,18 +351,53 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor in
             let status = manager.authorizationStatus
-            locationManager.allowsBackgroundLocationUpdates = (status == .authorizedAlways)
+            // Update background location updates based on capability and authorization
+            configureBackgroundLocationUpdates(authStatus: status)
         }
     }
     
     // MARK: Helpers
+    
+    /// Check if the app has background location capability configured
+    private func hasBackgroundLocationCapability() -> Bool {
+        guard let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] else {
+            return false
+        }
+        return modes.contains("location")
+    }
+    
+    /// Safely configure allowsBackgroundLocationUpdates based on capability and authorization
+    private func configureBackgroundLocationUpdates(authStatus: CLAuthorizationStatus) {
+        #if targetEnvironment(simulator)
+        // Simulator cannot be made backgroundable, keep this off
+        locationManager.allowsBackgroundLocationUpdates = false
+        print("📍 RideSessionManager: Background location updates DISABLED (simulator)")
+        #else
+        if hasBackgroundLocationCapability() && authStatus == .authorizedAlways {
+            locationManager.allowsBackgroundLocationUpdates = true
+            print("📍 RideSessionManager: Background location updates ENABLED")
+        } else {
+            locationManager.allowsBackgroundLocationUpdates = false
+            if !hasBackgroundLocationCapability() {
+                print("📍 RideSessionManager: Background location updates DISABLED (no UIBackgroundModes 'location')")
+            } else {
+                print("📍 RideSessionManager: Background location updates DISABLED (not authorizedAlways)")
+            }
+        }
+        #endif
+    }
+    
     private func configureLocationManager() {
         locationManager.delegate = self
         locationManager.activityType = .fitness
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = 5
         locationManager.pausesLocationUpdatesAutomatically = false
-        locationManager.allowsBackgroundLocationUpdates = locationManager.authorizationStatus == .authorizedAlways
+        
+        // IMPORTANT: Only enable background updates if the app is actually configured
+        // for background location in Info.plist / Capabilities AND user has authorizedAlways.
+        let authStatus = locationManager.authorizationStatus
+        configureBackgroundLocationUpdates(authStatus: authStatus)
     }
     
     private func beginActiveRide() {

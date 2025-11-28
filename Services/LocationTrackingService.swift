@@ -37,15 +37,51 @@ class LocationTrackingService: NSObject, ObservableObject {
         print("Branchr LocationTrackingService initialized")
     }
     
+    // MARK: - Background Location Helper
+    
+    /// Check if the app has background location capability configured
+    private func hasBackgroundLocationCapability() -> Bool {
+        guard let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] else {
+            return false
+        }
+        return modes.contains("location")
+    }
+    
+    /// Safely configure allowsBackgroundLocationUpdates based on capability and authorization
+    private func configureBackgroundLocationUpdates(authStatus: CLAuthorizationStatus) {
+        #if targetEnvironment(simulator)
+        // Simulator is not backgroundable – always disable to avoid assertion.
+        locationManager.allowsBackgroundLocationUpdates = false
+        print("LocationTrackingService: Background location updates DISABLED (simulator)")
+        #else
+        if hasBackgroundLocationCapability() && authStatus == .authorizedAlways {
+            locationManager.allowsBackgroundLocationUpdates = true
+            print("LocationTrackingService: Background location updates ENABLED (has capability + Always auth)")
+        } else {
+            locationManager.allowsBackgroundLocationUpdates = false
+            if !hasBackgroundLocationCapability() {
+                print("LocationTrackingService: UIBackgroundModes does not contain 'location'; background updates disabled.")
+            } else {
+                print("LocationTrackingService: Auth is not .authorizedAlways; background updates disabled.")
+            }
+        }
+        #endif
+    }
+    
     // MARK: - Setup
     private func setupLocationManager() {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
         locationManager.distanceFilter = 1.0 // Update every meter
         locationManager.activityType = .fitness
-        locationManager.allowsBackgroundLocationUpdates = false // For now, keep it simple
+        locationManager.pausesLocationUpdatesAutomatically = false
         
-        authorizationStatus = locationManager.authorizationStatus
+        // IMPORTANT: Only enable background updates if the app is actually configured
+        // for background location in Info.plist / Capabilities AND user has authorizedAlways.
+        let status = locationManager.authorizationStatus
+        configureBackgroundLocationUpdates(authStatus: status)
+        
+        authorizationStatus = status
     }
     
     // MARK: - Public Methods
@@ -185,6 +221,10 @@ extension LocationTrackingService: CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         DispatchQueue.main.async {
             self.authorizationStatus = status
+            print("LocationTrackingService: auth changed to \(status.rawValue)")
+            
+            // Update background location updates based on capability and authorization
+            self.configureBackgroundLocationUpdates(authStatus: status)
             
             switch status {
             case .authorizedWhenInUse, .authorizedAlways:

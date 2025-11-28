@@ -64,6 +64,11 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
     @Published var averageSpeed: Double = 0.0 // in km/h
     @Published var currentSpeed: Double = 0.0 // in km/h
     
+    // Phase 36: Published metrics for UI
+    @Published var totalDistanceMiles: Double = 0.0
+    @Published var totalDurationSeconds: TimeInterval = 0.0
+    @Published var averageSpeedMph: Double = 0.0
+    
     // MARK: - Private Properties
     
     private var locationManager = CLLocationManager()
@@ -73,11 +78,45 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
     private var timer: Timer?
     private var lastLocation: CLLocation?
     
+    // Phase 36: Store full CLLocation objects for accurate metrics calculation
+    private var routeLocations: [CLLocation] = []
+    
     // MARK: - Initialization
     
     override init() {
         super.init()
         setupLocationManager()
+    }
+    
+    // MARK: - Background Location Helper
+    
+    /// Check if the app has background location capability configured
+    private func hasBackgroundLocationCapability() -> Bool {
+        guard let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] else {
+            return false
+        }
+        return modes.contains("location")
+    }
+    
+    /// Safely configure allowsBackgroundLocationUpdates based on capability and authorization
+    private func configureBackgroundLocationUpdates(authStatus: CLAuthorizationStatus) {
+        #if targetEnvironment(simulator)
+        // Simulator cannot be made backgroundable, keep this off
+        locationManager.allowsBackgroundLocationUpdates = false
+        print("📍 RideTrackingService: Background location updates DISABLED (simulator)")
+        #else
+        if hasBackgroundLocationCapability() && authStatus == .authorizedAlways {
+            locationManager.allowsBackgroundLocationUpdates = true
+            print("📍 RideTrackingService: Background location updates ENABLED")
+        } else {
+            locationManager.allowsBackgroundLocationUpdates = false
+            if !hasBackgroundLocationCapability() {
+                print("📍 RideTrackingService: Background location updates DISABLED (no UIBackgroundModes 'location')")
+            } else {
+                print("📍 RideTrackingService: Background location updates DISABLED (not authorizedAlways)")
+            }
+        }
+        #endif
     }
     
     private func setupLocationManager() {
@@ -87,16 +126,10 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
         locationManager.distanceFilter = 5.0 // Update every 5 meters
         locationManager.pausesLocationUpdatesAutomatically = false
         
-        // Only enable background location updates if we have "Always" permission
-        // and proper background capabilities
+        // IMPORTANT: Only enable background updates if the app is actually configured
+        // for background location in Info.plist / Capabilities.
         let authStatus = locationManager.authorizationStatus
-        if authStatus == .authorizedAlways {
-            // Only set if we have Always permission
-            locationManager.allowsBackgroundLocationUpdates = true
-        } else {
-            // For "When In Use" permission, background updates are not allowed
-            locationManager.allowsBackgroundLocationUpdates = false
-        }
+        configureBackgroundLocationUpdates(authStatus: authStatus)
     }
     
     // MARK: - Public Methods
@@ -113,12 +146,16 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
             return
         }
         
-        // Reset tracking data
+        // Phase 36: Reset tracking data including route locations
         totalDistance = 0.0
         duration = 0.0
         route.removeAll()
+        routeLocations.removeAll()
         pausedTime = 0.0
         lastLocation = nil
+        totalDistanceMiles = 0.0
+        totalDurationSeconds = 0.0
+        averageSpeedMph = 0.0
         
         // Request location authorization if needed
         let status = locationManager.authorizationStatus
@@ -127,17 +164,17 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
             // Wait for authorization callback before starting
             return
         } else if status == .authorizedWhenInUse || status == .authorizedAlways {
-            // Update background location setting based on permission
-            if status == .authorizedAlways {
-                locationManager.allowsBackgroundLocationUpdates = true
-            } else {
-                locationManager.allowsBackgroundLocationUpdates = false
-            }
+            // Update background location setting based on capability and permission
+            configureBackgroundLocationUpdates(authStatus: status)
             
             rideState = .active
             startTime = Date()
             locationManager.startUpdatingLocation()
             startTimer()
+            
+            // Phase 39: Start Voice Coach for periodic updates
+            VoiceCoachService.shared.start()
+            
             print("🚴 Ride started")
         } else {
             print("⚠️ Location permission not granted")
@@ -157,6 +194,10 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
         locationManager.stopUpdatingLocation()
         stopTimer()
         lastPauseTime = Date()
+        
+        // Phase 39: Stop Voice Coach when paused
+        VoiceCoachService.shared.stop()
+        
         print("⏸ Ride paused")
     }
     
@@ -177,6 +218,10 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
         rideState = .active
         locationManager.startUpdatingLocation()
         startTimer()
+        
+        // Phase 39: Resume Voice Coach when ride resumes
+        VoiceCoachService.shared.start()
+        
         print("▶️ Ride resumed")
     }
     
@@ -193,17 +238,25 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
         locationManager.stopUpdatingLocation()
         stopTimer()
         
-        // Calculate final duration
+        // Phase 36: Calculate final duration
         if let start = startTime {
             duration = Date().timeIntervalSince(start) - pausedTime
         }
         
-        // Calculate final average speed
+        // Phase 36: Compute final metrics from all route locations
+        updateMetrics()
+        
+        // Calculate final average speed (backward compatibility)
         if duration > 0 {
             averageSpeed = (totalDistance / duration) * 3.6 // m/s to km/h
         }
         
-        print("🏁 Ride ended - Distance: \(String(format: "%.2f", totalDistance/1000)) km, Duration: \(formatTime(duration))")
+        // Phase 39: Stop Voice Coach when ride ends
+        VoiceCoachService.shared.stop()
+        
+        // Phase 36: Log final metrics
+        print("📊 Ride finalized metrics – distance: \(String(format: "%.2f", totalDistanceMiles)) mi, duration: \(String(format: "%.0f", totalDurationSeconds))s, avg: \(String(format: "%.1f", averageSpeedMph)) mph, route points: \(route.count)")
+        print("🏁 Ride ended - Distance: \(String(format: "%.2f", totalDistance/1000)) km (\(String(format: "%.2f", totalDistanceMiles)) mi), Duration: \(formatTime(duration))")
     }
     
     /**
@@ -216,12 +269,20 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
         totalDistance = 0.0
         duration = 0.0
         route.removeAll()
+        routeLocations.removeAll()
         pausedTime = 0.0
         startTime = nil
         lastPauseTime = nil
         lastLocation = nil
         averageSpeed = 0.0
         currentSpeed = 0.0
+        totalDistanceMiles = 0.0
+        totalDurationSeconds = 0.0
+        averageSpeedMph = 0.0
+        
+        // Phase 39: Stop Voice Coach when ride is reset
+        VoiceCoachService.shared.stop()
+        
         print("🔄 Ride reset")
     }
     
@@ -232,6 +293,8 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self, let start = self.startTime else { return }
             self.duration = Date().timeIntervalSince(start) - self.pausedTime
+            // Phase 36: Update metrics when duration changes
+            self.updateMetrics()
         }
     }
     
@@ -250,7 +313,10 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
             return
         }
         
-        // Calculate distance from last location
+        // Phase 36: Store full CLLocation for accurate metrics
+        routeLocations.append(newLocation)
+        
+        // Calculate distance from last location (for immediate UI updates)
         if let last = lastLocation {
             let distance = newLocation.distance(from: last)
             totalDistance += distance
@@ -259,9 +325,45 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
             currentSpeed = newLocation.speed >= 0 ? newLocation.speed * 3.6 : 0.0
         }
         
-        // Add to route
+        // Add to route (for map display)
         route.append(newLocation.coordinate)
         lastLocation = newLocation
+        
+        // Phase 36: Recompute metrics using calculator
+        updateMetrics()
+    }
+    
+    // Phase 36: Update metrics from route locations
+    private func updateMetrics() {
+        guard !routeLocations.isEmpty else {
+            // No locations yet - set zero metrics but preserve duration
+            totalDistance = 0.0
+            totalDistanceMiles = 0.0
+            totalDurationSeconds = duration
+            averageSpeedMph = 0.0
+            averageSpeed = 0.0
+            return
+        }
+        
+        let metrics = RideMetricsCalculator.calculateMetrics(
+            from: routeLocations,
+            startTime: startTime,
+            duration: duration
+        )
+        
+        // Update published properties
+        totalDistance = metrics.totalDistanceMeters
+        totalDistanceMiles = metrics.totalDistanceMiles
+        totalDurationSeconds = metrics.totalDurationSeconds
+        
+        // Average speed: convert from m/s to mph
+        averageSpeedMph = metrics.averageSpeedMph
+        averageSpeed = metrics.averageSpeedMetersPerSecond * 3.6 // m/s to km/h
+        
+        // Phase 36: Log metrics update (only occasionally to avoid spam)
+        if routeLocations.count % 10 == 0 {
+            print("📊 RideTrackingService: live metrics updated – distance: \(String(format: "%.2f", metrics.totalDistanceMiles)) mi, avg: \(String(format: "%.1f", metrics.averageSpeedMph)) mph")
+        }
     }
     
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -273,16 +375,20 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
         
-        // Update background location updates based on permission level
-        if status == .authorizedAlways {
-            locationManager.allowsBackgroundLocationUpdates = true
-            print("✅ Location permission: Always (background updates enabled)")
-        } else if status == .authorizedWhenInUse {
-            locationManager.allowsBackgroundLocationUpdates = false
+        // Update background location updates based on capability and permission level
+        configureBackgroundLocationUpdates(authStatus: status)
+        
+        switch status {
+        case .authorizedAlways:
+            print("✅ Location permission: Always")
+        case .authorizedWhenInUse:
             print("✅ Location permission: When In Use (foreground only)")
-        } else {
-            locationManager.allowsBackgroundLocationUpdates = false
-            print("⚠️ Location permission denied")
+        case .denied, .restricted:
+            print("⚠️ Location permission denied or restricted")
+        case .notDetermined:
+            print("📍 Location permission: Not determined")
+        @unknown default:
+            print("⚠️ Location permission: Unknown status")
         }
         
         if status == .authorizedWhenInUse || status == .authorizedAlways {
@@ -350,14 +456,6 @@ final class RideTrackingService: NSObject, ObservableObject, CLLocationManagerDe
     }
     
     // MARK: - Phase 5: HUD Helper Methods
-    
-    /**
-     * Get total distance in miles
-     * Phase 5: Converts meters to miles
-     */
-    var totalDistanceMiles: Double {
-        return totalDistance / 1609.34 // meters to miles
-    }
     
     /**
      * Get current speed in mph

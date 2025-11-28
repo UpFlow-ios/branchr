@@ -20,11 +20,18 @@ struct HomeView: View {
     @StateObject private var groupManager = GroupSessionManager() // Phase 20
     @StateObject private var musicSync = MusicSyncService() // Phase 20
     @ObservedObject private var theme = ThemeManager.shared
+    @ObservedObject private var rideDataManager = RideDataManager.shared
+    @ObservedObject private var userPreferences = UserPreferenceManager.shared
     
     // Phase 25B: Animation State removed (replaced by logo in Phase 29)
     
     // MARK: - Phase 28: SOS Alert State
     @State private var showSOSBanner = false
+    
+    // MARK: - Phase 41: Weekly Goal & Streak State
+    @State private var totalThisWeekMiles: Double = 0
+    @State private var currentStreakDays: Int = 0
+    @State private var bestStreakDays: Int = 0
     
     // MARK: - Phase 31: Ride Tracking State
     @State private var showRideTracking = false
@@ -98,98 +105,37 @@ struct HomeView: View {
                     }
                 }
                 
-                // MARK: - Logo Header (Phase 29: Branchr Logo with Dynamic Theme Swap)
-                VStack(spacing: 12) {
-                    // App Icon - Theme-aware (above "branchr" text, larger and centered)
-                    Image(theme.isDarkMode ? "AppIconDark" : "AppIconLight")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 160, height: 160)
-                        .cornerRadius(28)
-                    
-                    // "branchr" text centered below app icon
-                    Text("branchr")
-                        .font(.system(size: 38, weight: .bold, design: .rounded))
-                        .foregroundColor(theme.primaryText)
-                }
-                .frame(maxWidth: .infinity)
-                .multilineTextAlignment(.center)
-                .padding(.top, 40)
+                // Top breathing room - push all content down
+                Spacer()
+                    .frame(height: 40)
                 
-                // MARK: - Connection Status (Phase 29: Dynamic Indicator)
-                VStack(spacing: 6) {
-                    Text("Connect with your group")
-                        .font(.subheadline)
-                        .foregroundColor(theme.primaryText.opacity(0.7))
-                    
-                    // Phase 29: Dynamic connection indicator with pulse animation
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(connectionManager.isConnected ? Color.green : Color.red)
-                            .frame(width: 12, height: 12)
-                            .shadow(
-                                color: connectionManager.isConnected ? .green.opacity(0.5) : .red.opacity(0.5),
-                                radius: 8,
-                                x: 0,
-                                y: 0
-                            )
-                            .scaleEffect(connectionManager.isConnected ? 1.05 : 1.0)
-                            .animation(
-                                connectionManager.isConnected
-                                ? Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)
-                                : .default,
-                                value: connectionManager.isConnected
-                            )
-                        
-                        Text(connectionManager.isConnected ? "Connected" : "Disconnected")
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundColor(connectionManager.isConnected ? .green : .red)
-                            .animation(.easeInOut, value: connectionManager.isConnected)
+                // MARK: - Phase 41C: Compact Header (replaces large hero branding)
+                HStack {
+                    // Left: App name
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("branchr")
+                            .font(.title3.bold())
+                            .foregroundColor(theme.primaryText)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGray6).opacity(0.2))
-                    .clipShape(Capsule())
+                    
+                    Spacer()
+                    
+                    // Right: Theme toggle
+                    Button(action: { theme.toggleTheme() }) {
+                        Image(systemName: theme.isDarkMode ? "sun.max.fill" : "moon.fill")
+                            .font(.title3)
+                            .foregroundColor(theme.accentColor)
+                            .frame(width: 44, height: 44)
+                            .background(theme.cardBackground)
+                            .cornerRadius(10)
+                    }
                 }
-                .padding(.bottom, 10)
+                .padding(.horizontal, 16)
+                .padding(.top, 8) // Reduced from 24 since we added Spacer above
                 
-                // MARK: - Audio Controls
-                HStack(spacing: 20) {
-                    // Voice Mute Toggle
-                    ControlButton(
-                        icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
-                        title: isVoiceMuted ? "Muted" : "Unmuted",
-                        action: {
-                            isVoiceMuted.toggle()
-                            AudioManager.shared.toggleVoiceChat(active: !isVoiceMuted)
-                            print(isVoiceMuted ? "Voice muted" : "Voice unmuted")
-                        }
-                    )
-                    
-                    // Music Mute Toggle
-                    ControlButton(
-                        icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
-                        title: isMusicMuted ? "Music Off" : "Music On",
-                        action: {
-                            isMusicMuted.toggle()
-                            if isMusicMuted {
-                                AudioManager.shared.stopMusic()
-                            }
-                            print(isMusicMuted ? "Music muted" : "Music unmuted")
-                        }
-                    )
-                    
-                    // DJ Controls
-                    ControlButton(
-                        icon: "music.quarternote.3",
-                        title: "DJ Controls",
-                        action: {
-                            showDJSheet.toggle()
-                            print("DJ Controls tapped - opening sheet")
-                        }
-                    )
-                }
-                .padding(.vertical, 10)
+                // Phase 41K: Additional spacing between header and main actions
+                Spacer()
+                    .frame(height: 56)
                 
                 // MARK: - Main Actions (Phase 2: Unified Button System)
                 VStack(spacing: 20) {
@@ -224,6 +170,35 @@ struct HomeView: View {
                             withAnimation(.spring()) { showSmartRideSheet = true }
                         }
                     }
+                    
+                    // MARK: - Phase 41J: Connection Status (moved between Start Ride Tracking and Start Connection)
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(connectionStatusColor)
+                            .frame(width: 12, height: 12)
+                            .shadow(
+                                color: connectionStatusColor.opacity(0.5),
+                                radius: 8,
+                                x: 0,
+                                y: 0
+                            )
+                            .scaleEffect(connectionManager.isConnected ? 1.05 : 1.0)
+                            .animation(
+                                connectionManager.isConnected
+                                ? Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)
+                                : .default,
+                                value: connectionManager.isConnected
+                            )
+                        
+                        Text(connectionStatusLabel)
+                            .font(.system(size: 16, weight: .medium, design: .rounded))
+                            .foregroundColor(connectionStatusColor)
+                            .animation(.easeInOut, value: connectionManager.isConnected)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+                    .background(Color(.systemGray6).opacity(0.2))
+                    .clipShape(Capsule())
                     
                     // Start Connection Button
                     PrimaryButton(
@@ -263,6 +238,15 @@ struct HomeView: View {
                         .padding(.top, 8)
                     }
                     
+                    // MARK: - Phase 41J: Weekly Goal & Streak Card (moved between Start Connection and Start Voice Chat)
+                    WeeklyGoalCardView(
+                        totalThisWeekMiles: totalThisWeekMiles,
+                        goalMiles: userPreferences.weeklyDistanceGoalMiles,
+                        currentStreakDays: currentStreakDays,
+                        bestStreakDays: bestStreakDays
+                    )
+                    .padding(.horizontal, 16)
+                    
                     // Start Voice Chat Button
                     PrimaryButton(
                         voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
@@ -278,6 +262,56 @@ struct HomeView: View {
                     }
                     .rainbowGlow(active: voiceService.isVoiceChatActive)  // Phase 34D: Active-state glow
                     
+                    // MARK: - Phase 41J: Audio Controls Footer (moved between Start Voice Chat and Safety & SOS)
+                    HStack(spacing: 16) {
+                        // Voice Mute Toggle
+                        ControlButton(
+                            icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
+                            title: isVoiceMuted ? "Muted" : "Unmuted",
+                            action: {
+                                isVoiceMuted.toggle()
+                                AudioManager.shared.toggleVoiceChat(active: !isVoiceMuted)
+                                print(isVoiceMuted ? "Voice muted" : "Voice unmuted")
+                            }
+                        )
+                        
+                        // Music Mute Toggle
+                        ControlButton(
+                            icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
+                            title: isMusicMuted ? "Music Off" : "Music On",
+                            action: {
+                                isMusicMuted.toggle()
+                                if isMusicMuted {
+                                    AudioManager.shared.stopMusic()
+                                }
+                                print(isMusicMuted ? "Music muted" : "Music unmuted")
+                            }
+                        )
+                        
+                        // DJ Controls
+                        ControlButton(
+                            icon: "music.quarternote.3",
+                            title: "DJ Controls",
+                            action: {
+                                showDJSheet.toggle()
+                                print("DJ Controls tapped - opening sheet")
+                            }
+                        )
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        theme.surfaceBackground,
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    )
+                    .shadow(
+                        color: theme.isDarkMode ? .clear : Color.black.opacity(0.25),
+                        radius: theme.isDarkMode ? 0 : 18,
+                        x: 0,
+                        y: theme.isDarkMode ? 0 : 8
+                    )
+                    .padding(.horizontal, 16)
+                    
                     // Safety & SOS Button
                     SafetyButton(
                         "Safety & SOS",
@@ -287,9 +321,9 @@ struct HomeView: View {
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.bottom, 32)
+                .padding(.bottom, 40) // Bottom padding for safe area / tab bar
                 
-                Spacer(minLength: 40)
+                Spacer(minLength: 20)
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 40)
@@ -299,6 +333,16 @@ struct HomeView: View {
                 print("🏁 HomeView loaded - ready for Start Connection")
                 // Phase 28: Start listening for SOS alerts
                 fcmService.startListeningForSOSAlerts()
+                // Phase 41: Update goal and streak data
+                updateGoalAndStreakData()
+            }
+            .onChange(of: rideDataManager.rides.count) { _ in
+                // Phase 41: Update when rides change
+                updateGoalAndStreakData()
+            }
+            .onChange(of: userPreferences.weeklyDistanceGoalMiles) { _ in
+                // Phase 41: Update when goal changes
+                updateGoalAndStreakData()
             }
             .onChange(of: fcmService.latestSOSAlert) { alert in
                 // Show banner when new SOS alert arrives
@@ -306,14 +350,7 @@ struct HomeView: View {
                     showSOSBanner = true
                 }
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { theme.toggleTheme() }) {
-                        Image(systemName: theme.isDarkMode ? "sun.max.fill" : "moon.fill")
-                            .foregroundColor(theme.accentColor)
-                    }
-                }
-            }
+            // Phase 41C: Theme toggle moved to compact header, removed from toolbar
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .sheet(isPresented: $showingGroupRide) {
@@ -364,6 +401,31 @@ struct HomeView: View {
     // MARK: - Computed Properties
     // Phase 29: Connection status now handled inline with dynamic indicator
     
+    // Phase 35B: Solo ride detection - show "Solo Ride" instead of "Disconnected" when ride is active
+    private var isSoloRide: Bool {
+        rideService.rideState == .active || rideService.rideState == .paused
+    }
+    
+    private var connectionStatusLabel: String {
+        if isSoloRide && !connectionManager.isConnected {
+            return "Solo Ride"
+        } else if connectionManager.isConnected {
+            return "Connected"
+        } else {
+            return "Disconnected"
+        }
+    }
+    
+    private var connectionStatusColor: Color {
+        if isSoloRide && !connectionManager.isConnected {
+            return Color.branchrAccent
+        } else if connectionManager.isConnected {
+            return .green
+        } else {
+            return .red
+        }
+    }
+    
     // MARK: - Phase 28: SOS Alert Helpers
     
     /// Open Apple Maps with SOS location
@@ -371,6 +433,15 @@ struct HomeView: View {
         if let url = URL(string: "https://maps.apple.com/?q=\(latitude),\(longitude)") {
             UIApplication.shared.open(url)
         }
+    }
+    
+    // MARK: - Phase 41: Weekly Goal & Streak Helpers
+    
+    /// Update goal and streak data from RideDataManager
+    private func updateGoalAndStreakData() {
+        totalThisWeekMiles = rideDataManager.totalDistanceThisWeek()
+        currentStreakDays = rideDataManager.currentStreakDays()
+        bestStreakDays = rideDataManager.bestStreakDays()
     }
     
     // MARK: - Ride Tracking
@@ -412,16 +483,18 @@ struct ControlButton: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
+            // Phase 41B: More compact layout
+            // Phase 41J: Updated colors for black card background
+            VStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 22))
-                    .foregroundColor(theme.accentColor)
-                    .frame(width: 50, height: 50)
+                    .font(.system(size: 18))
+                    .foregroundColor(theme.brandYellow) // Brand yellow for icons on black
+                    .frame(width: 44, height: 44)
                     .background(theme.cardBackground)
-                    .cornerRadius(12)
+                    .cornerRadius(10)
                 Text(title)
                     .font(.caption)
-                    .foregroundColor(theme.primaryText)
+                    .foregroundColor(Color.white.opacity(0.9)) // White labels for readability on black
             }
         }
     }
