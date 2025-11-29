@@ -172,11 +172,14 @@ struct RideDetailView: View {
             .navigationTitle("Ride Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                // Phase 46C: Clear exit control in leading position with haptic feedback
+                ToolbarItem(placement: .topBarLeading) {
                     Button("Done") {
+                        HapticsService.shared.mediumTap()
                         dismiss()
                     }
-                    .foregroundColor(theme.accentColor)
+                    .foregroundColor(theme.brandYellow)
+                    .font(.headline)
                 }
             }
         }

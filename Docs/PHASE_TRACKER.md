@@ -69,6 +69,10 @@ This file tracks all completed phases in chronological order.
 - Phase 43C – Ride Header Swap: Host HUD on Top, Solo Ride Pill on Map (✅ completed)
 - Phase 44 – Audio Control Center Polish (Home Screen) (✅ completed)
 - Phase 45 – Ride Summary Sheet & Post-Ride Insights Polish (✅ completed)
+- Phase 46 – Calendar & Ride History Screen Polish (✅ completed)
+- Phase 46B – Calendar Exit UX (✅ completed)
+- Phase 46C – Calendar & Ride Detail Exit UX (✅ completed)
+- Phase 47 – Calendar Month Navigation & Correct Day Summaries (✅ completed)
 
 ---
 
@@ -77,4 +81,3 @@ This file tracks all completed phases in chronological order.
 - Phases are tracked chronologically as they are completed
 - Each phase entry includes completion status and date when available
 - See individual phase documentation files in `Docs/` for detailed information
-

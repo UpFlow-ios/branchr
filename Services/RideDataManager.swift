@@ -168,7 +168,11 @@ class RideDataManager: ObservableObject {
     /// Get ride summary for a specific day
     func summary(for date: Date) -> DayRideSummary? {
         let calendar = Calendar.current
+        // Phase 47: Strictly filter rides by exact calendar day
         let dayRides = rides.filter { calendar.isDate($0.date, inSameDayAs: date) }
+        
+        // Phase 47: Debug logging
+        print("📆 RideDataManager.summary(for: \(date)): found \(dayRides.count) rides")
         
         guard !dayRides.isEmpty else { return nil }
         
@@ -176,7 +180,7 @@ class RideDataManager: ObservableObject {
         let totalDuration = dayRides.reduce(0) { $0 + $1.duration }
         
         return DayRideSummary(
-            date: date,
+            date: calendar.startOfDay(for: date), // Phase 47: Normalize to start of day
             rides: dayRides,
             totalDistance: totalDistance,
             totalDuration: totalDuration

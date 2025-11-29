@@ -76,13 +76,17 @@ struct RideInsightsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.primaryBackground.ignoresSafeArea())
+            .navigationTitle("Ride Insights")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                // Phase 46B: Clear exit control in leading position
+                ToolbarItem(placement: .topBarLeading) {
                     Button("Done") {
+                        HapticsService.shared.mediumTap()
                         dismiss()
                     }
-                    .foregroundColor(theme.accentColor)
+                    .foregroundColor(theme.brandYellow)
+                    .font(.headline)
                 }
             }
             .onAppear {
