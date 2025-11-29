@@ -89,29 +89,7 @@ struct RideTrackingView: View {
                     }
                 }
 
-                // 3) HOST HUD OVERLAY (TOP-LEFT) - Phase 43: Polished pill over map card
-                if rideService.rideState == .active || rideService.rideState == .paused {
-                    VStack {
-                        HStack {
-                            RideHostHUDView(
-                                hostName: profileManager.currentDisplayName,
-                                hostImage: profileManager.currentProfileImage,
-                                distanceMiles: rideService.totalDistanceMiles,
-                                speedMph: rideService.currentSpeedMph,
-                                durationText: rideService.formattedDuration,
-                                isConnected: connectionManager.state == .connected,
-                                isMusicOn: musicSync.currentTrack?.isPlaying ?? false
-                            )
-                            Spacer()
-                        }
-                        .padding(.top, 100) // Phase 43: Positioned over map card
-                        .padding(.leading, 16)
-                        Spacer()
-                    }
-                    .onAppear {
-                        print("🎛 RideHostHUDView visible – host HUD overlay active")
-                    }
-                }
+                // Phase 43C: Host HUD moved to top header strip (removed from map overlay)
 
                 // 4) RIDER INFO PANEL (BOTTOM SHEET)
                 if let rider = selectedRider {
@@ -254,40 +232,19 @@ struct RideTrackingView: View {
 
     // MARK: - Phase 42: UI Components
     
-    /// Compact status strip at top showing ride mode and connection status
+    /// Phase 43C: Host HUD in top header strip
     private var rideStatusStrip: some View {
-        HStack(spacing: 12) {
-            // Ride mode indicator
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(rideModeColor)
-                    .frame(width: 8, height: 8)
-                Text(rideModeLabel)
-                    .font(.caption.bold())
-                    .foregroundColor(Color.white)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                Capsule()
-                    .fill(theme.surfaceBackground)
-            )
-            
-            // Connection status (if available)
-            if connectionManager.state == .connected {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(Color.green)
-                        .frame(width: 8, height: 8)
-                    Text("Connected")
-                        .font(.caption.bold())
-                        .foregroundColor(Color.white)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule()
-                        .fill(theme.surfaceBackground)
+        HStack {
+            // Host HUD moved to top header
+            if rideService.rideState == .active || rideService.rideState == .paused {
+                RideHostHUDView(
+                    hostName: profileManager.currentDisplayName,
+                    hostImage: profileManager.currentProfileImage,
+                    distanceMiles: rideService.totalDistanceMiles,
+                    speedMph: rideService.currentSpeedMph,
+                    durationText: rideService.formattedDuration,
+                    isConnected: connectionManager.state == .connected,
+                    isMusicOn: musicSync.currentTrack?.isPlaying ?? false
                 )
             }
             
@@ -303,17 +260,29 @@ struct RideTrackingView: View {
         }
     }
     
-    /// Map wrapped in a black card with rounded corners
+    /// Phase 43C: Map card with ride mode pill in top-right corner
     private var mapCard: some View {
-        RideMapViewRepresentable(
-            region: $region,
-            coordinates: rideService.route,
-            showsUserLocation: true,
-            riderAnnotations: [],
-            selectedRider: $selectedRider
-        )
-        .frame(height: 400) // Phase 42: Fixed height for consistent layout
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        ZStack(alignment: .topTrailing) {
+            RideMapViewRepresentable(
+                region: $region,
+                coordinates: rideService.route,
+                showsUserLocation: true,
+                riderAnnotations: [],
+                selectedRider: $selectedRider
+            )
+            .frame(height: 400) // Phase 42: Fixed height for consistent layout
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            
+            // Phase 43C: Ride mode pill in top-right corner
+            if let badgeConfig = rideModeBadgeConfig {
+                RideModeBadgeView(
+                    label: badgeConfig.label,
+                    color: badgeConfig.color
+                )
+                .padding(.top, 12)
+                .padding(.trailing, 12)
+            }
+        }
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(theme.surfaceBackground)
@@ -327,6 +296,18 @@ struct RideTrackingView: View {
         .onChange(of: rideService.route.count) { _ in
             updateMapRegion()
         }
+    }
+    
+    /// Phase 43C: Ride mode badge configuration
+    private var rideModeBadgeConfig: (label: String, color: Color)? {
+        if rideService.rideState == .active || rideService.rideState == .paused {
+            if connectionManager.state == .connected {
+                return ("Connected", Color.green)
+            } else {
+                return ("Solo Ride", theme.brandYellow)
+            }
+        }
+        return nil
     }
     
     /// Stats card with black background and white/yellow text
@@ -366,24 +347,6 @@ struct RideTrackingView: View {
         )
     }
     
-    /// Ride mode label based on current state
-    private var rideModeLabel: String {
-        if connectionManager.state == .connected {
-            return "Group Ride"
-        } else {
-            return "Solo Ride"
-        }
-    }
-    
-    /// Ride mode color indicator
-    private var rideModeColor: Color {
-        if connectionManager.state == .connected {
-            return Color.green
-        } else {
-            return theme.brandYellow
-        }
-    }
-
     // MARK: - Helper Methods
 
     private func updateMapRegion() {

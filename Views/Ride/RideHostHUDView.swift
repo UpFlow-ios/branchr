@@ -56,9 +56,12 @@ struct RideHostHUDView: View {
             Spacer()
             
             // Right: Ride mode + status indicators
+            // Phase 43B: Only show ride mode pill for group/connected rides (not solo)
             HStack(spacing: 8) {
-                // Ride mode pill
-                rideModePill
+                // Ride mode pill - only show for connected/group rides
+                if isConnected {
+                    rideModePill
+                }
                 
                 // Music badge (if active)
                 if isMusicOn {
@@ -117,19 +120,9 @@ struct RideHostHUDView: View {
     
     // Phase 43: Ride mode pill
     private var rideModePill: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(connectionStatusColor)
-                .frame(width: 8, height: 8)
-            Text(connectionStatusLabel)
-                .font(.caption.bold())
-                .foregroundColor(Color.white)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(
-            Capsule()
-                .fill(Color.white.opacity(0.12))
+        RideModeBadgeView(
+            label: connectionStatusLabel,
+            color: connectionStatusColor
         )
     }
     
@@ -169,6 +162,33 @@ struct RideHostHUDView: View {
         } else {
             return Color.green
         }
+    }
+}
+
+// MARK: - Phase 43C: Reusable Ride Mode Badge
+
+/// Reusable ride mode badge component for displaying ride status on map
+struct RideModeBadgeView: View {
+    let label: String
+    let color: Color // dot color
+    
+    @ObservedObject private var theme = ThemeManager.shared
+    
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+            Text(label)
+                .font(.caption.bold())
+                .foregroundColor(Color.white)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(Color.black.opacity(0.8))
+        )
     }
 }
 

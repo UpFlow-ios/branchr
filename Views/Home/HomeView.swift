@@ -262,55 +262,9 @@ struct HomeView: View {
                     }
                     .rainbowGlow(active: voiceService.isVoiceChatActive)  // Phase 34D: Active-state glow
                     
-                    // MARK: - Phase 41J: Audio Controls Footer (moved between Start Voice Chat and Safety & SOS)
-                    HStack(spacing: 16) {
-                        // Voice Mute Toggle
-                        ControlButton(
-                            icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
-                            title: isVoiceMuted ? "Muted" : "Unmuted",
-                            action: {
-                                isVoiceMuted.toggle()
-                                AudioManager.shared.toggleVoiceChat(active: !isVoiceMuted)
-                                print(isVoiceMuted ? "Voice muted" : "Voice unmuted")
-                            }
-                        )
-                        
-                        // Music Mute Toggle
-                        ControlButton(
-                            icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
-                            title: isMusicMuted ? "Music Off" : "Music On",
-                            action: {
-                                isMusicMuted.toggle()
-                                if isMusicMuted {
-                                    AudioManager.shared.stopMusic()
-                                }
-                                print(isMusicMuted ? "Music muted" : "Music unmuted")
-                            }
-                        )
-                        
-                        // DJ Controls
-                        ControlButton(
-                            icon: "music.quarternote.3",
-                            title: "DJ Controls",
-                            action: {
-                                showDJSheet.toggle()
-                                print("DJ Controls tapped - opening sheet")
-                            }
-                        )
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(
-                        theme.surfaceBackground,
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    )
-                    .shadow(
-                        color: theme.isDarkMode ? .clear : Color.black.opacity(0.25),
-                        radius: theme.isDarkMode ? 0 : 18,
-                        x: 0,
-                        y: theme.isDarkMode ? 0 : 8
-                    )
-                    .padding(.horizontal, 16)
+                    // MARK: - Phase 44: Audio Control Center (polished with clear active states)
+                    audioControlCenter
+                        .padding(.top, 24)
                     
                     // Safety & SOS Button
                     SafetyButton(
@@ -444,6 +398,78 @@ struct HomeView: View {
         bestStreakDays = rideDataManager.bestStreakDays()
     }
     
+    // MARK: - Phase 44: Audio Control Center
+    
+    /// Polished audio control center with clear active states
+    private var audioControlCenter: some View {
+        HStack(spacing: 16) {
+            // Voice Mute Toggle
+            AudioControlButton(
+                icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
+                title: isVoiceMuted ? "Muted" : "Unmuted",
+                isActive: !isVoiceMuted
+            ) {
+                handleToggleMute()
+            }
+            
+            // Music Toggle
+            AudioControlButton(
+                icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
+                title: isMusicMuted ? "Music Off" : "Music On",
+                isActive: !isMusicMuted
+            ) {
+                handleToggleMusic()
+            }
+            
+            // DJ Controls
+            AudioControlButton(
+                icon: "music.quarternote.3",
+                title: "DJ Controls",
+                isActive: false // DJ Controls is not a toggle, always inactive state
+            ) {
+                handleDJControlsTap()
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(theme.surfaceBackground)
+                .shadow(
+                    color: theme.isDarkMode ? .clear : Color.black.opacity(0.25),
+                    radius: theme.isDarkMode ? 0 : 18,
+                    x: 0,
+                    y: theme.isDarkMode ? 0 : 8
+                )
+        )
+        .padding(.horizontal, 24)
+    }
+    
+    /// Handle mute toggle with haptics
+    private func handleToggleMute() {
+        isVoiceMuted.toggle()
+        AudioManager.shared.toggleVoiceChat(active: !isVoiceMuted)
+        HapticsService.shared.lightTap()
+        print(isVoiceMuted ? "Voice muted" : "Voice unmuted")
+    }
+    
+    /// Handle music toggle with haptics
+    private func handleToggleMusic() {
+        isMusicMuted.toggle()
+        if isMusicMuted {
+            AudioManager.shared.stopMusic()
+        }
+        HapticsService.shared.lightTap()
+        print(isMusicMuted ? "Music muted" : "Music unmuted")
+    }
+    
+    /// Handle DJ controls tap with haptics
+    private func handleDJControlsTap() {
+        showDJSheet.toggle()
+        HapticsService.shared.mediumTap()
+        print("DJ Controls tapped - opening sheet")
+    }
+    
     // MARK: - Ride Tracking
     
     /**
@@ -473,7 +499,47 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Control Button Component
+// MARK: - Phase 44: Audio Control Button Component
+
+/// Reusable audio control button with clear active/inactive states
+private struct AudioControlButton: View {
+    let icon: String
+    let title: String
+    let isActive: Bool
+    let action: () -> Void
+    
+    @ObservedObject private var theme = ThemeManager.shared
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 40, height: 40)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(isActive ? theme.brandYellow : theme.surfaceBackground)
+                    )
+                    .foregroundColor(isActive ? .black : .white)
+                
+                Text(title)
+                    .font(.caption.bold())
+                    .foregroundColor(
+                        isActive ? .white : Color.white.opacity(0.85)
+                    )
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(Color.black.opacity(isActive ? 0.9 : 0.7))
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Control Button Component (Legacy - kept for compatibility)
 
 struct ControlButton: View {
     let icon: String

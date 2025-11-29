@@ -65,6 +65,10 @@ This file tracks all completed phases in chronological order.
 - Phase 41K – Home Vertical Spacing Polish (✅ completed)
 - Phase 42 – Ride Tracking Screen Polish (UI Only, No Logic Changes) (✅ completed)
 - Phase 43 – Host & Group Ride HUD Polish (UI Only) (✅ completed)
+- Phase 43B – Host HUD Duplicate "Solo Ride" Pill Cleanup (✅ completed)
+- Phase 43C – Ride Header Swap: Host HUD on Top, Solo Ride Pill on Map (✅ completed)
+- Phase 44 – Audio Control Center Polish (Home Screen) (✅ completed)
+- Phase 45 – Ride Summary Sheet & Post-Ride Insights Polish (✅ completed)
 
 ---
 

@@ -53,122 +53,40 @@ struct EnhancedRideSummaryView: View {
 
     var body: some View {
         ZStack {
-            // Full-screen dark background
+            // Full-screen background
             theme.primaryBackground.ignoresSafeArea()
             
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
-                    // 1. PRIMARY STATS ROW
-                    HStack(spacing: 16) {
-                        PrimaryStatCard(
-                            icon: "location.fill",
-                            value: String(format: "%.2f", distanceMiles),
-                            unit: "mi",
-                            label: "Distance"
-                        )
-                        
-                        PrimaryStatCard(
-                            icon: "clock.fill",
-                            value: durationText,
-                            unit: nil,
-                            label: "Duration"
-                        )
-                        
-                        PrimaryStatCard(
-                            icon: "speedometer",
-                            value: String(format: "%.1f", averageSpeedMph),
-                            unit: "mph",
-                            label: "Avg Speed"
-                        )
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 20)
+                VStack(spacing: 24) {
+                    // Top spacing
+                    Spacer()
+                        .frame(height: 16)
                     
-                    // 2. RIDE INSIGHTS SECTION
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Ride Insights")
-                            .font(.headline)
-                            .foregroundColor(Color.branchrAccent)
-                            .padding(.horizontal, 16)
-                        
-                        VStack(spacing: 12) {
-                            InsightCard(
-                                icon: "figure.run",
-                                title: "Average Pace",
-                                value: averagePace
-                            )
-                            
-                            InsightCard(
-                                icon: "flame.fill",
-                                title: "Estimated Calories",
-                                value: ride.calories > 0 ? String(format: "%.0f cal", ride.calories) : "Coming soon"
-                            )
-                            
-                            InsightCard(
-                                icon: "map.fill",
-                                title: "Route Samples",
-                                value: "\(ride.route.count) points"
-                            )
-                            
-                            // Phase 38: View Ride Insights button
-                            Button(action: {
-                                showRideInsights = true
-                            }) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "chart.line.uptrend.xyaxis")
-                                        .foregroundColor(theme.accentColor)
-                                    Text("View Ride Insights")
-                                        .font(.subheadline.bold())
-                                        .foregroundColor(theme.primaryText)
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption)
-                                        .foregroundColor(theme.secondaryText)
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 12)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(theme.cardBackground)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(theme.accentColor.opacity(0.3), lineWidth: 1)
-                                        )
-                                )
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        }
+                    // Phase 45: Header
+                    headerSection
                         .padding(.horizontal, 16)
+                    
+                    // Phase 45: Main Metrics Card
+                    mainMetricsCard
+                        .padding(.horizontal, 16)
+                        .scaleEffect(showFadeIn ? 1.0 : 0.98)
+                        .opacity(showFadeIn ? 1.0 : 0.0)
+                    
+                    // Phase 45: Secondary Stats Row (optional)
+                    if hasSecondaryStats {
+                        secondaryStatsRow
+                            .padding(.horizontal, 16)
+                            .opacity(showFadeIn ? 1.0 : 0.0)
                     }
                     
-                    // 3. DONE BUTTON - Phase 35B: Call onDone closure for finalization
-                    Button(action: {
-                        NotificationCenter.default.post(
-                            name: NSNotification.Name("EnhancedRideSummaryCloseRequested"),
-                            object: nil
-                        )
-                        onDone?()
-                        dismiss()
-                    }) {
-                        Text("Done")
-                            .font(.headline)
-                            .foregroundColor(theme.isDarkMode ? .black : .black)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .fill(theme.brandYellow)
-                                    .shadow(color: theme.brandYellow.opacity(0.3), radius: 8, x: 0, y: 4)
-                            )
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 20)
+                    // Phase 45: Actions Row
+                    actionsRow
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 40)
+                        .opacity(showFadeIn ? 1.0 : 0.0)
                 }
             }
         }
-        .preferredColorScheme(.dark)
-        .opacity(showFadeIn ? 1.0 : 0.0)
         .sheet(isPresented: $showRideInsights) {
             RideInsightsView()
                 .presentationDetents([.large])
@@ -182,10 +100,147 @@ struct EnhancedRideSummaryView: View {
                 saveRide(silent: true)
             }
             
-            // Fade-in animation
-            withAnimation(.easeIn(duration: 0.4)) {
+            // Haptic feedback on appear
+            HapticsService.shared.mediumTap()
+            
+            // Fade-in and scale animation
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                 showFadeIn = true
             }
+        }
+    }
+    
+    // MARK: - Phase 45: UI Components
+    
+    /// Header section with title
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Ride Summary")
+                .font(.title3.bold())
+                .foregroundColor(Color.white)
+            
+            Text("Nice ride!")
+                .font(.subheadline)
+                .foregroundColor(Color.white.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    /// Main metrics card with distance, duration, and avg speed
+    private var mainMetricsCard: some View {
+        HStack(spacing: 24) {
+            // Distance
+            MetricDisplay(
+                icon: "location.fill",
+                value: String(format: "%.2f", distanceMiles),
+                unit: "mi",
+                label: "Distance"
+            )
+            
+            // Duration
+            MetricDisplay(
+                icon: "clock.fill",
+                value: durationText,
+                unit: nil,
+                label: "Duration"
+            )
+            
+            // Avg Speed
+            MetricDisplay(
+                icon: "speedometer",
+                value: String(format: "%.1f", averageSpeedMph),
+                unit: "mph",
+                label: "Avg Speed"
+            )
+        }
+        .padding(.vertical, 20)
+        .padding(.horizontal, 24)
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(theme.surfaceBackground)
+                .shadow(
+                    color: theme.isDarkMode ? .clear : Color.black.opacity(0.25),
+                    radius: theme.isDarkMode ? 0 : 18,
+                    x: 0,
+                    y: theme.isDarkMode ? 0 : 8
+                )
+        )
+    }
+    
+    /// Secondary stats row (pace, calories, route points)
+    private var secondaryStatsRow: some View {
+        HStack(spacing: 12) {
+            SecondaryStatPill(
+                icon: "figure.run",
+                label: "Pace",
+                value: averagePace
+            )
+            
+            if ride.calories > 0 {
+                SecondaryStatPill(
+                    icon: "flame.fill",
+                    label: "Calories",
+                    value: String(format: "%.0f", ride.calories)
+                )
+            }
+            
+            SecondaryStatPill(
+                icon: "map.fill",
+                label: "Route",
+                value: "\(ride.route.count) pts"
+            )
+        }
+    }
+    
+    /// Check if secondary stats are available
+    private var hasSecondaryStats: Bool {
+        averagePace != "N/A" || ride.calories > 0 || !ride.route.isEmpty
+    }
+    
+    /// Actions row with primary and secondary buttons
+    private var actionsRow: some View {
+        VStack(spacing: 12) {
+            // Primary button
+            Button(action: {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("EnhancedRideSummaryCloseRequested"),
+                    object: nil
+                )
+                onDone?()
+                dismiss()
+            }) {
+                Text("Done")
+                    .font(.headline.bold())
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .fill(theme.brandYellow)
+                            .shadow(
+                                color: Color.black.opacity(0.2),
+                                radius: 8,
+                                x: 0,
+                                y: 4
+                            )
+                    )
+            }
+            .buttonStyle(.plain)
+            
+            // Secondary button - View Ride Insights
+            Button(action: {
+                showRideInsights = true
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.caption)
+                    Text("View Ride Insights")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundColor(Color.white.opacity(0.85))
+                .padding(.vertical, 8)
+            }
+            .buttonStyle(.plain)
         }
     }
     
@@ -220,47 +275,75 @@ struct EnhancedRideSummaryView: View {
     }
 }
 
-// MARK: - Primary Stat Card Component
+// MARK: - Phase 45: Metric Display Component
 
-struct PrimaryStatCard: View {
+/// Large, readable metric display for main stats card
+struct MetricDisplay: View {
     let icon: String
     let value: String
     let unit: String?
     let label: String
+    
     @ObservedObject private var theme = ThemeManager.shared
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.title3)
-                .foregroundColor(theme.accentColor)
+                .font(.title2)
+                .foregroundColor(theme.brandYellow)
             
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text(value)
-                    .font(.headline.bold())
-                    .foregroundColor(theme.primaryText)
-                
-                if let unit = unit {
-                    Text(unit)
-                        .font(.caption)
-                        .foregroundColor(theme.accentColor.opacity(0.7))
+            VStack(spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(value)
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundColor(Color.white)
+                    
+                    if let unit = unit {
+                        Text(unit)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(Color.white.opacity(0.78))
+                    }
                 }
+                
+                Text(label)
+                    .font(.caption)
+                    .foregroundColor(Color.white.opacity(0.7))
             }
-            
-            Text(label)
-                .font(.caption)
-                .foregroundColor(theme.secondaryText)
         }
         .frame(maxWidth: .infinity)
-        .padding()
+    }
+}
+
+// MARK: - Phase 45: Secondary Stat Pill Component
+
+/// Compact pill for secondary stats
+struct SecondaryStatPill: View {
+    let icon: String
+    let label: String
+    let value: String
+    
+    @ObservedObject private var theme = ThemeManager.shared
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundColor(theme.brandYellow)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.caption2)
+                    .foregroundColor(Color.white.opacity(0.7))
+                Text(value)
+                    .font(.caption.bold())
+                    .foregroundColor(Color.white)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(theme.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(theme.accentColor.opacity(0.5), lineWidth: 1)
-                )
-                .shadow(color: theme.accentColor.opacity(0.2), radius: 8, x: 0, y: 4)
+            Capsule()
+                .fill(Color.black.opacity(0.6))
         )
     }
 }
