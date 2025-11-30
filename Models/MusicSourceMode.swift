@@ -64,5 +64,15 @@ enum MusicSourceMode: String, Codable, CaseIterable, Identifiable {
             return "music.note.list"
         }
     }
+    
+    // Phase 58: Asset name for branded logo images
+    var assetName: String {
+        switch self {
+        case .appleMusicSynced:
+            return "appleMusicLogo"
+        case .externalPlayer:
+            return "otherMusicLogo"
+        }
+    }
 }
 

@@ -464,8 +464,11 @@ struct MusicSourceSelectorView: View {
                     // Phase 57: Changes are synced via onChange in HomeView
                 } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: source.systemImageName)
-                            .font(.system(size: 16, weight: .semibold))
+                        Image(source.assetName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 15, height: 15)
+                            .renderingMode(.template)
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text(source.title)

@@ -48,11 +48,14 @@ struct RideHostHUDView: View {
                         .clipShape(Capsule())
                 }
                 
-                // Phase 53: Music source chip inside host card
+                // Phase 53: Music source chip inside host card (Phase 58: branded icon)
                 if let mode = musicSourceMode {
                     HStack(spacing: 6) {
-                        Image(systemName: mode.systemImageName)
-                            .font(.caption)
+                        Image(mode.assetName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 13, height: 13)
+                            .renderingMode(.template)
                         Text(mode.title)
                             .font(.caption.bold())
                     }
