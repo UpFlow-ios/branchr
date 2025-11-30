@@ -72,6 +72,9 @@ final class MusicSyncService: NSObject, ObservableObject {
     @Published var isPolling: Bool = false
     @Published var isMusicMuted: Bool = false // Phase 20: Per-user music mute
     
+    // Phase 51: Music source mode (published for UI binding)
+    @Published var musicSourceMode: MusicSourceMode = .appleMusicSynced
+    
     private var pollingTimer: Timer?
     private var groupSessionManager: GroupSessionManager?
     private let pollingInterval: TimeInterval = 1.0
@@ -84,6 +87,21 @@ final class MusicSyncService: NSObject, ObservableObject {
     /// Set the group session manager for broadcasting
     func setGroupSessionManager(_ manager: GroupSessionManager) {
         self.groupSessionManager = manager
+    }
+    
+    // Phase 51: Set music source mode
+    func setMusicSourceMode(_ mode: MusicSourceMode) {
+        musicSourceMode = mode
+        print("Branchr MusicSyncService: musicSourceMode set to \(mode.title)")
+        
+        // If switching to external player, stop any MusicKit operations
+        if mode == .externalPlayer {
+            print("Branchr MusicSyncService: Skipping MusicKit setup (ExternalPlayer mode)")
+            // Stop polling if we're in external player mode and not host DJ
+            if !isHostDJ {
+                stopPolling()
+            }
+        }
     }
     
     /// Become the host DJ

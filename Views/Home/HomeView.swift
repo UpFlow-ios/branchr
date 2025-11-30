@@ -51,6 +51,9 @@ struct HomeView: View {
     @State private var showRideOptions = false
     @State private var showRideSummary = false
     
+    // Phase 57: Music source mode state (syncs with userPreferences and musicSync)
+    @State private var musicSourceMode: MusicSourceMode = UserPreferenceManager.shared.preferredMusicSource
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 24) {
@@ -107,37 +110,34 @@ struct HomeView: View {
                 
                 // Top breathing room - push all content down
                 Spacer()
-                    .frame(height: 40)
+                    .frame(height: 12)
                 
-                // MARK: - Phase 41C: Compact Header (replaces large hero branding)
-                HStack {
-                    // Left: App name
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("branchr")
-                            .font(.title3.bold())
-                            .foregroundColor(theme.primaryText)
-                    }
+                // MARK: - Phase 57: Brand Header - Logo and Theme Toggle on One Line
+                ZStack {
+                    // Centered brand title
+                    Text("branchr")
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .kerning(0.5)
+                        .foregroundColor(theme.primaryText)
                     
-                    Spacer()
-                    
-                    // Right: Theme toggle
-                    Button(action: { theme.toggleTheme() }) {
-                        Image(systemName: theme.isDarkMode ? "sun.max.fill" : "moon.fill")
-                            .font(.title3)
-                            .foregroundColor(theme.accentColor)
-                            .frame(width: 44, height: 44)
-                            .background(theme.cardBackground)
-                            .cornerRadius(10)
+                    // Theme toggle aligned to trailing edge
+                    HStack {
+                        Spacer()
+                        Button(action: { theme.toggleTheme() }) {
+                            Image(systemName: theme.isDarkMode ? "sun.max.fill" : "moon.fill")
+                                .font(.title3)
+                                .foregroundColor(theme.accentColor)
+                                .frame(width: 44, height: 44)
+                                .background(theme.cardBackground)
+                                .cornerRadius(10)
+                        }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8) // Reduced from 24 since we added Spacer above
-                
-                // Phase 41K: Additional spacing between header and main actions
-                Spacer()
-                    .frame(height: 56)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 16) // Spacing above main buttons
                 
                 // MARK: - Main Actions (Phase 2: Unified Button System)
+                // Phase 52: Primary action buttons only - status/controls moved to RideControlPanelView
                 VStack(spacing: 20) {
                     // Start Ride Tracking - Hero Button
                     PrimaryButton(
@@ -151,7 +151,7 @@ struct HomeView: View {
                         isNeonHalo: true  // Phase 34D: Thin neon halo on press
                     ) {
                         if rideSession.rideState == .idle || rideSession.rideState == .ended {
-                            RideSessionManager.shared.startSoloRide()
+                            RideSessionManager.shared.startSoloRide(musicSource: musicSourceMode)
                             withAnimation(.spring()) { showSmartRideSheet = true }
                         } else if rideSession.rideState == .active {
                             RideSessionManager.shared.pauseRide()
@@ -170,35 +170,6 @@ struct HomeView: View {
                             withAnimation(.spring()) { showSmartRideSheet = true }
                         }
                     }
-                    
-                    // MARK: - Phase 41J: Connection Status (moved between Start Ride Tracking and Start Connection)
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(connectionStatusColor)
-                            .frame(width: 12, height: 12)
-                            .shadow(
-                                color: connectionStatusColor.opacity(0.5),
-                                radius: 8,
-                                x: 0,
-                                y: 0
-                            )
-                            .scaleEffect(connectionManager.isConnected ? 1.05 : 1.0)
-                            .animation(
-                                connectionManager.isConnected
-                                ? Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)
-                                : .default,
-                                value: connectionManager.isConnected
-                            )
-                        
-                        Text(connectionStatusLabel)
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundColor(connectionStatusColor)
-                            .animation(.easeInOut, value: connectionManager.isConnected)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGray6).opacity(0.2))
-                    .clipShape(Capsule())
                     
                     // Start Connection Button
                     PrimaryButton(
@@ -238,15 +209,6 @@ struct HomeView: View {
                         .padding(.top, 8)
                     }
                     
-                    // MARK: - Phase 41J: Weekly Goal & Streak Card (moved between Start Connection and Start Voice Chat)
-                    WeeklyGoalCardView(
-                        totalThisWeekMiles: totalThisWeekMiles,
-                        goalMiles: userPreferences.weeklyDistanceGoalMiles,
-                        currentStreakDays: currentStreakDays,
-                        bestStreakDays: bestStreakDays
-                    )
-                    .padding(.horizontal, 16)
-                    
                     // Start Voice Chat Button
                     PrimaryButton(
                         voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
@@ -262,10 +224,6 @@ struct HomeView: View {
                     }
                     .rainbowGlow(active: voiceService.isVoiceChatActive)  // Phase 34D: Active-state glow
                     
-                    // MARK: - Phase 44: Audio Control Center (polished with clear active states)
-                    audioControlCenter
-                        .padding(.top, 24)
-                    
                     // Safety & SOS Button
                     SafetyButton(
                         "Safety & SOS",
@@ -275,7 +233,33 @@ struct HomeView: View {
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.bottom, 40) // Bottom padding for safe area / tab bar
+                
+                // MARK: - Phase 52: Ride Control & Audio Panel
+                RideControlPanelView(
+                    preferredMusicSource: $musicSourceMode,
+                    connectionManager: connectionManager,
+                    rideService: rideService,
+                    userPreferences: userPreferences,
+                    totalThisWeekMiles: totalThisWeekMiles,
+                    goalMiles: userPreferences.weeklyDistanceGoalMiles,
+                    currentStreakDays: currentStreakDays,
+                    bestStreakDays: bestStreakDays,
+                    isVoiceMuted: $isVoiceMuted,
+                    isMusicMuted: $isMusicMuted,
+                    onToggleMute: handleToggleMute,
+                    onToggleMusic: handleToggleMusic,
+                    onDJControlsTap: handleDJControlsTap
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .onChange(of: musicSourceMode) { newMode in
+                    // Phase 57: Sync musicSourceMode with userPreferences and musicSync
+                    userPreferences.preferredMusicSource = newMode
+                    musicSync.setMusicSourceMode(newMode)
+                }
+                
+                Spacer(minLength: 20)
+                    .frame(height: 40) // Bottom padding for safe area / tab bar
                 
                 Spacer(minLength: 20)
             }
@@ -289,6 +273,9 @@ struct HomeView: View {
                 fcmService.startListeningForSOSAlerts()
                 // Phase 41: Update goal and streak data
                 updateGoalAndStreakData()
+                // Phase 57: Initialize musicSourceMode from userPreferences
+                musicSourceMode = userPreferences.preferredMusicSource
+                musicSync.setMusicSourceMode(musicSourceMode)
             }
             .onChange(of: rideDataManager.rides.count) { _ in
                 // Phase 41: Update when rides change
@@ -331,7 +318,12 @@ struct HomeView: View {
             }
         }
         .sheet(isPresented: $showDJSheet) {
-            DJControlSheetView()
+            DJControlsSheetView(
+                musicService: MusicService.shared,
+                musicSyncService: musicSync,
+                musicSourceMode: $musicSourceMode
+            )
+            .presentationDetents([.medium, .large])
         }
         .sheet(isPresented: $showRideOptions) {
             RideOptionsSheet(rideService: rideService, showSummary: $showRideSummary, dismiss: $showRideOptions)
@@ -349,34 +341,6 @@ struct HomeView: View {
                     // Phase 34D: Start the sheet fully expanded
                     rideDetent = .large
                 }
-        }
-    }
-    
-    // MARK: - Computed Properties
-    // Phase 29: Connection status now handled inline with dynamic indicator
-    
-    // Phase 35B: Solo ride detection - show "Solo Ride" instead of "Disconnected" when ride is active
-    private var isSoloRide: Bool {
-        rideService.rideState == .active || rideService.rideState == .paused
-    }
-    
-    private var connectionStatusLabel: String {
-        if isSoloRide && !connectionManager.isConnected {
-            return "Solo Ride"
-        } else if connectionManager.isConnected {
-            return "Connected"
-        } else {
-            return "Disconnected"
-        }
-    }
-    
-    private var connectionStatusColor: Color {
-        if isSoloRide && !connectionManager.isConnected {
-            return Color.branchrAccent
-        } else if connectionManager.isConnected {
-            return .green
-        } else {
-            return .red
         }
     }
     
@@ -398,52 +362,7 @@ struct HomeView: View {
         bestStreakDays = rideDataManager.bestStreakDays()
     }
     
-    // MARK: - Phase 44: Audio Control Center
-    
-    /// Polished audio control center with clear active states
-    private var audioControlCenter: some View {
-        HStack(spacing: 16) {
-            // Voice Mute Toggle
-            AudioControlButton(
-                icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
-                title: isVoiceMuted ? "Muted" : "Unmuted",
-                isActive: !isVoiceMuted
-            ) {
-                handleToggleMute()
-            }
-            
-            // Music Toggle
-            AudioControlButton(
-                icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
-                title: isMusicMuted ? "Music Off" : "Music On",
-                isActive: !isMusicMuted
-            ) {
-                handleToggleMusic()
-            }
-            
-            // DJ Controls
-            AudioControlButton(
-                icon: "music.quarternote.3",
-                title: "DJ Controls",
-                isActive: false // DJ Controls is not a toggle, always inactive state
-            ) {
-                handleDJControlsTap()
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(theme.surfaceBackground)
-                .shadow(
-                    color: theme.isDarkMode ? .clear : Color.black.opacity(0.25),
-                    radius: theme.isDarkMode ? 0 : 18,
-                    x: 0,
-                    y: theme.isDarkMode ? 0 : 8
-                )
-        )
-        .padding(.horizontal, 24)
-    }
+    // MARK: - Phase 44: Audio Control Handlers (used by RideControlPanelView)
     
     /// Handle mute toggle with haptics
     private func handleToggleMute() {
@@ -501,44 +420,6 @@ struct HomeView: View {
 
 // MARK: - Phase 44: Audio Control Button Component
 
-/// Reusable audio control button with clear active/inactive states
-private struct AudioControlButton: View {
-    let icon: String
-    let title: String
-    let isActive: Bool
-    let action: () -> Void
-    
-    @ObservedObject private var theme = ThemeManager.shared
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 40, height: 40)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(isActive ? theme.brandYellow : theme.surfaceBackground)
-                    )
-                    .foregroundColor(isActive ? .black : .white)
-                
-                Text(title)
-                    .font(.caption.bold())
-                    .foregroundColor(
-                        isActive ? .white : Color.white.opacity(0.85)
-                    )
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.black.opacity(isActive ? 0.9 : 0.7))
-            )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - Control Button Component (Legacy - kept for compatibility)
 
 struct ControlButton: View {
@@ -561,6 +442,53 @@ struct ControlButton: View {
                 Text(title)
                     .font(.caption)
                     .foregroundColor(Color.white.opacity(0.9)) // White labels for readability on black
+            }
+        }
+    }
+}
+
+// MARK: - Phase 51: Music Source Selector
+
+struct MusicSourceSelectorView: View {
+    @Binding var selectedSource: MusicSourceMode
+    @ObservedObject private var theme = ThemeManager.shared
+    
+    var body: some View {
+        // Phase 54: Removed "Music Source" label, keep only selector pills
+        HStack(spacing: 12) {
+            ForEach(MusicSourceMode.allCases) { source in
+                Button {
+                    selectedSource = source
+                    HapticsService.shared.lightTap()
+                    print("Branchr: Music source changed to \(source.title)")
+                    // Phase 57: Changes are synced via onChange in HomeView
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: source.systemImageName)
+                            .font(.system(size: 16, weight: .semibold))
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(source.title)
+                                .font(.caption.bold())
+                            Text(source.subtitle)
+                                .font(.caption2)
+                                .opacity(0.7)
+                        }
+                    }
+                    .foregroundColor(selectedSource == source ? .black : .white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(selectedSource == source ? theme.brandYellow : theme.surfaceBackground)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(selectedSource == source ? theme.brandYellow : Color.clear, lineWidth: 2)
+                    )
+                }
+                .buttonStyle(.plain)
             }
         }
     }

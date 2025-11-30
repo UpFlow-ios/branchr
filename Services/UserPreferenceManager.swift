@@ -105,6 +105,14 @@ class UserPreferenceManager: ObservableObject {
         }
     }
     
+    // Phase 51: Preferred music source mode
+    @Published var preferredMusicSource: MusicSourceMode {
+        didSet {
+            UserDefaults.standard.set(preferredMusicSource.rawValue, forKey: "preferredMusicSource")
+            print("Branchr UserPreferenceManager: preferredMusicSource set to \(preferredMusicSource.title)")
+        }
+    }
+    
     // MARK: - Private Properties
     private let userDefaults = UserDefaults.standard
     
@@ -127,6 +135,13 @@ class UserPreferenceManager: ObservableObject {
         self.preferredCalendarIdentifier = userDefaults.string(forKey: "preferredCalendarIdentifier")
         // Phase 41: Weekly distance goal (default 25.0 miles)
         self.weeklyDistanceGoalMiles = userDefaults.object(forKey: "weeklyDistanceGoalMiles") as? Double ?? 25.0
+        // Phase 51: Preferred music source (default Apple Music Synced)
+        if let rawValue = userDefaults.string(forKey: "preferredMusicSource"),
+           let source = MusicSourceMode(rawValue: rawValue) {
+            self.preferredMusicSource = source
+        } else {
+            self.preferredMusicSource = .appleMusicSynced
+        }
         
         print("Branchr UserPreferenceManager initialized")
         print("Branchr: Voice assistant enabled: \(voiceAssistantEnabled)")
@@ -147,6 +162,7 @@ class UserPreferenceManager: ObservableObject {
         voiceCoachEnabled = true // Phase 39
         preferredCalendarIdentifier = nil // Phase 40: Reset to system default
         weeklyDistanceGoalMiles = 25.0 // Phase 41: Reset to default goal
+        preferredMusicSource = .appleMusicSynced // Phase 51: Reset to default
         
         print("Branchr: All preferences reset to defaults")
     }

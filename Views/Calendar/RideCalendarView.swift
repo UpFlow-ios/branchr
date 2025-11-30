@@ -18,6 +18,7 @@ import SwiftUI
 struct RideCalendarView: View {
     @StateObject private var rideDataManager = RideDataManager.shared
     @ObservedObject private var theme = ThemeManager.shared
+    @Environment(\.colorScheme) private var colorScheme
     @State private var selectedDay: Date? = nil
     @State private var selectedSummary: DayRideSummary? = nil
     @State private var selectedRide: RideRecord? = nil
@@ -26,6 +27,7 @@ struct RideCalendarView: View {
     @State private var noRidesMessage: String? = nil
     @State private var refreshTrigger = UUID()
     @State private var showRideInsights = false // Phase 38: Ride Insights sheet
+    @State private var showRideStats = false // Phase 49: Monthly Ride Stats
     
     // Phase 47: Month navigation state
     @State private var displayedMonth: Date = {
@@ -39,7 +41,8 @@ struct RideCalendarView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 20) {
                 // Phase 47: Month/Year Header with Navigation
                 HStack(spacing: 16) {
                     Button {
@@ -133,18 +136,17 @@ struct RideCalendarView: View {
                         value: summary.date
                     )
                 }
-                
-                Spacer()
+                }
+                .padding(.bottom, 24)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.primaryBackground.ignoresSafeArea())
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        showRideInsights = true
-                        print("📊 RideCalendarView: opening RideInsightsView")
+                        showRideStats = true
+                        print("📊 RideCalendarView: opening RideStatsView for \(currentMonthYear)")
                     } label: {
                         Image(systemName: "chart.line.uptrend.xyaxis")
                             .foregroundColor(theme.accentColor)
@@ -166,6 +168,24 @@ struct RideCalendarView: View {
             .sheet(isPresented: $showRideInsights) {
                 RideInsightsView()
                     .presentationDetents([.large])
+            }
+            .sheet(isPresented: $showRideStats) {
+                RideStatsView(
+                    month: displayedMonth,
+                    onClose: {
+                        showRideStats = false
+                    },
+                    onSelectDay: { date in
+                        // Phase 50: Update calendar selection and close stats
+                        selectedDay = date
+                        if let summary = rideDataManager.summary(for: date) {
+                            selectedSummary = summary
+                        }
+                        showRideStats = false
+                        HapticsService.shared.mediumTap()
+                    }
+                )
+                .presentationDetents([.large])
             }
             .sheet(isPresented: $showRideDetail) {
                 if let ride = selectedRide {
@@ -247,6 +267,8 @@ struct CalendarDayCell: View {
     let isInDisplayedMonth: Bool // Phase 47: Use displayedMonth instead of Date()
     let action: () -> Void
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     private var calendar: Calendar { Calendar.current }
     private var hasRides: Bool {
         if let summary = summary {
@@ -255,45 +277,65 @@ struct CalendarDayCell: View {
         return false
     }
     
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 4) {
-                Text("\(calendar.component(.day, from: day))")
-                    .font(.subheadline.bold())
-                    .foregroundColor(textColor)
-                
-                // Ride indicator dot
-                Circle()
-                    .fill(hasRides ? theme.brandYellow : Color.clear)
-                    .frame(width: 6, height: 6)
-                    .opacity(hasRides ? 1 : 0)
-            }
-            .frame(width: 36, height: 44)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(isSelected ? theme.brandYellow : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(
-                        hasRides
-                            ? theme.brandYellow.opacity(isSelected ? 1.0 : 0.6)
-                            : Color.clear,
-                        lineWidth: hasRides ? (isSelected ? 2 : 1) : 0
-                    )
-            )
-        }
-        .disabled(!isInDisplayedMonth) // Phase 47: Use isInDisplayedMonth
+    // Phase 48: Theme-aware colors for unified pill + dot layout
+    private var isDark: Bool {
+        colorScheme == .dark
+    }
+    
+    private var accentColor: Color {
+        isDark ? theme.brandYellow : theme.primaryText
     }
     
     private var textColor: Color {
         if isSelected {
-            return .black
-        } else if !isInDisplayedMonth { // Phase 47: Use isInDisplayedMonth
-            return theme.secondaryText.opacity(0.3)
+            return isDark ? .black : theme.surfaceBackground
+        } else if !isInDisplayedMonth {
+            return theme.primaryText.opacity(0.3)
         } else {
-            return .white
+            return theme.primaryText
         }
+    }
+    
+    private var pillFill: Color {
+        isSelected ? accentColor : .clear
+    }
+    
+    private var pillStroke: Color? {
+        hasRides ? accentColor : nil
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                // Phase 48: Filled pill for selected day
+                Capsule()
+                    .fill(pillFill)
+                
+                // Phase 48: Stroke outline when there are rides
+                if let pillStroke = pillStroke {
+                    Capsule()
+                        .stroke(pillStroke, lineWidth: isSelected ? 2 : 1.2)
+                }
+                
+                VStack(spacing: 4) {
+                    Text("\(calendar.component(.day, from: day))")
+                        .font(.system(size: 15, weight: isSelected ? .semibold : .medium))
+                        .foregroundColor(textColor)
+                    
+                    // Phase 48: Dot indicator for days with rides
+                    if hasRides {
+                        Circle()
+                            .fill(isSelected ? textColor : accentColor)
+                            .frame(width: 4, height: 4)
+                    }
+                }
+                .padding(.vertical, 6)
+                .padding(.horizontal, 8)
+            }
+            .opacity(isInDisplayedMonth ? 1.0 : 0.3)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isInDisplayedMonth)
     }
 }
 
@@ -345,7 +387,8 @@ struct SelectedDayRideCard: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 24)
             } else {
-                VStack(alignment: .leading, spacing: 12) {
+                // Phase 48: LazyVStack for scrollable rides list (no height constraints)
+                LazyVStack(alignment: .leading, spacing: 12) {
                     ForEach(summary.rides) { ride in
                         Button {
                             onRideTap(ride)

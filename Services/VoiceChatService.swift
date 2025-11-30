@@ -133,10 +133,11 @@ class VoiceChatService: NSObject, ObservableObject {
             // First, deactivate any existing session to avoid conflicts
             try? audioSession.setActive(false, options: .notifyOthersOnDeactivation)
             
-            // Configure audio session for voice chat
+            // Phase 51: Configure audio session for voice chat + simultaneous music
+            // mixWithOthers allows music apps to continue playing while voice chat is active
             try audioSession.setCategory(.playAndRecord, 
                                       mode: .voiceChat, 
-                                      options: [.allowBluetooth, .allowBluetoothA2DP, .defaultToSpeaker])
+                                      options: [.allowBluetooth, .allowBluetoothA2DP, .defaultToSpeaker, .mixWithOthers])
             
             // Set preferred buffer duration for low latency
             try audioSession.setPreferredIOBufferDuration(0.005) // 5ms buffer

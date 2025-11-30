@@ -91,13 +91,20 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
     // to avoid main actor isolation issues
     
     // MARK: Ride lifecycle
-    func startSoloRide() {
+    func startSoloRide(musicSource: MusicSourceMode? = nil) {
         guard rideState == .idle else { return }
         resetRideData()
         showSummary = false  // Phase 35.4: Hide summary when starting new ride
         isGroupRide = false
         isHost = false
         groupRideId = nil
+        
+        // Phase 51: Use provided music source or default from preferences
+        let selectedMusicSource = musicSource ?? UserPreferenceManager.shared.preferredMusicSource
+        print("Branchr: Starting ride with musicSource = \(selectedMusicSource.title)")
+        
+        // Phase 51: Configure music sync service
+        MusicSyncService.shared.setMusicSourceMode(selectedMusicSource)
         
         // Phase 35.6: Track absolute ride start time for safety guard
         rideStartTime = Date()
@@ -115,10 +122,17 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
         }
     }
     
-    func startGroupRide() {
+    func startGroupRide(musicSource: MusicSourceMode? = nil) {
         guard rideState == .idle, let uid = Auth.auth().currentUser?.uid else { return }
         resetRideData()
         showSummary = false
+        
+        // Phase 51: Use provided music source or default from preferences
+        let selectedMusicSource = musicSource ?? UserPreferenceManager.shared.preferredMusicSource
+        print("Branchr: Starting ride with musicSource = \(selectedMusicSource.title)")
+        
+        // Phase 51: Configure music sync service
+        MusicSyncService.shared.setMusicSourceMode(selectedMusicSource)
         
         // CRITICAL: Set group ride state
         isGroupRide = true
@@ -166,10 +180,18 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
         }
     }
     
-    func joinGroupRide(rideId: String) {
+    func joinGroupRide(rideId: String, musicSource: MusicSourceMode? = nil) {
         guard rideState == .idle, let uid = Auth.auth().currentUser?.uid else { return }
         resetRideData()
         showSummary = false  // Phase 35.4: Hide summary when starting new ride
+        
+        // Phase 51: Use provided music source or default from preferences
+        let selectedMusicSource = musicSource ?? UserPreferenceManager.shared.preferredMusicSource
+        print("Branchr: Joining ride with musicSource = \(selectedMusicSource.title)")
+        
+        // Phase 51: Configure music sync service
+        MusicSyncService.shared.setMusicSourceMode(selectedMusicSource)
+        
         isGroupRide = true
         isHost = false
         groupRideId = rideId

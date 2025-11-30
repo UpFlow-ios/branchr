@@ -66,9 +66,9 @@ struct RideTrackingView: View {
                 // 2) MAIN CONTENT - Phase 42: Clean single-column layout
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Top spacing
-                        Spacer()
-                            .frame(height: 16)
+                        // Phase 57: Grabber handle at top
+                        grabberHandle
+                            .padding(.top, 8)
                         
                         // Phase 42: Compact Status Strip
                         rideStatusStrip
@@ -232,10 +232,26 @@ struct RideTrackingView: View {
 
     // MARK: - Phase 42: UI Components
     
-    /// Phase 43C: Host HUD in top header strip
+    /// Phase 57: Grabber handle at top of ride view
+    private var grabberHandle: some View {
+        Capsule()
+            .fill(Color.white.opacity(0.25))
+            .frame(width: 40, height: 4)
+            .padding(.bottom, 4)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // Phase 57: Dismiss on tap (replaces old X button behavior)
+                dismiss()
+            }
+    }
+    
+    /// Phase 43C: Host HUD in top header strip (Phase 57: widened, no X button)
     private var rideStatusStrip: some View {
         HStack {
             // Host HUD moved to top header
+            // Phase 53: Music source indicator embedded in host card
+            // Phase 57: Widened to full width with standard padding
             if rideService.rideState == .active || rideService.rideState == .paused {
                 RideHostHUDView(
                     hostName: profileManager.currentDisplayName,
@@ -244,18 +260,10 @@ struct RideTrackingView: View {
                     speedMph: rideService.currentSpeedMph,
                     durationText: rideService.formattedDuration,
                     isConnected: connectionManager.state == .connected,
-                    isMusicOn: musicSync.currentTrack?.isPlaying ?? false
+                    isMusicOn: musicSync.currentTrack?.isPlaying ?? false,
+                    musicSourceMode: musicSync.musicSourceMode
                 )
-            }
-            
-            Spacer()
-            
-            // Close button
-            Button(action: { dismiss() }) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.title3)
-                    .foregroundColor(theme.brandYellow)
-                    .frame(width: 32, height: 32)
+                .frame(maxWidth: .infinity)
             }
         }
     }

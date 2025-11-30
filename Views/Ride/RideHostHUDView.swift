@@ -19,6 +19,9 @@ struct RideHostHUDView: View {
     let isConnected: Bool
     let isMusicOn: Bool
     
+    // Phase 53: Music source mode indicator
+    let musicSourceMode: MusicSourceMode?
+    
     @ObservedObject private var theme = ThemeManager.shared
     
     var body: some View {
@@ -45,6 +48,21 @@ struct RideHostHUDView: View {
                         .clipShape(Capsule())
                 }
                 
+                // Phase 53: Music source chip inside host card
+                if let mode = musicSourceMode {
+                    HStack(spacing: 6) {
+                        Image(systemName: mode.systemImageName)
+                            .font(.caption)
+                        Text(mode.title)
+                            .font(.caption.bold())
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.black.opacity(0.35))
+                    .clipShape(Capsule())
+                }
+                
                 // Metrics row
                 HStack(spacing: 12) {
                     metricLabel(icon: "location.north.line", text: String(format: "%.2f mi", distanceMiles))
@@ -69,8 +87,9 @@ struct RideHostHUDView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 20) // Phase 57: Wider padding for full-width feel
         .padding(.vertical, 12)
+        .frame(maxWidth: .infinity) // Phase 57: Full width within safe margins
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(theme.surfaceBackground)

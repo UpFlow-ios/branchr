@@ -328,6 +328,94 @@ class RideDataManager: ObservableObject {
         return streak
     }
     
+    // MARK: - Phase 49: Monthly Stats Helper
+    
+    /// Get all rides for a specific month
+    /// - Parameter month: A date within the target month
+    /// - Returns: Array of rides in that month
+    func ridesForMonth(_ month: Date) -> [RideRecord] {
+        let calendar = Calendar.current
+        guard let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: month)),
+              let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) else {
+            return []
+        }
+        
+        return rides.filter { ride in
+            ride.date >= monthStart && ride.date < monthEnd
+        }
+    }
+    
+    /// Compute monthly summary statistics
+    /// - Parameter month: A date within the target month
+    /// - Returns: Monthly stats (total distance, time, rides, averages)
+    func monthSummary(for month: Date) -> MonthRideSummary {
+        let monthRides = ridesForMonth(month)
+        let calendar = Calendar.current
+        guard let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: month)) else {
+            return MonthRideSummary(month: month, rides: [], totalDistance: 0, totalDuration: 0, totalRides: 0, averageDistance: 0, averageSpeed: 0)
+        }
+        
+        let totalDistance = monthRides.reduce(0.0) { $0 + $1.distance }
+        let totalDuration = monthRides.reduce(0.0) { $0 + $1.duration }
+        let totalRides = monthRides.count
+        
+        let averageDistance = totalRides > 0 ? (totalDistance / 1609.34) / Double(totalRides) : 0.0
+        
+        // Calculate average speed: weighted average of all rides
+        let averageSpeed: Double
+        if totalDuration > 0 && totalDistance > 0 {
+            let totalDistanceMiles = totalDistance / 1609.34
+            let totalTimeHours = totalDuration / 3600.0
+            averageSpeed = totalDistanceMiles / totalTimeHours
+        } else {
+            averageSpeed = 0.0
+        }
+        
+        return MonthRideSummary(
+            month: monthStart,
+            rides: monthRides,
+            totalDistance: totalDistance,
+            totalDuration: totalDuration,
+            totalRides: totalRides,
+            averageDistance: averageDistance,
+            averageSpeed: averageSpeed
+        )
+    }
+    
+    /// Get daily distance data for a specific month (for trend visualization)
+    /// - Parameter month: A date within the target month
+    /// - Returns: Array of daily distance data for that month
+    func dailyDistanceForMonth(_ month: Date) -> [DailyDistance] {
+        let calendar = Calendar.current
+        guard let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: month)),
+              let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart),
+              let daysInMonth = calendar.range(of: .day, in: .month, for: month) else {
+            return []
+        }
+        
+        var dailyData: [DailyDistance] = []
+        
+        for dayOffset in daysInMonth {
+            guard let day = calendar.date(byAdding: .day, value: dayOffset - 1, to: monthStart) else { continue }
+            let dayStart = calendar.startOfDay(for: day)
+            let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
+            
+            let dayRides = rides.filter { ride in
+                ride.date >= dayStart && ride.date < dayEnd
+            }
+            
+            let totalDistanceMiles = dayRides.reduce(0.0) { $0 + ($1.distance / 1609.34) }
+            
+            dailyData.append(DailyDistance(
+                date: dayStart,
+                dayNumber: dayOffset,
+                distanceMiles: totalDistanceMiles
+            ))
+        }
+        
+        return dailyData
+    }
+    
     /// Compute the longest streak of consecutive days with at least one ride in entire history
     /// - Returns: Number of days in the best streak (0 if no rides)
     func bestStreakDays() -> Int {
@@ -408,6 +496,138 @@ struct RideTrendPoint: Identifiable {
         self.totalDistanceMiles = totalDistanceMiles
         self.totalDurationSeconds = totalDurationSeconds
         self.averageSpeedMph = averageSpeedMph
+    }
+}
+
+// MARK: - Phase 49: Monthly Stats Data Structures
+
+struct MonthRideSummary {
+    let month: Date
+    let rides: [RideRecord]
+    let totalDistance: Double // meters
+    let totalDuration: TimeInterval
+    let totalRides: Int
+    let averageDistance: Double // miles per ride
+    let averageSpeed: Double // mph
+    
+    var totalDistanceInMiles: Double {
+        totalDistance / 1609.34
+    }
+    
+    var formattedDuration: String {
+        let hours = Int(totalDuration) / 3600
+        let minutes = (Int(totalDuration) % 3600) / 60
+        
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        } else {
+            return "\(minutes)m"
+        }
+    }
+    
+    // Phase 50: Best streak within this month
+    var bestStreakInMonth: Int {
+        let calendar = Calendar.current
+        guard let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: month)),
+              let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) else {
+            return 0
+        }
+        
+        // Get all days in this month that have rides
+        var ridesByDay: Set<Date> = []
+        for ride in rides {
+            let day = calendar.startOfDay(for: ride.date)
+            if day >= monthStart && day < monthEnd {
+                ridesByDay.insert(day)
+            }
+        }
+        
+        guard !ridesByDay.isEmpty else {
+            return 0
+        }
+        
+        // Sort days chronologically
+        let sortedDays = ridesByDay.sorted()
+        
+        // Find longest consecutive sequence within the month
+        var bestStreak = 1
+        var currentStreak = 1
+        
+        for i in 1..<sortedDays.count {
+            if let daysBetween = calendar.dateComponents([.day], from: sortedDays[i - 1], to: sortedDays[i]).day,
+               daysBetween == 1 {
+                currentStreak += 1
+                bestStreak = max(bestStreak, currentStreak)
+            } else {
+                currentStreak = 1
+            }
+        }
+        
+        return bestStreak
+    }
+    
+    // Phase 50: Completed goals for this month
+    var completedGoals: [RideGoal] {
+        var goals: [RideGoal] = []
+        
+        // 200 miles in a month
+        if totalDistanceInMiles >= 200.0 {
+            goals.append(RideGoal(
+                id: "monthly_distance_200",
+                title: "200 Miles in a Month",
+                description: "You rode at least 200 miles this month.",
+                isCompleted: true
+            ))
+        }
+        
+        // 20 rides in a month
+        if totalRides >= 20 {
+            goals.append(RideGoal(
+                id: "monthly_rides_20",
+                title: "20 Rides in a Month",
+                description: "You completed 20 or more rides this month.",
+                isCompleted: true
+            ))
+        }
+        
+        // 5-day streak in a month
+        if bestStreakInMonth >= 5 {
+            goals.append(RideGoal(
+                id: "streak_5_days",
+                title: "5-Day Streak",
+                description: "You kept riding for at least 5 days in a row this month.",
+                isCompleted: true
+            ))
+        }
+        
+        return goals
+    }
+    
+    var hasCompletedGoals: Bool {
+        !completedGoals.isEmpty
+    }
+}
+
+// MARK: - Phase 50: Ride Goal Model
+
+struct RideGoal: Identifiable, Hashable {
+    let id: String
+    let title: String
+    let description: String
+    let isCompleted: Bool
+}
+
+struct DailyDistance: Identifiable {
+    let id: UUID
+    let date: Date
+    let dayNumber: Int
+    let distanceMiles: Double
+    
+    init(id: UUID = UUID(), date: Date, dayNumber: Int, distanceMiles: Double) {
+        self.id = id
+        self.date = date
+        self.dayNumber = dayNumber
+        self.distanceMiles = distanceMiles
     }
 }
 
