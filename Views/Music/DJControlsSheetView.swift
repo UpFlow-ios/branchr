@@ -57,10 +57,10 @@ struct DJControlsSheetView: View {
             // Music source pill (Phase 58: with branded icon and non-truncated text)
             HStack(spacing: 8) {
                 Image(musicSourceMode.assetName)
+                    .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 14, height: 14)
-                    .renderingMode(.template)
                 Text(musicSourceMode.shortTitle)
                     .font(.system(size: 14, weight: .semibold))
                     .lineLimit(1)

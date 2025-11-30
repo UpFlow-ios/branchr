@@ -52,10 +52,10 @@ struct RideHostHUDView: View {
                 if let mode = musicSourceMode {
                     HStack(spacing: 6) {
                         Image(mode.assetName)
+                            .renderingMode(.template)
                             .resizable()
                             .scaledToFit()
                             .frame(width: 13, height: 13)
-                            .renderingMode(.template)
                         Text(mode.title)
                             .font(.caption.bold())
                     }

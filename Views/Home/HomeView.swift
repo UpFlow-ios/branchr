@@ -465,10 +465,10 @@ struct MusicSourceSelectorView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(source.assetName)
+                            .renderingMode(.template)
                             .resizable()
                             .scaledToFit()
                             .frame(width: 15, height: 15)
-                            .renderingMode(.template)
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text(source.title)
