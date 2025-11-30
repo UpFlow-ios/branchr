@@ -54,9 +54,9 @@ struct DJControlsSheetView: View {
             
             Spacer()
             
-            // Music source pill (Phase 58: with branded icon and non-truncated text)
+            // Music source pill (Phase 59: with safe branded icon and non-truncated text)
             HStack(spacing: 8) {
-                Image(musicSourceMode.assetName)
+                brandedLogo(for: musicSourceMode)
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
@@ -72,6 +72,18 @@ struct DJControlsSheetView: View {
             .background(Color.yellow.opacity(0.15))
             .foregroundColor(.yellow)
             .clipShape(Capsule())
+        }
+    }
+    
+    // MARK: - Phase 59: Safe Branded Logo Helper
+    
+    /// Returns branded logo image if available, falls back to SF Symbol
+    private func brandedLogo(for mode: MusicSourceMode) -> Image {
+        if UIImage(named: mode.assetName) != nil {
+            return Image(mode.assetName)
+        } else {
+            // Failsafe – fall back to SF Symbol to avoid log spam
+            return Image(systemName: mode.systemIconName)
         }
     }
     

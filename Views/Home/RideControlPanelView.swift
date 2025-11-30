@@ -116,7 +116,7 @@ struct RideControlPanelView: View {
                 bestStreakDays: bestStreakDays
             )
             
-            // Voice/Audio Controls Row
+            // Voice/Audio Controls Row (Phase 59: swapped Music On and DJ Controls)
             HStack(spacing: 16) {
                 // Voice Mute Toggle
                 AudioControlButton(
@@ -127,22 +127,22 @@ struct RideControlPanelView: View {
                     onToggleMute()
                 }
                 
-                // Music Toggle
-                AudioControlButton(
-                    icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
-                    title: isMusicMuted ? "Music Off" : "Music On",
-                    isActive: !isMusicMuted
-                ) {
-                    onToggleMusic()
-                }
-                
-                // DJ Controls
+                // DJ Controls (Phase 59: moved to middle position)
                 AudioControlButton(
                     icon: "music.quarternote.3",
                     title: "DJ Controls",
                     isActive: false // DJ Controls is not a toggle, always inactive state
                 ) {
                     onDJControlsTap()
+                }
+                
+                // Music Toggle (Phase 59: moved to right position)
+                AudioControlButton(
+                    icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
+                    title: isMusicMuted ? "Music Off" : "Music On",
+                    isActive: !isMusicMuted
+                ) {
+                    onToggleMusic()
                 }
             }
             .frame(maxWidth: .infinity)

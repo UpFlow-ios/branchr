@@ -84,6 +84,7 @@ This file tracks all completed phases in chronological order.
 - Phase 56 – Home Brand Header + Connection Pill Centering (✅ completed)
 - Phase 57 – Home Header Polish, DJ Controls Source Sync, and Ride HUD Cleanup (✅ completed)
 - Phase 58 – Branded Music Logos (Apple Music & Other App) (✅ completed)
+- Phase 59 – Home Layout Drop, Button Swap, and Apple Music Asset Fix (✅ completed)
 
 ---
 <｜tool▁call▁begin｜>

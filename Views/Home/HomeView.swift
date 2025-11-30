@@ -136,6 +136,10 @@ struct HomeView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 16) // Spacing above main buttons
                 
+                // Phase 59: Extra spacer to push content lower
+                Spacer()
+                    .frame(height: 24)
+                
                 // MARK: - Main Actions (Phase 2: Unified Button System)
                 // Phase 52: Primary action buttons only - status/controls moved to RideControlPanelView
                 VStack(spacing: 20) {
@@ -258,10 +262,9 @@ struct HomeView: View {
                     musicSync.setMusicSourceMode(newMode)
                 }
                 
-                Spacer(minLength: 20)
-                    .frame(height: 40) // Bottom padding for safe area / tab bar
-                
-                Spacer(minLength: 20)
+                // Phase 59: Minimal bottom spacing - card should almost touch tab bar
+                Spacer()
+                    .frame(height: 10) // Small gap above tab bar
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 40)
@@ -464,7 +467,7 @@ struct MusicSourceSelectorView: View {
                     // Phase 57: Changes are synced via onChange in HomeView
                 } label: {
                     HStack(spacing: 8) {
-                        Image(source.assetName)
+                        brandedLogo(for: source)
                             .renderingMode(.template)
                             .resizable()
                             .scaledToFit()
@@ -493,6 +496,18 @@ struct MusicSourceSelectorView: View {
                 }
                 .buttonStyle(.plain)
             }
+        }
+    }
+    
+    // MARK: - Phase 59: Safe Branded Logo Helper
+    
+    /// Returns branded logo image if available, falls back to SF Symbol
+    private func brandedLogo(for mode: MusicSourceMode) -> Image {
+        if UIImage(named: mode.assetName) != nil {
+            return Image(mode.assetName)
+        } else {
+            // Failsafe – fall back to SF Symbol to avoid log spam
+            return Image(systemName: mode.systemIconName)
         }
     }
 }

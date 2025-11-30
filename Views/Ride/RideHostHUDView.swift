@@ -48,10 +48,10 @@ struct RideHostHUDView: View {
                         .clipShape(Capsule())
                 }
                 
-                // Phase 53: Music source chip inside host card (Phase 58: branded icon)
+                // Phase 53: Music source chip inside host card (Phase 59: safe branded icon)
                 if let mode = musicSourceMode {
                     HStack(spacing: 6) {
-                        Image(mode.assetName)
+                        brandedLogo(for: mode)
                             .renderingMode(.template)
                             .resizable()
                             .scaledToFit()
@@ -183,6 +183,18 @@ struct RideHostHUDView: View {
             return Color.branchrAccent
         } else {
             return Color.green
+        }
+    }
+    
+    // MARK: - Phase 59: Safe Branded Logo Helper
+    
+    /// Returns branded logo image if available, falls back to SF Symbol
+    private func brandedLogo(for mode: MusicSourceMode) -> Image {
+        if UIImage(named: mode.assetName) != nil {
+            return Image(mode.assetName)
+        } else {
+            // Failsafe – fall back to SF Symbol to avoid log spam
+            return Image(systemName: mode.systemIconName)
         }
     }
 }
