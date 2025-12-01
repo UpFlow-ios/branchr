@@ -484,16 +484,10 @@ struct MusicSourceSelectorView: View {
                         brandedLogo(for: source)
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 24) // big enough to fill the pill visually
+                            .frame(height: 32) // was 24 – make badge bigger
                             .padding(.horizontal, 12)
                     }
                     .frame(maxWidth: .infinity, minHeight: 52) // pill height similar to old yellow pill
-                    .shadow(
-                        color: theme.brandYellow.opacity(selectedSource == source ? 0.4 : 0.0),
-                        radius: 16,
-                        x: 0,
-                        y: 0
-                    )
                 }
                 .buttonStyle(.plain)
             }

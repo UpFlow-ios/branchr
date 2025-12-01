@@ -87,6 +87,7 @@ This file tracks all completed phases in chronological order.
 - Phase 59 – Home Layout Drop, Button Swap, and Apple Music Asset Fix (✅ completed)
 - Phase 60 – Full-Color Music Badges + Header Drop (✅ completed)
 - Phase 60.2 – Glass Music Source Pills with Full-Size Badges (✅ completed)
+- Phase 60.3 – Enlarge Music Badges & Remove Glow (✅ completed)
 
 ---
 <｜tool▁call▁begin｜>
