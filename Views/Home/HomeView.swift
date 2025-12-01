@@ -108,9 +108,9 @@ struct HomeView: View {
                     }
                 }
                 
-                // Top breathing room - push all content down
+                // Top breathing room - push all content down (Phase 60.3: increased for lower header)
                 Spacer()
-                    .frame(height: 12)
+                    .frame(height: 40) // was 12 – wordmark sits lower, away from status bar
                 
                 // MARK: - Phase 57: Brand Header - Logo and Theme Toggle on One Line
                 ZStack {
@@ -484,7 +484,7 @@ struct MusicSourceSelectorView: View {
                         brandedLogo(for: source)
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 32) // was 24 – make badge bigger
+                            .frame(height: 40) // was 32 – make badge bigger
                             .padding(.horizontal, 12)
                     }
                     .frame(maxWidth: .infinity, minHeight: 52) // pill height similar to old yellow pill

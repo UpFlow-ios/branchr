@@ -7,9 +7,10 @@
 
 ## 🎯 Goals
 
-1. Make the Apple Music and branchr badge logos inside the music source pills **larger** (from 24pt to 32pt height).
+1. Make the Apple Music and branchr badge logos inside the music source pills **larger** (from 32pt to 40pt height).
 2. Remove the **yellow glow shadow** from the selected pill.
-3. Keep the glass background + yellow border for the selected pill exactly as in Phase 60.2.
+3. Move the top "branchr" wordmark lower on the Home screen (increased top spacer from 12pt to 40pt).
+4. Keep the glass background + yellow border for the selected pill exactly as in Phase 60.2.
 
 ---
 
@@ -20,8 +21,8 @@
 **Modified**: `Views/Home/HomeView.swift` (MusicSourceSelectorView component)
 
 **Changes**:
-- Increased badge frame height from `24pt` to `32pt`
-- Badges now fill the pill more prominently
+- Increased badge frame height from `32pt` to `40pt`
+- Badges now fill the pill more prominently and are more dominant
 - Maintains proportional width (aspect ratio preserved)
 - Keeps 12pt horizontal padding for breathing room
 
@@ -30,15 +31,36 @@
 brandedLogo(for: source)
     .resizable()
     .scaledToFit()
-    .frame(height: 32) // was 24 – make badge bigger
+    .frame(height: 40) // was 32 – make badge bigger
     .padding(.horizontal, 12)
 ```
 
-**Result**: Badges are now 33% larger (32pt vs 24pt), making them more prominent and easier to recognize.
+**Result**: Badges are now 25% larger (40pt vs 32pt), making them more prominent, dominant, and easier to recognize.
 
 ---
 
-### 2. Removed Yellow Glow Shadow
+### 2. Lowered Header Position
+
+**Modified**: `Views/Home/HomeView.swift`
+
+**Changes**:
+- Increased top spacer from `12pt` to `40pt`
+- "branchr" wordmark now sits lower, away from the status bar
+- Creates more breathing room between status bar and header
+- Improves visual hierarchy and spacing
+
+**Updated Code**:
+```swift
+// Top breathing room - push all content down (Phase 60.3: increased for lower header)
+Spacer()
+    .frame(height: 40) // was 12 – wordmark sits lower, away from status bar
+```
+
+**Result**: Header has more space from the status bar, creating better visual separation and hierarchy.
+
+---
+
+### 3. Removed Yellow Glow Shadow
 
 **Modified**: `Views/Home/HomeView.swift` (MusicSourceSelectorView component)
 
@@ -64,16 +86,19 @@ brandedLogo(for: source)
 ## 🎨 Visual Design
 
 ### Before Phase 60.3:
-- Badges were 24pt height
+- Badges were 32pt height
+- Header was close to status bar (12pt spacing)
 - Selected pill had yellow glow shadow (0.4 opacity, 16pt radius)
 - More subtle badge presence
 - Glow added extra visual weight
 
 ### After Phase 60.3:
-- **Larger Badges**: 32pt height badges are more prominent and fill the pill better
+- **Larger Badges**: 40pt height badges are more prominent and dominant
+- **Lower Header**: Wordmark sits lower with 40pt spacing from status bar
 - **No Glow**: Selected pill uses only glass + border (cleaner appearance)
 - **Better Visibility**: Larger badges are easier to recognize at a glance
 - **Subtle Selection**: Glass + border provides selection feedback without glow
+- **Better Hierarchy**: More breathing room improves visual spacing
 
 ---
 
@@ -82,10 +107,18 @@ brandedLogo(for: source)
 ### Badge Sizing
 
 **Implementation**:
-- 32pt height (increased from 24pt)
+- 40pt height (increased from 32pt)
 - Proportional width (maintains aspect ratio)
 - 12pt horizontal padding preserved
 - Pill height remains 52pt (minHeight)
+
+### Header Spacing
+
+**Implementation**:
+- Top spacer increased from 12pt to 40pt
+- Creates more breathing room between status bar and header
+- Improves visual hierarchy
+- Header no longer hugs the status bar
 
 ### Shadow Removal
 
@@ -112,8 +145,9 @@ brandedLogo(for: source)
 
 ## ✅ Acceptance Criteria
 
-- [x] Badges enlarged from 24pt to 32pt height
-- [x] Badges fill pills more prominently
+- [x] Badges enlarged from 32pt to 40pt height
+- [x] Badges fill pills more prominently and are more dominant
+- [x] Header moved lower (top spacer increased from 12pt to 40pt)
 - [x] Yellow glow shadow removed from selected pill
 - [x] Glass background + yellow border preserved for selected pill
 - [x] All selection logic, haptics, and logging unchanged
@@ -125,7 +159,8 @@ brandedLogo(for: source)
 ## 📁 Files Modified
 
 1. **Views/Home/HomeView.swift**
-   - Increased badge frame height from 24pt to 32pt
+   - Increased badge frame height from 32pt to 40pt
+   - Increased top spacer from 12pt to 40pt (lowered header)
    - Removed yellow glow shadow from pill container
 
 ---
@@ -133,12 +168,14 @@ brandedLogo(for: source)
 ## 🚀 User Experience
 
 ### Before:
-- Badges were smaller (24pt), less prominent
+- Badges were smaller (32pt), less prominent
+- Header was close to status bar (12pt spacing)
 - Glow effect added visual weight
 - Less immediate brand recognition
 
 ### After:
-- **More Prominent Badges**: 32pt height makes badges clearly visible
+- **More Prominent Badges**: 40pt height makes badges clearly visible and dominant
+- **Lower Header**: More breathing room from status bar improves hierarchy
 - **Cleaner Design**: No glow creates more subtle, refined appearance
 - **Better Recognition**: Larger badges improve brand logo visibility
 - **Balanced Selection**: Glass + border provides clear feedback without glow
@@ -177,12 +214,19 @@ brandedLogo(for: source)
 
 ### Case A: Badge Size
 1. Open HomeView
-2. Verify Apple Music badge is larger (32pt height)
-3. Verify branchrMedia badge is larger (32pt height)
-4. Check badges fill pills more prominently
+2. Verify Apple Music badge is larger (40pt height)
+3. Verify branchrMedia badge is larger (40pt height)
+4. Check badges fill pills more prominently and are more dominant
 5. Verify badges maintain aspect ratio
 
-### Case B: No Glow
+### Case B: Header Position
+1. Open HomeView
+2. Verify "branchr" wordmark is lower on screen
+3. Check there's more space between status bar and header (40pt)
+4. Verify header doesn't hug the status bar
+5. Test on different iPhone sizes
+
+### Case C: No Glow
 1. Tap left pill to select Apple Music
 2. Verify selected pill shows glass background
 3. Verify yellow border appears
@@ -190,14 +234,14 @@ brandedLogo(for: source)
 5. Tap right pill to select branchrMedia
 6. Verify glow doesn't appear on either pill
 
-### Case C: Selection Logic
+### Case D: Selection Logic
 1. Tap between pills to switch selection
 2. Verify haptics fire on each tap
 3. Check console logs show correct source changes
 4. Verify selection state persists correctly
 5. Verify onChange handler still syncs correctly
 
-### Case D: Layout Stability
+### Case E: Layout Stability
 1. Test on iPhone SE (small screen)
 2. Test on iPhone 15 Pro (standard screen)
 3. Verify pills maintain 52pt height
