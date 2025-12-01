@@ -136,9 +136,9 @@ struct HomeView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 16) // Spacing above main buttons
                 
-                // Phase 59: Extra spacer to push content lower
+                // Phase 60: Extra spacer to push content lower (increased for more breathing room)
                 Spacer()
-                    .frame(height: 24)
+                    .frame(height: 40) // was 24 – gives the header more breathing room
                 
                 // MARK: - Main Actions (Phase 2: Unified Button System)
                 // Phase 52: Primary action buttons only - status/controls moved to RideControlPanelView
@@ -468,10 +468,10 @@ struct MusicSourceSelectorView: View {
                 } label: {
                     HStack(spacing: 8) {
                         brandedLogo(for: source)
-                            .renderingMode(.template)
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 15, height: 15)
+                            .frame(height: 16) // control by height, let width follow aspect ratio
+                            .cornerRadius(4) // subtle rounding to match pill style
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text(source.title)
@@ -499,15 +499,18 @@ struct MusicSourceSelectorView: View {
         }
     }
     
-    // MARK: - Phase 59: Safe Branded Logo Helper
+    // MARK: - Phase 60: Safe Branded Logo Helper (Full-Color Assets)
     
     /// Returns branded logo image if available, falls back to SF Symbol
     private func brandedLogo(for mode: MusicSourceMode) -> Image {
         if UIImage(named: mode.assetName) != nil {
+            // Use original rendering for full-color badge assets
             return Image(mode.assetName)
+                .renderingMode(.original)
         } else {
-            // Failsafe – fall back to SF Symbol to avoid log spam
+            // Failsafe – fall back to SF Symbol in template mode so it tints correctly
             return Image(systemName: mode.systemIconName)
+                .renderingMode(.template)
         }
     }
 }
