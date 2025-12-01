@@ -48,21 +48,16 @@ struct RideHostHUDView: View {
                         .clipShape(Capsule())
                 }
                 
-                // Phase 53: Music source chip inside host card (Phase 60: safe branded icon)
+                // Phase 60.3: Image-only full-size music badge pill (no text)
                 if let mode = musicSourceMode {
-                    HStack(spacing: 6) {
-                        brandedLogo(for: mode)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 13, height: 13)
-                        Text(mode.title)
-                            .font(.caption.bold())
-                    }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.black.opacity(0.35))
-                    .clipShape(Capsule())
+                    brandedLogo(for: mode)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .frame(minWidth: 80, minHeight: 28, maxHeight: 28)
+                        .background(Color.black.opacity(0.35))
+                        .clipShape(Capsule())
                 }
                 
                 // Metrics row

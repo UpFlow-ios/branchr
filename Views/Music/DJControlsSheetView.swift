@@ -54,23 +54,24 @@ struct DJControlsSheetView: View {
             
             Spacer()
             
-            // Music source pill (Phase 60: with safe branded icon and non-truncated text)
-            HStack(spacing: 8) {
+            // Phase 60.3: Image-only full-size music badge pill (no text)
+            Button {
+                // Toggle between music source modes
+                musicSourceMode = musicSourceMode == .appleMusicSynced ? .externalPlayer : .appleMusicSynced
+                HapticsService.shared.lightTap()
+                print("Branchr: DJ Controls music source changed to \(musicSourceMode.title)")
+            } label: {
                 brandedLogo(for: musicSourceMode)
                     .resizable()
-                    .scaledToFit()
-                    .frame(width: 14, height: 14)
-                Text(musicSourceMode.shortTitle)
-                    .font(.system(size: 14, weight: .semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .layoutPriority(1)
+                    .aspectRatio(contentMode: .fit)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .frame(minWidth: 96, minHeight: 32, maxHeight: 32)
+                    .frame(maxWidth: .infinity)
+                    .background(theme.brandYellow) // keep current yellow pill color
+                    .clipShape(Capsule())
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Color.yellow.opacity(0.15))
-            .foregroundColor(.yellow)
-            .clipShape(Capsule())
+            .buttonStyle(.plain)
         }
     }
     
