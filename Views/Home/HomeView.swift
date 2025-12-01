@@ -466,32 +466,33 @@ struct MusicSourceSelectorView: View {
                     print("Branchr: Music source changed to \(source.title)")
                     // Phase 57: Changes are synced via onChange in HomeView
                 } label: {
-                    HStack(spacing: 8) {
+                    ZStack {
+                        // Background pill – glass for selected, solid dark for unselected
+                        if selectedSource == source {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .stroke(theme.brandYellow, lineWidth: 2)
+                                )
+                        } else {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(theme.surfaceBackground)
+                        }
+                        
+                        // Centered badge image only
                         brandedLogo(for: source)
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 16) // control by height, let width follow aspect ratio
-                            .cornerRadius(4) // subtle rounding to match pill style
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(source.title)
-                                .font(.caption.bold())
-                            Text(source.subtitle)
-                                .font(.caption2)
-                                .opacity(0.7)
-                        }
+                            .frame(height: 24) // big enough to fill the pill visually
+                            .padding(.horizontal, 12)
                     }
-                    .foregroundColor(selectedSource == source ? .black : .white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(selectedSource == source ? theme.brandYellow : theme.surfaceBackground)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(selectedSource == source ? theme.brandYellow : Color.clear, lineWidth: 2)
+                    .frame(maxWidth: .infinity, minHeight: 52) // pill height similar to old yellow pill
+                    .shadow(
+                        color: theme.brandYellow.opacity(selectedSource == source ? 0.4 : 0.0),
+                        radius: 16,
+                        x: 0,
+                        y: 0
                     )
                 }
                 .buttonStyle(.plain)
