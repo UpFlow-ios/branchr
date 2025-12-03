@@ -144,6 +144,39 @@ final class ThemeManager: ObservableObject {
         Color(hex: "#9B59B6") // Soft purple
     }
     
+    // MARK: - Phase 67: Rainbow Progress Gradient
+    /// Vivid rainbow gradient for progress bars (horizontal)
+    var rideRainbowGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(red: 1.0, green: 0.32, blue: 0.42), // hot pink-ish
+                .orange,
+                .yellow,
+                .green,
+                .blue,
+                .purple
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+    
+    /// Vivid rainbow gradient for vertical bars (e.g., Daily Distance chart)
+    var rideRainbowGradientVertical: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(red: 1.0, green: 0.32, blue: 0.42), // hot pink-ish
+                .orange,
+                .yellow,
+                .green,
+                .blue,
+                .purple
+            ],
+            startPoint: .bottom,
+            endPoint: .top
+        )
+    }
+    
     // MARK: - Phase 41E: Neutral Accent Color
     /// Neutral gray accent for tertiary UI elements (tracks, borders, etc.)
     /// Light mode: cooler light grey for tracks/borders

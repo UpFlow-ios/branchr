@@ -134,7 +134,8 @@ class UserPreferenceManager: ObservableObject {
         // Phase 40: Preferred calendar (default nil - uses system default)
         self.preferredCalendarIdentifier = userDefaults.string(forKey: "preferredCalendarIdentifier")
         // Phase 41: Weekly distance goal (default 25.0 miles)
-        self.weeklyDistanceGoalMiles = userDefaults.object(forKey: "weeklyDistanceGoalMiles") as? Double ?? 25.0
+        // Phase 74: Increased default to 75.0 miles for more realistic weekly pacing
+        self.weeklyDistanceGoalMiles = userDefaults.object(forKey: "weeklyDistanceGoalMiles") as? Double ?? 75.0
         // Phase 51: Preferred music source (default Apple Music Synced)
         if let rawValue = userDefaults.string(forKey: "preferredMusicSource"),
            let source = MusicSourceMode(rawValue: rawValue) {

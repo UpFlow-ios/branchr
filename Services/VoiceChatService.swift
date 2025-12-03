@@ -301,27 +301,70 @@ class VoiceChatService: NSObject, ObservableObject {
     private var hapticGenerator = UINotificationFeedbackGenerator()
     
     /// Start voice chat
+    /// Phase 70: Enhanced audio session configuration to prevent conflicts with Apple Music
     func startVoiceChat() {
-        guard !isVoiceChatActive else { return }
-        
-        // Check microphone permission first
-        guard hasMicrophonePermission else {
-            print("Branchr: Cannot start voice chat - microphone permission not granted")
+        guard !isVoiceChatActive else {
+            print("Branchr VoiceChatService: Voice chat already active, skipping start()")
             return
         }
         
+        // Check microphone permission first
+        guard hasMicrophonePermission else {
+            print("Branchr VoiceChatService: Cannot start voice chat - microphone permission not granted")
+            return
+        }
+        
+        // Phase 70: Guard against engine already running
+        guard !audioEngine.isRunning else {
+            print("Branchr VoiceChatService: audioEngine already running, skipping start()")
+            return
+        }
+        
+#if canImport(UIKit)
+        // Phase 70: Configure audio session right before starting engine
         do {
-            // Start audio engine
+            let session = AVAudioSession.sharedInstance()
+            
+            // Phase 70: Single, predictable audio session configuration
+            try session.setCategory(
+                .playAndRecord,
+                mode: .voiceChat,
+                options: [
+                    .allowBluetooth,
+                    .allowBluetoothA2DP,
+                    .defaultToSpeaker,
+                    .mixWithOthers  // Apple Music keeps playing while we talk
+                ]
+            )
+            
+            // Phase 70: Activate with notification to other audio apps
+            try session.setActive(true, options: [.notifyOthersOnDeactivation])
+            
+            // Phase 70: Enhanced logging for debugging
+            print("Branchr VoiceChatService: Audio session configured")
+            print("Branchr VoiceChatService: Category: \(session.category.rawValue), Mode: \(session.mode.rawValue)")
+            print("Branchr VoiceChatService: Sample Rate: \(session.sampleRate) Hz, IO Buffer: \(session.ioBufferDuration)s")
+            
+        } catch {
+            print("Branchr VoiceChatService: Failed to configure audio session: \(error)")
+            print("Branchr VoiceChatService: Error code: \((error as NSError).code), domain: \((error as NSError).domain)")
+            isVoiceChatActive = false
+            return
+        }
+#endif
+        
+        do {
+            // Phase 70: Start audio engine after session is configured
             try audioEngine.start()
             isVoiceChatActive = true
             
             // Phase 29C: Haptic feedback on start
             hapticGenerator.notificationOccurred(.success)
             
-            print("🎤 Starting voice chat...")
-            print("Branchr: Voice chat started successfully")
+            print("🎤 Branchr VoiceChatService: Voice chat started successfully")
         } catch {
-            print("Branchr: Failed to start voice chat: \(error)")
+            print("Branchr VoiceChatService: Failed to start audio engine: \(error)")
+            print("Branchr VoiceChatService: Error code: \((error as NSError).code), domain: \((error as NSError).domain)")
             isVoiceChatActive = false
         }
     }

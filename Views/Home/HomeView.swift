@@ -48,6 +48,12 @@ struct HomeView: View {
     @State private var showDJSheet = false
     @State private var isMusicMuted: Bool = false
     @State private var isVoiceMuted: Bool = false
+    
+    // Phase 74: Primary ride action title
+    private var primaryRideActionTitle: String {
+        let hasActiveRide = rideSession.rideState == .active || rideSession.rideState == .paused
+        return hasActiveRide ? "Resume Ride Tracking" : "Start Ride Tracking"
+    }
     @State private var showRideOptions = false
     @State private var showRideSummary = false
     
@@ -134,33 +140,53 @@ struct HomeView: View {
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.bottom, 16) // Spacing above main buttons
+                .padding(.bottom, 8) // Phase 72: Reduced from 16 for tighter spacing
                 
-                // Phase 60: Extra spacer to push content lower (increased for more breathing room)
-                Spacer()
-                    .frame(height: 40) // was 24 – gives the header more breathing room
+                // MARK: - Phase 71: Ride Control & Audio Panel (moved above buttons)
+                // Phase 72: Card sits directly under header with minimal gap
+                RideControlPanelView(
+                    preferredMusicSource: $musicSourceMode,
+                    connectionManager: connectionManager,
+                    rideService: rideService,
+                    userPreferences: userPreferences,
+                    totalThisWeekMiles: totalThisWeekMiles,
+                    goalMiles: userPreferences.weeklyDistanceGoalMiles,
+                    currentStreakDays: currentStreakDays,
+                    bestStreakDays: bestStreakDays,
+                    isVoiceMuted: $isVoiceMuted,
+                    isMusicMuted: $isMusicMuted,
+                    onToggleMute: handleToggleMute,
+                    onToggleMusic: handleToggleMusic,
+                    onDJControlsTap: handleDJControlsTap
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 8) // Phase 72: Small gap between header and card
+                .onChange(of: musicSourceMode) { newMode in
+                    // Phase 57: Sync musicSourceMode with userPreferences and musicSync
+                    userPreferences.preferredMusicSource = newMode
+                    musicSync.setMusicSourceMode(newMode)
+                }
                 
                 // MARK: - Main Actions (Phase 2: Unified Button System)
                 // Phase 52: Primary action buttons only - status/controls moved to RideControlPanelView
+                // Phase 71: Buttons moved below RideControlPanelView
                 VStack(spacing: 20) {
-                    // Start Ride Tracking - Hero Button
+                    // Start Ride Tracking - Hero Button (Phase 67: No outer glow)
+                    // Phase 74: Show "Resume Ride Tracking" when ride is active/paused, just open sheet
                     PrimaryButton(
-                        rideSession.rideState == .idle || rideSession.rideState == .ended
-                            ? "Start Ride Tracking"
-                            : rideSession.rideState == .active
-                              ? "Pause Ride"
-                              : "Resume Ride",
+                        primaryRideActionTitle,
                         systemImage: nil,
                         isHero: true,
-                        isNeonHalo: true  // Phase 34D: Thin neon halo on press
+                        isNeonHalo: true,  // Phase 34D: Thin neon halo on press
+                        disableOuterGlow: true  // Phase 67: Remove outer glow
                     ) {
                         if rideSession.rideState == .idle || rideSession.rideState == .ended {
+                            // Start new ride
                             RideSessionManager.shared.startSoloRide(musicSource: musicSourceMode)
                             withAnimation(.spring()) { showSmartRideSheet = true }
-                        } else if rideSession.rideState == .active {
-                            RideSessionManager.shared.pauseRide()
-                        } else if rideSession.rideState == .paused {
-                            RideSessionManager.shared.resumeRide()
+                        } else {
+                            // Phase 74: If ride is active/paused, just reopen the sheet
+                            withAnimation(.spring()) { showSmartRideSheet = true }
                         }
                     }
                     .rainbowGlow(active: rideSession.rideState == .active)  // Phase 34D: Active-state glow
@@ -237,36 +263,14 @@ struct HomeView: View {
                     }
                 }
                 .padding(.horizontal, 24)
+                .padding(.top, 20) // Phase 72: Spacing between card and buttons
                 
-                // MARK: - Phase 52: Ride Control & Audio Panel
-                RideControlPanelView(
-                    preferredMusicSource: $musicSourceMode,
-                    connectionManager: connectionManager,
-                    rideService: rideService,
-                    userPreferences: userPreferences,
-                    totalThisWeekMiles: totalThisWeekMiles,
-                    goalMiles: userPreferences.weeklyDistanceGoalMiles,
-                    currentStreakDays: currentStreakDays,
-                    bestStreakDays: bestStreakDays,
-                    isVoiceMuted: $isVoiceMuted,
-                    isMusicMuted: $isMusicMuted,
-                    onToggleMute: handleToggleMute,
-                    onToggleMusic: handleToggleMusic,
-                    onDJControlsTap: handleDJControlsTap
-                )
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .onChange(of: musicSourceMode) { newMode in
-                    // Phase 57: Sync musicSourceMode with userPreferences and musicSync
-                    userPreferences.preferredMusicSource = newMode
-                    musicSync.setMusicSourceMode(newMode)
-                }
-                
-                // Phase 59: Minimal bottom spacing - card should almost touch tab bar
+                // Phase 72: Minimal bottom spacing
                 Spacer()
-                    .frame(height: 10) // Small gap above tab bar
+                    .frame(height: 24) // Small gap above tab bar
             }
             .padding(.horizontal, 16)
+            .padding(.top, 16) // Phase 72: Reduced top padding for tighter layout
             .padding(.bottom, 40)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.primaryBackground.ignoresSafeArea())

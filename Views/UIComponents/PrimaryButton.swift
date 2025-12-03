@@ -19,6 +19,7 @@ struct PrimaryButton: View {
     let systemImage: String?
     let isHero: Bool
     let isNeonHalo: Bool  // Phase 3B: Enable sharp neon rainbow halo (on press only)
+    let disableOuterGlow: Bool  // Phase 67: Disable outer glow shadow
     let action: () -> Void
     
     @ObservedObject private var theme = ThemeManager.shared
@@ -28,11 +29,13 @@ struct PrimaryButton: View {
          systemImage: String? = nil,
          isHero: Bool = false,
          isNeonHalo: Bool = false,
+         disableOuterGlow: Bool = false,
          action: @escaping () -> Void) {
         self.title = title
         self.systemImage = systemImage
         self.isHero = isHero
         self.isNeonHalo = isNeonHalo
+        self.disableOuterGlow = disableOuterGlow
         self.action = action
     }
     
@@ -64,10 +67,10 @@ struct PrimaryButton: View {
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(theme.primaryButtonBackground)
                     .shadow(
-                        color: theme.glowColor.opacity(isHero ? 0.8 : 0.4),
-                        radius: isHero ? 18 : 10,
+                        color: disableOuterGlow ? .clear : theme.glowColor.opacity(isHero ? 0.8 : 0.4),
+                        radius: disableOuterGlow ? 0 : (isHero ? 18 : 10),
                         x: 0,
-                        y: isHero ? 8 : 4
+                        y: disableOuterGlow ? 0 : (isHero ? 8 : 4)
                     )
                 
                 // Button content

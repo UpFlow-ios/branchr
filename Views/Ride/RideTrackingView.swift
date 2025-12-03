@@ -32,6 +32,7 @@ struct RideTrackingView: View {
     @ObservedObject private var profileManager = ProfileManager.shared // Phase 5: Profile data
     @ObservedObject private var connectionManager = ConnectionManager.shared // Phase 5: Connection status
     @ObservedObject private var musicSync = MusicSyncService.shared // Phase 5: Music status
+    @ObservedObject private var musicService = MusicService.shared // Phase 64: Now Playing strip
     @Environment(\.dismiss) private var dismiss
 
     @State private var showRideSummary = false // Phase 31: Ride summary sheet
@@ -58,35 +59,82 @@ struct RideTrackingView: View {
 
     var body: some View {
         NavigationView {
-            ZStack(alignment: .topLeading) {
-
-                // 1) BACKGROUND
-                theme.primaryBackground.ignoresSafeArea()
-
-                // 2) MAIN CONTENT - Phase 42: Clean single-column layout
-                ScrollView {
-                    VStack(spacing: 24) {
+            GeometryReader { proxy in
+                // Phase 73: Map touches buttons - no gap
+                let bottomInset = max(proxy.safeAreaInsets.bottom, 16)
+                
+                ZStack(alignment: .topLeading) {
+                    // 1) BACKGROUND
+                    theme.primaryBackground.ignoresSafeArea()
+                    
+                    // 2) MAIN CONTENT - Phase 73: Map fills to buttons, no gap
+                    VStack(spacing: 0) {
                         // Phase 57: Grabber handle at top
                         grabberHandle
                             .padding(.top, 8)
                         
-                        // Phase 42: Compact Status Strip
-                        rideStatusStrip
-                            .padding(.horizontal, 16)
+                        // Phase 73: Map + HUD overlay (fills to buttons)
+                        ZStack(alignment: .top) {
+                            // Map section - fills all available space
+                            RideMapViewRepresentable(
+                                region: $region,
+                                coordinates: rideService.route,
+                                showsUserLocation: true,
+                                riderAnnotations: [],
+                                selectedRider: $selectedRider
+                            )
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                            .shadow(color: Color.black.opacity(0.45), radius: 20, x: 0, y: 16)
+                            .onChange(of: rideService.route.count) { _ in
+                                updateMapRegion()
+                            }
+                            
+                            // Phase 70: Host HUD overlay on map
+                            VStack {
+                                if rideService.rideState == .active || rideService.rideState == .paused {
+                                    RideHostHUDView(
+                                        hostName: profileManager.currentDisplayName,
+                                        hostImage: profileManager.currentProfileImage,
+                                        distanceMiles: rideService.totalDistanceMiles,
+                                        speedMph: rideService.currentSpeedMph,
+                                        durationText: rideService.formattedDuration,
+                                        isConnected: connectionManager.state == .connected,
+                                        isMusicOn: musicSync.currentTrack?.isPlaying ?? false,
+                                        musicSourceMode: musicSync.musicSourceMode,
+                                        nowPlaying: musicService.nowPlaying,
+                                        isPlaying: musicService.isPlaying,
+                                        onPrevious: {
+                                            HapticsService.shared.lightTap()
+                                            musicService.skipToPreviousTrack()
+                                        },
+                                        onTogglePlayPause: {
+                                            HapticsService.shared.mediumTap()
+                                            musicService.togglePlayPause()
+                                        },
+                                        onNext: {
+                                            HapticsService.shared.lightTap()
+                                            musicService.skipToNextTrack()
+                                        }
+                                    )
+                                    .padding(.horizontal, 16)
+                                    .padding(.top, 16)
+                                }
+                                
+                                Spacer()
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
                         
-                        // Phase 42: Map Card
-                        mapCard
-                            .padding(.horizontal, 16)
-                        
-                        // Phase 42: Stats Card
-                        statsCard
-                            .padding(.horizontal, 16)
-                        
-                        // Phase 42: Bottom Control Strip
+                        // Phase 73: Buttons directly below map (no spacer)
                         rideControls
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 40)
+                            .padding(.horizontal, 24)
+                            .padding(.top, 0) // No gap between map and buttons
+                            .padding(.bottom, bottomInset)
                     }
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .ignoresSafeArea(edges: .bottom)
                 }
 
                 // Phase 43C: Host HUD moved to top header strip (removed from map overlay)
@@ -143,6 +191,14 @@ struct RideTrackingView: View {
             speechCommands.setEnabled(preferences.voiceCommandsEnabled)
             if preferences.voiceCommandsEnabled {
                 speechCommands.startListening()
+            }
+            
+            // Phase 64: Refresh now playing when ride view appears (only for Apple Music mode)
+            if musicSync.musicSourceMode == .appleMusicSynced {
+                Task { @MainActor in
+                    musicService.refreshNowPlayingFromNowPlayingInfoCenter()
+                    print("Branchr RideTrackingView: Refreshed now playing for Apple Music mode")
+                }
             }
         }
         .sheet(isPresented: $showRideSummary) {
@@ -246,31 +302,10 @@ struct RideTrackingView: View {
             }
     }
     
-    /// Phase 43C: Host HUD in top header strip (Phase 57: widened, no X button)
-    private var rideStatusStrip: some View {
-        HStack {
-            // Host HUD moved to top header
-            // Phase 53: Music source indicator embedded in host card
-            // Phase 57: Widened to full width with standard padding
-            if rideService.rideState == .active || rideService.rideState == .paused {
-                RideHostHUDView(
-                    hostName: profileManager.currentDisplayName,
-                    hostImage: profileManager.currentProfileImage,
-                    distanceMiles: rideService.totalDistanceMiles,
-                    speedMph: rideService.currentSpeedMph,
-                    durationText: rideService.formattedDuration,
-                    isConnected: connectionManager.state == .connected,
-                    isMusicOn: musicSync.currentTrack?.isPlaying ?? false,
-                    musicSourceMode: musicSync.musicSourceMode
-                )
-                .frame(maxWidth: .infinity)
-            }
-        }
-    }
-    
-    /// Phase 43C: Map card with ride mode pill in top-right corner
+    /// Phase 70: Map card with Host HUD overlay and increased height
     private var mapCard: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack(alignment: .top) {
+            // Phase 70: Increased map height for better route visibility
             RideMapViewRepresentable(
                 region: $region,
                 coordinates: rideService.route,
@@ -278,18 +313,54 @@ struct RideTrackingView: View {
                 riderAnnotations: [],
                 selectedRider: $selectedRider
             )
-            .frame(height: 400) // Phase 42: Fixed height for consistent layout
+            .frame(height: 450) // Phase 70: Increased from 400
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             
-            // Phase 43C: Ride mode pill in top-right corner
-            if let badgeConfig = rideModeBadgeConfig {
-                RideModeBadgeView(
-                    label: badgeConfig.label,
-                    color: badgeConfig.color
-                )
-                .padding(.top, 12)
-                .padding(.trailing, 12)
+            // Phase 70: Host HUD overlaid at top of map
+            VStack {
+                if rideService.rideState == .active || rideService.rideState == .paused {
+                    RideHostHUDView(
+                        hostName: profileManager.currentDisplayName,
+                        hostImage: profileManager.currentProfileImage,
+                        distanceMiles: rideService.totalDistanceMiles,
+                        speedMph: rideService.currentSpeedMph,
+                        durationText: rideService.formattedDuration,
+                        isConnected: connectionManager.state == .connected,
+                        isMusicOn: musicSync.currentTrack?.isPlaying ?? false,
+                        musicSourceMode: musicSync.musicSourceMode,
+                        nowPlaying: musicService.nowPlaying,
+                        isPlaying: musicService.isPlaying,
+                        onPrevious: {
+                            HapticsService.shared.lightTap()
+                            musicService.skipToPreviousTrack()
+                        },
+                        onTogglePlayPause: {
+                            HapticsService.shared.mediumTap()
+                            musicService.togglePlayPause()
+                        },
+                        onNext: {
+                            HapticsService.shared.lightTap()
+                            musicService.skipToNextTrack()
+                        }
+                    )
+                    .padding(.horizontal, 12)
+                    .padding(.top, 12)
+                }
+                
+                Spacer()
             }
+            
+                            // Phase 73: Ride mode pill in top-right (only for Connected, not Solo Ride)
+                            // Solo Ride badge now appears in HUD stats above Avg Speed column
+                            if let badgeConfig = rideModeBadgeConfig, badgeConfig.label == "Connected" {
+                                RideModeBadgeView(
+                                    label: badgeConfig.label,
+                                    color: badgeConfig.color
+                                )
+                                .padding(.top, 16)
+                                .padding(.trailing, 16)
+                                .frame(maxWidth: .infinity, alignment: .topTrailing)
+                            }
         }
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -399,6 +470,313 @@ struct RideTrackingView: View {
         RideHaptics.milestone()
     }
 
+    // MARK: - Phase 67-69: Combined Music Section with Artwork Background
+    
+    @ViewBuilder
+    private var rideMusicSection: some View {
+        switch musicSync.musicSourceMode {
+        case .appleMusicSynced:
+            if let nowPlaying = musicService.nowPlaying {
+                // Phase 67-69: Transport controls with artwork background
+                ZStack {
+                    // Background: blurred artwork or fallback
+                    if let artwork = nowPlaying.artwork {
+                        Image(uiImage: artwork)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .clipped()
+                            .blur(radius: 20)
+                            .overlay(Color.black.opacity(0.45))
+                    } else {
+                        // Fallback background if no artwork
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color.black.opacity(0.25))
+                    }
+                    
+                    // Foreground: transport controls
+                    rideMusicTransportControlsContent
+                }
+                .frame(maxWidth: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            } else {
+                // No track state
+                Text("Start Apple Music to control playback here.")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color.black.opacity(0.25))
+                    )
+            }
+            
+        case .externalPlayer:
+            // External Player mode - simple card without artwork
+            Text("Using your other music app for playback.")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.black.opacity(0.25))
+                )
+        }
+    }
+    
+    // MARK: - Phase 64: Now Playing Strip Content (extracted for reuse)
+    
+    @ViewBuilder
+    private var rideNowPlayingStripContent: some View {
+        if let nowPlaying = musicService.nowPlaying {
+            HStack(spacing: 12) {
+                // Artwork thumbnail (kept visible even with background)
+                Group {
+                    if let artwork = nowPlaying.artwork {
+                        Image(uiImage: artwork)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } else {
+                        Image(systemName: "music.note")
+                            .font(.subheadline)
+                            .foregroundColor(.white.opacity(0.8))
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
+                .frame(width: 40, height: 40)
+                .background(Color.black.opacity(0.45))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(nowPlaying.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    
+                    Text(nowPlaying.artist)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.7))
+                        .lineLimit(1)
+                }
+                
+                Spacer()
+            }
+        } else {
+            // No track state
+            Text("Start Apple Music to control playback here.")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+        }
+    }
+    
+    // MARK: - Phase 66: Transport Controls Content (extracted for reuse)
+    
+    @ViewBuilder
+    private var rideMusicTransportControlsContent: some View {
+        if musicService.nowPlaying != nil {
+            // Phase 67-69: Transport buttons with artwork background
+            HStack(spacing: 24) {
+                // Previous track
+                Button {
+                    HapticsService.shared.lightTap()
+                    musicService.skipToPreviousTrack()
+                } label: {
+                    Image(systemName: "backward.fill")
+                        .font(.title3)
+                        .foregroundColor(theme.brandYellow)
+                        .frame(width: 44, height: 44)
+                }
+                
+                // Play/Pause
+                Button {
+                    HapticsService.shared.mediumTap()
+                    musicService.togglePlayPause()
+                } label: {
+                    Image(systemName: musicService.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.title2.weight(.bold))
+                        .foregroundColor(theme.brandYellow)
+                        .frame(width: 56, height: 56)
+                        .background(Color.black.opacity(0.3))
+                        .clipShape(Circle())
+                }
+                
+                // Next track
+                Button {
+                    HapticsService.shared.lightTap()
+                    musicService.skipToNextTrack()
+                } label: {
+                    Image(systemName: "forward.fill")
+                        .font(.title3)
+                        .foregroundColor(theme.brandYellow)
+                        .frame(width: 44, height: 44)
+                }
+            }
+            .padding(.vertical, 14)
+            .padding(.horizontal, 24)
+            .frame(maxWidth: .infinity)
+        }
+    }
+    
+    // MARK: - Phase 64: Now Playing Strip (kept for backward compatibility, now unused)
+    
+    @ViewBuilder
+    private var rideNowPlayingStrip: some View {
+        switch musicSync.musicSourceMode {
+        case .appleMusicSynced:
+            if let nowPlaying = musicService.nowPlaying {
+                HStack(spacing: 12) {
+                    // Artwork
+                    Group {
+                        if let artwork = nowPlaying.artwork {
+                            Image(uiImage: artwork)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } else {
+                            Image(systemName: "music.note")
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.8))
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                    }
+                    .frame(width: 40, height: 40)
+                    .background(Color.black.opacity(0.45))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(nowPlaying.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                        
+                        Text(nowPlaying.artist)
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                            .lineLimit(1)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.black.opacity(0.35))
+                )
+            } else {
+                // Optional subtle "no music" state
+                Text("Apple Music is ready – start a song to see it here.")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color.black.opacity(0.25))
+                    )
+            }
+            
+        case .externalPlayer:
+            Text("Using your other music app for playback.")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.6))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.black.opacity(0.25))
+                )
+        }
+    }
+    
+    // MARK: - Phase 66: Inline Music Transport Controls
+    
+    @ViewBuilder
+    private var rideMusicTransportControls: some View {
+        switch musicSync.musicSourceMode {
+        case .appleMusicSynced:
+            if musicService.nowPlaying != nil {
+                // Phase 66: Transport buttons when track is playing
+                HStack(spacing: 24) {
+                    // Previous track
+                    Button {
+                        HapticsService.shared.lightTap()
+                        musicService.skipToPreviousTrack()
+                    } label: {
+                        Image(systemName: "backward.fill")
+                            .font(.title3)
+                            .foregroundColor(theme.brandYellow)
+                            .frame(width: 44, height: 44)
+                    }
+                    
+                    // Play/Pause
+                    Button {
+                        HapticsService.shared.mediumTap()
+                        musicService.togglePlayPause()
+                    } label: {
+                        Image(systemName: musicService.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.title2.weight(.bold))
+                            .foregroundColor(theme.brandYellow)
+                            .frame(width: 56, height: 56)
+                            .background(Color.black.opacity(0.3))
+                            .clipShape(Circle())
+                    }
+                    
+                    // Next track
+                    Button {
+                        HapticsService.shared.lightTap()
+                        musicService.skipToNextTrack()
+                    } label: {
+                        Image(systemName: "forward.fill")
+                            .font(.title3)
+                            .foregroundColor(theme.brandYellow)
+                            .frame(width: 44, height: 44)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.black.opacity(0.25))
+                )
+            } else {
+                // Phase 66: Helper text when no track
+                Text("Start Apple Music to control playback here.")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color.black.opacity(0.25))
+                    )
+            }
+            
+        case .externalPlayer:
+            // Phase 66: Helper text for External Player mode
+            Text("Using another music app – control playback there while Branchr keeps your ride and voice chat in sync.")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.black.opacity(0.25))
+                )
+        }
+    }
+    
     // MARK: - Phase 35A: Unified Ride Button
     
     // Phase 42: Ride controls with Home-style bottom strip

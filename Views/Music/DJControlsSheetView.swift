@@ -19,6 +19,9 @@ struct DJControlsSheetView: View {
     @ObservedObject var musicSyncService: MusicSyncService
     @Binding var musicSourceMode: MusicSourceMode
     
+    // Phase 62: Observe MusicKit authorization status
+    @ObservedObject private var musicKitService = MusicKitService.shared
+    
     @ObservedObject private var theme = ThemeManager.shared
     @Environment(\.dismiss) private var dismiss
     
@@ -27,8 +30,13 @@ struct DJControlsSheetView: View {
             // Header
             header
             
-            // Now Playing Card
-            nowPlayingCard
+            // Phase 63: Improved Now Playing Card (only for Apple Music mode)
+            if musicSourceMode == .appleMusicSynced {
+                appleMusicNowPlayingCard
+            } else {
+                // External Player mode: Show helper message
+                externalPlayerHelperMessage
+            }
             
             // Playback Controls
             playbackControls
@@ -36,12 +44,28 @@ struct DJControlsSheetView: View {
             // Source Hint
             sourceHint
             
+            // Phase 62: Apple Music authorization status (only when Apple Music is selected)
+            if musicSourceMode == .appleMusicSynced {
+                appleMusicStatusView
+            }
+            
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 20)
         .padding(.top, 16)
         .padding(.bottom, 24)
         .background(Color.black.ignoresSafeArea())
+        .onAppear {
+            // Phase 62: Refresh authorization status when sheet appears
+            Task {
+                await musicKitService.refreshAuthorizationStatus(requestIfNeeded: false)
+            }
+            
+            // Phase 63: Refresh now playing when sheet appears (only for Apple Music mode)
+            if musicSourceMode == .appleMusicSynced {
+                musicService.refreshNowPlayingFromNowPlayingInfoCenter()
+            }
+        }
     }
     
     // MARK: - Header
@@ -90,89 +114,92 @@ struct DJControlsSheetView: View {
         }
     }
     
-    // MARK: - Now Playing Card
-    
-    private var nowPlayingCard: some View {
-        Group {
-            if let track = currentTrack {
-                HStack(spacing: 16) {
-                    artworkView(for: track)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(track.title)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                        
-                        Text(track.artist)
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                            .lineLimit(1)
-                        
-                        Text("Now playing")
-                            .font(.caption2)
-                            .foregroundColor(.yellow)
-                    }
-                    
-                    Spacer()
-                }
-                .padding(14)
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            } else {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("No music playing")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.white)
-                        
-                        Text(musicSourceMode == .appleMusicSynced
-                             ? "Start a song in Apple Music or from the DJ Controls."
-                             : "Start music in your favorite app. Branchr will mix with voice chat.")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    
-                    Spacer()
-                }
-                .padding(14)
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            }
-        }
-    }
-    
-    // MARK: - Artwork View
+    // MARK: - Phase 63: Apple Music Now Playing Card
     
     @ViewBuilder
-    private func artworkView(for track: NowPlayingInfo) -> some View {
-        // Try to get artwork from MPNowPlayingInfoCenter
-        let nowPlayingInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo
-        if let artwork = nowPlayingInfo?[MPMediaItemPropertyArtwork] as? MPMediaItemArtwork {
-            if let image = artwork.image(at: CGSize(width: 56, height: 56)) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 56, height: 56)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            } else {
-                placeholderArtwork
+    private var appleMusicNowPlayingCard: some View {
+        if let nowPlaying = musicService.nowPlaying {
+            HStack(spacing: 12) {
+                // Artwork
+                Group {
+                    if let artwork = nowPlaying.artwork {
+                        Image(uiImage: artwork)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } else {
+                        Image(systemName: "music.note")
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.8))
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
+                .frame(width: 56, height: 56)
+                .background(Color.black.opacity(0.45))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(nowPlaying.title)
+                        .font(.headline)
+                        .lineLimit(1)
+                        .foregroundColor(.white)
+                    
+                    Text(nowPlaying.artist)
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+                        .lineLimit(1)
+                }
+                
+                Spacer()
             }
+            .padding()
+            .background(Color.black.opacity(0.35))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         } else {
-            placeholderArtwork
+            // No music playing state
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("No music playing")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(.white)
+                    
+                    Text("Start a song in Apple Music or from the DJ Controls.")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                
+                Spacer()
+            }
+            .padding(14)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }
     
-    private var placeholderArtwork: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.yellow.opacity(0.2))
-            Image(systemName: "music.note")
-                .foregroundColor(.yellow)
+    // MARK: - Phase 63: External Player Helper Message
+    
+    private var externalPlayerHelperMessage: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("No music playing")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(.white)
+                
+                Text("Start music in your favorite app. Branchr will mix with voice chat.")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Spacer()
         }
-        .frame(width: 56, height: 56)
+        .padding(14)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
+    
+    // MARK: - Phase 63: Removed old artworkView and placeholderArtwork
+    // Now using musicService.nowPlaying directly in appleMusicNowPlayingCard
     
     // MARK: - Playback Controls
     
@@ -220,6 +247,61 @@ struct DJControlsSheetView: View {
         }
     }
     
+    // MARK: - Phase 62: Apple Music Authorization Status
+    
+    @ViewBuilder
+    private var appleMusicStatusView: some View {
+        switch musicKitService.authorizationStatus {
+        case .notDetermined:
+            HStack(spacing: 12) {
+                Text("Apple Music not set up yet")
+                    .font(.caption2)
+                    .foregroundColor(.gray.opacity(0.7))
+                
+                Spacer()
+                
+                Button {
+                    HapticsService.shared.lightTap()
+                    Task {
+                        await musicKitService.refreshAuthorizationStatus(requestIfNeeded: true)
+                    }
+                } label: {
+                    Text("Enable")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundColor(theme.brandYellow)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.gray.opacity(0.2))
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color(.secondarySystemBackground).opacity(0.5))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            
+        case .denied, .restricted:
+            HStack {
+                Text("Apple Music access is off. Enable in Settings > Music > Branchr.")
+                    .font(.caption2)
+                    .foregroundColor(.gray.opacity(0.7))
+                    .multilineTextAlignment(.leading)
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color(.secondarySystemBackground).opacity(0.5))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            
+        case .authorized:
+            // Show nothing or a very subtle indicator
+            EmptyView()
+            
+        @unknown default:
+            EmptyView()
+        }
+    }
+    
     // MARK: - Computed Properties
     
     private var currentTrack: NowPlayingInfo? {
@@ -227,10 +309,8 @@ struct DJControlsSheetView: View {
         // Fall back to MusicService if needed
         if let syncTrack = musicSyncService.currentTrack {
             return syncTrack
-        } else if musicService.currentSongTitle != "No song playing" && 
-                  musicService.currentSongTitle != "MusicKit disabled for clean build" &&
-                  musicService.currentSongTitle != "MusicKit disabled" {
-            // Create NowPlayingInfo from MusicService data
+        } else if musicService.currentSongTitle != "No song playing" {
+            // Phase 61: Create NowPlayingInfo from MusicService data (MusicKit re-enabled)
             return NowPlayingInfo(
                 title: musicService.currentSongTitle,
                 artist: musicService.currentArtist,
@@ -251,10 +331,17 @@ struct DJControlsSheetView: View {
         return musicService.isPlaying
     }
     
-    // MARK: - Actions
+    // MARK: - Actions (Phase 61: Respect musicSourceMode)
     
     private func handlePreviousTapped() {
         HapticsService.shared.lightTap()
+        
+        // Phase 61: Only control MusicKit when in Apple Music mode
+        guard musicSourceMode == .appleMusicSynced else {
+            print("Branchr MusicService: Ignoring transport controls (ExternalPlayer mode)")
+            return
+        }
+        
         Task {
             await musicService.skipToPrevious()
         }
@@ -262,6 +349,13 @@ struct DJControlsSheetView: View {
     
     private func handlePlayPauseTapped() {
         HapticsService.shared.mediumTap()
+        
+        // Phase 61: Only control MusicKit when in Apple Music mode
+        guard musicSourceMode == .appleMusicSynced else {
+            print("Branchr MusicService: Ignoring transport controls (ExternalPlayer mode)")
+            return
+        }
+        
         if isCurrentlyPlaying {
             musicService.pause()
         } else {
@@ -273,6 +367,13 @@ struct DJControlsSheetView: View {
     
     private func handleNextTapped() {
         HapticsService.shared.lightTap()
+        
+        // Phase 61: Only control MusicKit when in Apple Music mode
+        guard musicSourceMode == .appleMusicSynced else {
+            print("Branchr MusicService: Ignoring transport controls (ExternalPlayer mode)")
+            return
+        }
+        
         Task {
             await musicService.skipToNext()
         }

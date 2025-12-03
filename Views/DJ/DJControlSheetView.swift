@@ -242,7 +242,9 @@ struct DJControlSheetView: View {
         .presentationDetents([.medium, .large])
         .onAppear {
             // Check authorization status when sheet appears
-            musicService.checkAuthorizationStatus()
+            Task {
+                await musicService.checkAuthorizationStatus()
+            }
         }
     }
     

@@ -89,6 +89,18 @@ This file tracks all completed phases in chronological order.
 - Phase 60.2 – Glass Music Source Pills with Full-Size Badges (✅ completed)
 - Phase 60.3 – Enlarge Music Badges & Remove Glow (✅ completed)
 - Phase 60.3 – Unified Badge Pills (DJ Controls & Host HUD) (✅ completed)
+- Phase 61 – Live DJ Controls + MusicKit Re-Enable (✅ completed 2025-12-01)
+- Phase 62 – Apple Music Permission & Status UI (✅ completed 2025-12-01)
+- Phase 63 – DJ Controls "Now Playing" UI (✅ completed 2025-12-01)
+- Phase 64 – Ride Screen "Now Playing Strip" (✅ completed 2025-12-01)
+- Phase 65 – System Apple Music Transport (✅ completed 2025-12-01)
+- Phase 66 – Ride Screen Inline Music Controls (✅ completed 2025-12-01)
+- Phase 67-69 – Rainbow Progress, Ride HUD Stats & Artwork Player (✅ completed 2025-01-XX)
+- Phase 70 – Ride Voice Chat Stability & Ride HUD + Music Integration (✅ completed 2025-01-XX)
+- Phase 71 – Ride Map Height & Home Reorder (✅ completed 2025-01-XX)
+- Phase 72 – Home Spacing & Ride Map Height Fine-Tuning (✅ completed 2025-01-XX)
+- Phase 73 – Ride Map & HUD Layout Polish (✅ completed 2025-01-XX)
+- Phase 74 – Resume Ride Button, Weekly Goal Pacing, HUD Stat Alignment (✅ completed 2025-01-XX)
 
 ---
 <｜tool▁call▁begin｜>

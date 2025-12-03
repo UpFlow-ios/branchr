@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// Ride Host HUD overlay showing host info, live stats, and connection status
+/// Phase 70: Enhanced with music controls and now playing info
 struct RideHostHUDView: View {
     let hostName: String
     let hostImage: UIImage?
@@ -22,23 +23,36 @@ struct RideHostHUDView: View {
     // Phase 53: Music source mode indicator
     let musicSourceMode: MusicSourceMode?
     
+    // Phase 70: Music controls integration
+    let nowPlaying: MusicServiceNowPlaying?
+    let isPlaying: Bool
+    let onPrevious: (() -> Void)?
+    let onTogglePlayPause: (() -> Void)?
+    let onNext: (() -> Void)?
+    
     @ObservedObject private var theme = ThemeManager.shared
     
     var body: some View {
-        // Phase 43: Compact horizontal pill matching Ride + Home design
-        HStack(alignment: .center, spacing: 12) {
-            // Left: Avatar
-            avatarView
+        // Phase 74: Enhanced HUD with Host badge above Distance, badges above each stat column
+        VStack(alignment: .leading, spacing: 12) {
+            // Top section: Host info (Phase 74: removed Host badge from header)
+            HStack(alignment: .center, spacing: 12) {
+                // Left: Avatar
+                avatarView
+                
+                // Center-left: Host name only
+                Text(hostName)
+                    .font(.subheadline.bold())
+                    .foregroundColor(Color.white)
+                
+                Spacer()
+            }
             
-            // Center-left: Host name + metrics
-            VStack(alignment: .leading, spacing: 4) {
-                // Host name + role badge
-                HStack(spacing: 8) {
-                    Text(hostName)
-                        .font(.subheadline.bold())
-                        .foregroundColor(Color.white)
-                    
-                    // Host badge pill
+            // Phase 74: Centered stats row with Host badge above Distance, Apple Music above Time, Solo Ride above Avg Speed
+            HStack(alignment: .center, spacing: 0) {
+                // Distance column (left) with Host badge above
+                VStack(alignment: .center, spacing: 6) {
+                    // Phase 74: Host badge above Distance
                     Text("Host")
                         .font(.caption.bold())
                         .padding(.horizontal, 8)
@@ -46,42 +60,145 @@ struct RideHostHUDView: View {
                         .background(theme.brandYellow)
                         .foregroundColor(.black)
                         .clipShape(Capsule())
+                    
+                    HostStatItem(
+                        icon: "location.fill",
+                        value: String(format: "%.2f", distanceMiles),
+                        label: "Distance",
+                        unit: "mi"
+                    )
                 }
+                .frame(maxWidth: .infinity)
                 
-                // Phase 60.3: Image-only full-size music badge pill (no text)
-                if let mode = musicSourceMode {
-                    brandedLogo(for: mode)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .frame(minWidth: 80, minHeight: 28, maxHeight: 28)
-                        .background(Color.black.opacity(0.35))
-                        .clipShape(Capsule())
-                }
+                Spacer(minLength: 32)
                 
-                // Metrics row
-                HStack(spacing: 12) {
-                    metricLabel(icon: "location.north.line", text: String(format: "%.2f mi", distanceMiles))
-                    metricLabel(icon: "speedometer", text: String(format: "%.0f mph", speedMph))
-                    metricLabel(icon: "clock", text: durationText)
+                // Time column (middle) with Apple Music badge above
+                VStack(alignment: .center, spacing: 6) {
+                    // Phase 74: Apple Music badge above Time
+                    if let mode = musicSourceMode, mode == .appleMusicSynced {
+                        brandedLogo(for: mode)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .frame(minWidth: 80, minHeight: 28, maxHeight: 28)
+                            .background(Color.black.opacity(0.35))
+                            .clipShape(Capsule())
+                    } else {
+                        // Spacer to maintain alignment when badge is hidden
+                        Spacer()
+                            .frame(height: 28)
+                    }
+                    
+                    HostStatItem(
+                        icon: "clock.fill",
+                        value: durationText,
+                        label: "Time",
+                        unit: nil
+                    )
                 }
+                .frame(maxWidth: .infinity)
+                
+                Spacer(minLength: 32)
+                
+                // Avg Speed column (right) with Solo Ride badge above
+                VStack(alignment: .center, spacing: 6) {
+                    // Phase 74: Solo Ride badge above Avg Speed with green dot
+                    if !isConnected {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(Color.green) // Phase 73: Green dot for active solo ride
+                                .frame(width: 8, height: 8)
+                            
+                            Text("Solo Ride")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(Color.black.opacity(0.9))
+                                .clipShape(Capsule())
+                        }
+                    } else {
+                        // Spacer to maintain alignment when badge is hidden
+                        Spacer()
+                            .frame(height: 28)
+                    }
+                    
+                    HostStatItem(
+                        icon: "speedometer",
+                        value: String(format: "%.1f", speedMph),
+                        label: "Avg Speed",
+                        unit: "mph"
+                    )
+                }
+                .frame(maxWidth: .infinity)
             }
+            .frame(maxWidth: .infinity)
             
-            Spacer()
-            
-            // Right: Ride mode + status indicators
-            // Phase 43B: Only show ride mode pill for group/connected rides (not solo)
-            HStack(spacing: 8) {
-                // Ride mode pill - only show for connected/group rides
-                if isConnected {
-                    rideModePill
+            // Phase 70: Music Now Playing + Transport Controls
+            if musicSourceMode == .appleMusicSynced, let nowPlaying = nowPlaying {
+                HStack(spacing: 12) {
+                    // Phase 70: Crisp artwork (no heavy blur)
+                    if let artwork = nowPlaying.artwork {
+                        Image(uiImage: artwork)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 52, height: 52)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    } else {
+                        Image(systemName: "music.note")
+                            .font(.title3)
+                            .frame(width: 52, height: 52)
+                            .foregroundColor(.white.opacity(0.85))
+                            .background(Color.black.opacity(0.4))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(nowPlaying.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                        
+                        Text(nowPlaying.artist)
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                            .lineLimit(1)
+                    }
+                    
+                    Spacer()
+                    
+                    // Phase 70: Transport controls
+                    HStack(spacing: 18) {
+                        Button(action: { onPrevious?() }) {
+                            Image(systemName: "backward.fill")
+                                .font(.subheadline)
+                                .foregroundColor(theme.brandYellow)
+                        }
+                        
+                        Button(action: { onTogglePlayPause?() }) {
+                            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                                .font(.headline.weight(.bold))
+                                .foregroundColor(.black)
+                                .frame(width: 34, height: 34)
+                                .background(theme.brandYellow)
+                                .clipShape(Circle())
+                        }
+                        
+                        Button(action: { onNext?() }) {
+                            Image(systemName: "forward.fill")
+                                .font(.subheadline)
+                                .foregroundColor(theme.brandYellow)
+                        }
+                    }
                 }
-                
-                // Music badge (if active)
-                if isMusicOn {
-                    musicBadge
-                }
+                .padding(.top, 10)
+            } else if musicSourceMode == .externalPlayer {
+                Text("Using another music app – control playback there while Branchr keeps your ride and voice chat in sync.")
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.leading)
+                    .padding(.top, 8)
             }
         }
         .padding(.horizontal, 20) // Phase 57: Wider padding for full-width feel
@@ -122,7 +239,7 @@ struct RideHostHUDView: View {
         )
     }
     
-    // Phase 43: Metric label helper
+    // Phase 43: Metric label helper (kept for backward compatibility)
     private func metricLabel(icon: String, text: String) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
@@ -131,6 +248,44 @@ struct RideHostHUDView: View {
             Text(text)
                 .font(.caption)
                 .foregroundColor(Color.white.opacity(0.85))
+        }
+    }
+    
+    // MARK: - Phase 67-69: Host Stat Item Component
+    
+    /// Compact stat item for host HUD stats row
+    /// Phase 74: Updated alignment to center for consistent column layout
+    private struct HostStatItem: View {
+        let icon: String
+        let value: String
+        let label: String
+        let unit: String?
+        
+        @ObservedObject private var theme = ThemeManager.shared
+        
+        var body: some View {
+            VStack(alignment: .center, spacing: 4) {
+                HStack(spacing: 4) {
+                    Image(systemName: icon)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(theme.brandYellow)
+                    
+                    Text(value)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                    
+                    if let unit = unit {
+                        Text(unit)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                }
+                
+                Text(label)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .frame(maxWidth: .infinity)
         }
     }
     

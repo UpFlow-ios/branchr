@@ -67,19 +67,9 @@ struct WeeklyGoalCardView: View {
                             .fill(trackColor)
                             .frame(height: 12)
                         
-                        // Gradient progress fill
+                        // Phase 67: Rainbow progress fill
                         Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        theme.goalGradientStart,
-                                        theme.goalGradientMid,
-                                        theme.goalGradientEnd
-                                    ],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+                            .fill(theme.rideRainbowGradient)
                             .frame(width: geometry.size.width * CGFloat(progress), height: 12)
                             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: progress)
                     }

@@ -338,20 +338,9 @@ struct DailyDistanceBar: View {
         return max(4, min(120, ratio * 120)) // Min 4pt, max 120pt
     }
     
-    private var bestDayGradient: LinearGradient {
-        LinearGradient(
-            colors: [theme.brandYellow, theme.goalGradientEnd],
-            startPoint: .bottom,
-            endPoint: .top
-        )
-    }
-    
-    private var defaultBarColor: LinearGradient {
-        LinearGradient(
-            colors: [theme.brandYellow.opacity(0.7), theme.goalGradientEnd.opacity(0.7)],
-            startPoint: .bottom,
-            endPoint: .top
-        )
+    // Phase 67: Use rainbow gradient for all bars
+    private var barGradient: LinearGradient {
+        theme.rideRainbowGradientVertical
     }
     
     var body: some View {
@@ -364,10 +353,10 @@ struct DailyDistanceBar: View {
                         .fill(theme.neutralAccent.opacity(0.3))
                         .frame(width: 24, height: 120)
                     
-                    // Filled bar
+                    // Phase 67: Filled bar with rainbow gradient
                     if distance > 0 {
                         RoundedRectangle(cornerRadius: 4, style: .continuous)
-                            .fill(isBestDay ? bestDayGradient : defaultBarColor)
+                            .fill(barGradient)
                             .frame(width: 24, height: barHeight)
                             .shadow(
                                 color: isBestDay ? theme.brandYellow.opacity(0.5) : .clear,
