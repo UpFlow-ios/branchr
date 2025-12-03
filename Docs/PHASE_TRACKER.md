@@ -101,6 +101,7 @@ This file tracks all completed phases in chronological order.
 - Phase 72 – Home Spacing & Ride Map Height Fine-Tuning (✅ completed 2025-01-XX)
 - Phase 73 – Ride Map & HUD Layout Polish (✅ completed 2025-01-XX)
 - Phase 74 – Resume Ride Button, Weekly Goal Pacing, HUD Stat Alignment (✅ completed 2025-01-XX)
+- Phase 75 – ProfileView Wired to Ride Stats + Pro UI Polish (✅ completed 2025-01-XX)
 
 ---
 <｜tool▁call▁begin｜>

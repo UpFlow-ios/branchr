@@ -163,6 +163,41 @@ class RideDataManager: ObservableObject {
         return rides.count
     }
     
+    // MARK: - Phase 75: Aggregate Stats for Profile
+    
+    /// Total number of rides in history
+    var totalRideCount: Int {
+        rides.count
+    }
+    
+    /// Total distance across all rides in miles
+    var totalDistanceMiles: Double {
+        totalDistance / 1609.34 // Convert meters to miles
+    }
+    
+    /// Total duration across all rides in seconds
+    var totalDurationSeconds: TimeInterval {
+        totalDuration
+    }
+    
+    /// Formatted total ride time (e.g., "5h 22m" or "42m")
+    var formattedTotalRideTime: String {
+        formatDuration(totalDurationSeconds)
+    }
+    
+    /// Helper to format duration as hours and minutes
+    private func formatDuration(_ seconds: TimeInterval) -> String {
+        let totalMinutes = Int(seconds / 60)
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        
+        if hours > 0 {
+            return String(format: "%dh %02dm", hours, minutes)
+        } else {
+            return String(format: "%dm", minutes)
+        }
+    }
+    
     // MARK: - Phase 34: Calendar Summary
     
     /// Get ride summary for a specific day

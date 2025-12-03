@@ -24,6 +24,7 @@ struct ProfileView: View {
     @ObservedObject private var profileService = FirebaseProfileService.shared
     @ObservedObject private var profileManager = ProfileManager.shared
     @ObservedObject private var presence = PresenceManager.shared // Phase 34: Online presence
+    @ObservedObject private var rideDataManager = RideDataManager.shared // Phase 75: Ride stats
     @ObservedObject private var theme = ThemeManager.shared
     @State private var showEditProfile = false
     
@@ -74,28 +75,41 @@ struct ProfileView: View {
                                 .overlay(Circle().stroke(theme.accentColor.opacity(0.3), lineWidth: 2))
                         }
                     }
-                    .padding(.top, 60)
+                    .padding(.top, 40) // Phase 75: Reduced from 60 for tighter layout
                     
                     // Name
                     Text(profileManager.name.isEmpty ? profileService.currentProfile.name : profileManager.name)
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(Color.branchrTextPrimary)
                     
+                    // Phase 75: Rider tagline
+                    Text("\(rideDataManager.totalRideCount) rides • \(String(format: "%.1f mi", rideDataManager.totalDistanceMiles)) total")
+                        .font(.footnote)
+                        .foregroundColor(Color.branchrTextPrimary.opacity(0.7))
+                    
                     // Bio
                     Text(profileManager.bio.isEmpty ? profileService.currentProfile.bio : profileManager.bio)
                         .font(.body)
                         .foregroundColor(Color.branchrTextPrimary.opacity(0.8))
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 16) // Phase 75: Reduced from 20
                     
-                    // Phase 34: Stats moved up (above Edit button)
+                    // Phase 75: Lifetime stats row
                     HStack(spacing: 20) {
-                        StatItem(title: "Rides", value: "0")
-                        StatItem(title: "Distance", value: "0 mi")
-                        StatItem(title: "Time", value: "0h")
+                        StatItem(title: "Rides", value: "\(rideDataManager.totalRideCount)")
+                        StatItem(title: "Distance", value: String(format: "%.1f mi", rideDataManager.totalDistanceMiles))
+                        StatItem(title: "Time", value: rideDataManager.formattedTotalRideTime)
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
+                    
+                    // Phase 75: Weekly/Streak stats row
+                    HStack(spacing: 20) {
+                        StatItem(title: "This Week", value: String(format: "%.1f mi", rideDataManager.totalDistanceThisWeek()))
+                        StatItem(title: "Current Streak", value: "\(rideDataManager.currentStreakDays())d")
+                        StatItem(title: "Best Streak", value: "\(rideDataManager.bestStreakDays())d")
+                    }
+                    .padding(.horizontal, 20)
                     
                     Spacer()
                     
@@ -115,7 +129,7 @@ struct ProfileView: View {
                         .cornerRadius(12)
                     }
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 28) // Phase 75: Increased from 20 to match Home button offsets
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -150,6 +164,7 @@ struct ProfileView: View {
 
 // MARK: - Stat Item Component
 
+// Phase 75: StatItem visual refresh with pro styling
 struct StatItem: View {
     let title: String
     let value: String
@@ -158,17 +173,21 @@ struct StatItem: View {
     var body: some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.title2.bold())
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
                 .foregroundColor(Color.branchrAccent)
             
-            Text(title)
-                .font(.caption)
+            Text(title.uppercased())
+                .font(.caption2)
+                .tracking(0.8)
                 .foregroundColor(Color.branchrTextPrimary.opacity(0.7))
         }
         .frame(maxWidth: .infinity)
-        .padding()
-        .background(theme.cardBackground)
-        .cornerRadius(12)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(theme.cardBackground)
+                .shadow(color: .black.opacity(0.4), radius: 16, x: 0, y: 8)
+        )
     }
 }
 
