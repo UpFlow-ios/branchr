@@ -105,8 +105,18 @@ struct WeeklyGoalCardView: View {
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
         .background(
-            .ultraThinMaterial,
-            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                )
+        )
+        .shadow(
+            color: Color.black.opacity(0.40),
+            radius: 18,
+            x: 0,
+            y: 12
         )
     }
 }

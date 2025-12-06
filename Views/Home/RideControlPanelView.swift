@@ -40,6 +40,11 @@ struct RideControlPanelView: View {
     
     @ObservedObject private var theme = ThemeManager.shared
     
+    // Auto-refresh timer for now playing / artwork
+    @State private var nowPlayingTimer = Timer
+        .publish(every: 3, on: .main, in: .common)
+        .autoconnect()
+    
     // MARK: - Computed Properties
     
     private var isSoloRide: Bool {
@@ -85,9 +90,9 @@ struct RideControlPanelView: View {
                 theme.surfaceBackground
             }
             
-            // Gradient overlay for text readability
+            // Gradient overlay for text readability - lighter for clearer artwork
             LinearGradient(
-                colors: [Color.black.opacity(0.55), Color.black.opacity(0.2)],
+                colors: [Color.black.opacity(0.35), Color.black.opacity(0.10)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -138,8 +143,8 @@ struct RideControlPanelView: View {
                    let nowPlaying = musicService.nowPlaying {
                     
                     VStack(spacing: 12) {
-                        // Playback controls - centered
-                        HStack(spacing: 20) {
+                        // Playback controls - centered with increased spacing for symmetry
+                        HStack(spacing: 40) {
                             Button(action: {
                                 HapticsService.shared.lightTap()
                                 musicService.skipToPreviousTrack()
@@ -212,11 +217,17 @@ struct RideControlPanelView: View {
                 
                 Spacer(minLength: 0)
                 
-                // NEW ORDER:
-                // 1) Audio controls row
-                // 2) Weekly goal card at very bottom of the panel
+                // BOTTOM: Weekly Goal first, then audio controls
+                WeeklyGoalCardView(
+                    totalThisWeekMiles: totalThisWeekMiles,
+                    goalMiles: goalMiles,
+                    currentStreakDays: currentStreakDays,
+                    bestStreakDays: bestStreakDays
+                )
+                .frame(maxWidth: .infinity)
+                
+                // Voice/Audio Controls Row aligned to Weekly Goal width
                 HStack(spacing: 16) {
-                    // Voice Mute Toggle
                     AudioControlButton(
                         icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
                         title: isVoiceMuted ? "Muted" : "Unmuted",
@@ -225,7 +236,6 @@ struct RideControlPanelView: View {
                         onToggleMute()
                     }
                     
-                    // DJ Controls
                     AudioControlButton(
                         icon: "music.quarternote.3",
                         title: "DJ Controls",
@@ -234,7 +244,6 @@ struct RideControlPanelView: View {
                         onDJControlsTap()
                     }
                     
-                    // Music Toggle
                     AudioControlButton(
                         icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
                         title: isMusicMuted ? "Music Off" : "Music On",
@@ -244,18 +253,7 @@ struct RideControlPanelView: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                
-                // Weekly Goal pinned to the bottom of the card
-                WeeklyGoalCardView(
-                    totalThisWeekMiles: totalThisWeekMiles,
-                    goalMiles: goalMiles,
-                    currentStreakDays: currentStreakDays,
-                    bestStreakDays: bestStreakDays
-                )
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color.black.opacity(0.3)) // glassy look over artwork
-                )
+                .padding(.top, 8)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
@@ -274,7 +272,11 @@ struct RideControlPanelView: View {
                 )
         )
         .onAppear {
-            // Refresh now playing when view appears
+            if preferredMusicSource == .appleMusicSynced {
+                musicService.refreshNowPlayingFromNowPlayingInfoCenter()
+            }
+        }
+        .onReceive(nowPlayingTimer) { _ in
             if preferredMusicSource == .appleMusicSynced {
                 musicService.refreshNowPlayingFromNowPlayingInfoCenter()
             }
@@ -282,7 +284,7 @@ struct RideControlPanelView: View {
     }
 }
 
-// MARK: - Audio Control Button (reused from HomeView)
+// MARK: - Audio Control Button
 
 private struct AudioControlButton: View {
     let icon: String
