@@ -135,7 +135,6 @@ struct HomeView: View {
                     onToggleMusic: handleToggleMusic,
                     onDJControlsTap: handleDJControlsTap
                 )
-                .padding(.horizontal, 16)
                 .padding(.top, 8) // Reduced spacing between header and card
                 .onChange(of: musicSourceMode) { newMode in
                     // Phase 57: Sync musicSourceMode with userPreferences and musicSync
