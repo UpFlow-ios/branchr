@@ -82,7 +82,7 @@ struct SafetyButton: View {
                 }
                 .foregroundColor(theme.isDarkMode ? Color.black : theme.branchrYellow)
                 .padding(.horizontal, 24)
-                .padding(.vertical, 14)
+                .padding(.vertical, 10) // Reduced height for better fit on smaller screens
             }
             .frame(maxWidth: .infinity)
             .scaleEffect(isPressed ? 0.97 : 1.0)

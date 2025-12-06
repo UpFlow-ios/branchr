@@ -35,6 +35,9 @@ struct RideControlPanelView: View {
     let onToggleMusic: () -> Void
     let onDJControlsTap: () -> Void
     
+    // Music Service for Now Playing
+    @ObservedObject private var musicService = MusicService.shared
+    
     @ObservedObject private var theme = ThemeManager.shared
     
     // MARK: - Computed Properties
@@ -66,103 +69,266 @@ struct RideControlPanelView: View {
     // MARK: - Body
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            // Phase 56: Connection Status centered at top
-            HStack {
-                Spacer()
+        ZStack {
+            // Main content
+            VStack(spacing: 16) {
                 
-                // Connection Status Pill
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(connectionStatusColor)
-                        .frame(width: 12, height: 12)
-                        .shadow(
-                            color: connectionStatusColor.opacity(0.5),
-                            radius: 8,
-                            x: 0,
-                            y: 0
-                        )
-                        .scaleEffect(connectionManager.isConnected ? 1.05 : 1.0)
-                        .animation(
-                            connectionManager.isConnected
-                            ? Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)
-                            : .default,
-                            value: connectionManager.isConnected
-                        )
+                // TOP: Connection Status pill (glass)
+                HStack {
+                    Spacer()
+                    connectionStatusPill
+                    Spacer()
+                }
+                .padding(.top, 4)
+                
+                // MIDDLE: Album artwork + playback controls + track info
+                if preferredMusicSource == .appleMusicSynced,
+                   let nowPlaying = musicService.nowPlaying,
+                   let artwork = nowPlaying.artwork {
                     
-                    Text(connectionStatusLabel)
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundColor(connectionStatusColor)
-                        .animation(.easeInOut, value: connectionManager.isConnected)
+                    ZStack(alignment: .bottom) {
+                        // 🔳 Big, clean square artwork – shows the full album without cropping weirdly
+                        Image(uiImage: artwork)
+                            .resizable()
+                            .aspectRatio(1, contentMode: .fit)
+                            .frame(maxWidth: .infinity)
+                            .clipped()
+                            .cornerRadius(20)
+                        
+                        // Gradient at the bottom for readability
+                        LinearGradient(
+                            colors: [Color.black.opacity(0.0),
+                                     Color.black.opacity(0.75)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .cornerRadius(20)
+                        .allowsHitTesting(false)
+                        
+                        VStack(spacing: 10) {
+                            // Glass playback controls like Control Center
+                            HStack(spacing: 22) {
+                                // Previous
+                                Button(action: {
+                                    HapticsService.shared.lightTap()
+                                    musicService.skipToPreviousTrack()
+                                }) {
+                                    Image(systemName: "backward.fill")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 40, height: 40)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Circle())
+                                        .shadow(color: .black.opacity(0.4), radius: 6, x: 0, y: 3)
+                                }
+                                
+                                // Play / Pause
+                                Button(action: {
+                                    HapticsService.shared.mediumTap()
+                                    musicService.togglePlayPause()
+                                }) {
+                                    Image(systemName: musicService.isPlaying ? "pause.fill" : "play.fill")
+                                        .font(.system(size: 22, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 54, height: 54)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                                .stroke(Color.white.opacity(0.45), lineWidth: 1)
+                                        )
+                                        .shadow(color: .black.opacity(0.55), radius: 10, x: 0, y: 6)
+                                }
+                                
+                                // Next
+                                Button(action: {
+                                    HapticsService.shared.lightTap()
+                                    musicService.skipToNextTrack()
+                                }) {
+                                    Image(systemName: "forward.fill")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 40, height: 40)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Circle())
+                                        .shadow(color: .black.opacity(0.4), radius: 6, x: 0, y: 3)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            
+                            // Track title and artist over the artwork
+                            VStack(spacing: 4) {
+                                Text(nowPlaying.title)
+                                    .font(.headline.bold())
+                                    .foregroundColor(.white)
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.center)
+                                    .shadow(color: .black.opacity(0.7), radius: 6, x: 0, y: 3)
+                                
+                                Text(nowPlaying.artist)
+                                    .font(.subheadline)
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .lineLimit(1)
+                                    .shadow(color: .black.opacity(0.7), radius: 6, x: 0, y: 3)
+                            }
+                            .padding(.horizontal, 8)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
+                    }
+                    
+                } else if preferredMusicSource == .appleMusicSynced {
+                    // Placeholder when Apple Music selected but no track
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(Color.black.opacity(0.65))
+                        
+                        VStack(spacing: 10) {
+                            Image(systemName: "music.note")
+                                .font(.system(size: 40))
+                                .foregroundColor(theme.brandYellow.opacity(0.9))
+                            
+                            Text("Apple Music Ready")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                            
+                            Text("Start playing a song in Apple Music")
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                        .padding()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
+                } else {
+                    // Placeholder for "Other Music App" mode
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(Color.black.opacity(0.65))
+                        
+                        VStack(spacing: 10) {
+                            Image(systemName: "music.note.list")
+                                .font(.system(size: 36))
+                                .foregroundColor(.white)
+                            
+                            Text("External Music")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                            
+                            Text("Control playback from your other music app")
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.85))
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 8)
-                .background(Color(.systemGray6).opacity(0.2))
-                .clipShape(Capsule())
                 
-                Spacer()
-            }
-            
-            // Music Source Selector (Phase 54: label removed, only show when ride is idle)
-            if rideService.rideState == .idle || rideService.rideState == .ended {
-                MusicSourceSelectorView(selectedSource: $preferredMusicSource)
-            }
-            
-            // Weekly Goal Card
-            WeeklyGoalCardView(
-                totalThisWeekMiles: totalThisWeekMiles,
-                goalMiles: goalMiles,
-                currentStreakDays: currentStreakDays,
-                bestStreakDays: bestStreakDays
-            )
-            
-            // Voice/Audio Controls Row (Phase 59: swapped Music On and DJ Controls)
-            HStack(spacing: 16) {
-                // Voice Mute Toggle
-                AudioControlButton(
-                    icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
-                    title: isVoiceMuted ? "Muted" : "Unmuted",
-                    isActive: !isVoiceMuted
-                ) {
-                    onToggleMute()
-                }
+                // BOTTOM: Weekly Goal – glass like the status pill
+                WeeklyGoalCardView(
+                    totalThisWeekMiles: totalThisWeekMiles,
+                    goalMiles: goalMiles,
+                    currentStreakDays: currentStreakDays,
+                    bestStreakDays: bestStreakDays
+                )
                 
-                // DJ Controls (Phase 59: moved to middle position)
-                AudioControlButton(
-                    icon: "music.quarternote.3",
-                    title: "DJ Controls",
-                    isActive: false // DJ Controls is not a toggle, always inactive state
-                ) {
-                    onDJControlsTap()
+                // Voice/Audio Controls Row – glass buttons
+                HStack(spacing: 16) {
+                    // Voice Mute Toggle
+                    AudioControlButton(
+                        icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
+                        title: isVoiceMuted ? "Muted" : "Unmuted",
+                        isActive: !isVoiceMuted
+                    ) {
+                        onToggleMute()
+                    }
+                    
+                    // DJ Controls
+                    AudioControlButton(
+                        icon: "music.quarternote.3",
+                        title: "DJ Controls",
+                        isActive: false // DJ Controls is not a toggle
+                    ) {
+                        onDJControlsTap()
+                    }
+                    
+                    // Music Toggle
+                    AudioControlButton(
+                        icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
+                        title: isMusicMuted ? "Music Off" : "Music On",
+                        isActive: !isMusicMuted
+                    ) {
+                        onToggleMusic()
+                    }
                 }
-                
-                // Music Toggle (Phase 59: moved to right position)
-                AudioControlButton(
-                    icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
-                    title: isMusicMuted ? "Music Off" : "Music On",
-                    isActive: !isMusicMuted
-                ) {
-                    onToggleMusic()
-                }
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
         }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 16)
+        .clipShape(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+        )
+        // Outer card glass + subtle stroke + shadow
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(theme.surfaceBackground)
+                .fill(.ultraThinMaterial)
+                .background(theme.surfaceBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 0.8)
+                )
                 .shadow(
-                    color: theme.isDarkMode ? .clear : Color.black.opacity(0.25),
-                    radius: theme.isDarkMode ? 0 : 18,
+                    color: Color.black.opacity(theme.isDarkMode ? 0.55 : 0.35),
+                    radius: 22,
                     x: 0,
-                    y: theme.isDarkMode ? 0 : 8
+                    y: 14
                 )
         )
+        .onAppear {
+            // Refresh now playing when view appears
+            if preferredMusicSource == .appleMusicSynced {
+                musicService.refreshNowPlayingFromNowPlayingInfoCenter()
+            }
+        }
+    }
+    
+    // MARK: - Connection Status Pill
+    
+    private var connectionStatusPill: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(connectionStatusColor)
+                .frame(width: 12, height: 12)
+                .shadow(
+                    color: connectionStatusColor.opacity(0.6),
+                    radius: 8,
+                    x: 0,
+                    y: 0
+                )
+                .scaleEffect(connectionManager.isConnected ? 1.05 : 1.0)
+                .animation(
+                    connectionManager.isConnected
+                    ? Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)
+                    : .default,
+                    value: connectionManager.isConnected
+                )
+            
+            Text(connectionStatusLabel)
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundColor(connectionStatusColor)
+                .animation(.easeInOut, value: connectionManager.isConnected)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial) // glassy like System UI
+        .clipShape(Capsule())
     }
 }
 
-// MARK: - Audio Control Button (reused from HomeView)
+// MARK: - Audio Control Button (glass style)
 
 private struct AudioControlButton: View {
     let icon: String
@@ -175,29 +341,34 @@ private struct AudioControlButton: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 40, height: 40)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(isActive ? theme.brandYellow : theme.surfaceBackground)
-                    )
-                    .foregroundColor(isActive ? .black : .white)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(
+                                    Color.white.opacity(isActive ? 0.40 : 0.18),
+                                    lineWidth: isActive ? 1.2 : 0.8
+                                )
+                        )
+                        .frame(width: 52, height: 52)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(isActive ? theme.brandYellow : .white)
+                }
                 
                 Text(title)
                     .font(.caption.bold())
-                    .foregroundColor(
-                        isActive ? .white : Color.white.opacity(0.85)
-                    )
+                    .foregroundColor(.white.opacity(0.9))
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.black.opacity(isActive ? 0.9 : 0.7))
+                    .fill(.ultraThinMaterial)
             )
         }
         .buttonStyle(.plain)
     }
 }
-

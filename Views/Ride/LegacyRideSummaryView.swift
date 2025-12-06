@@ -5,6 +5,9 @@
 //  Created by Joseph Dormond on 2025-11-03
 //  Legacy Ride Summary View for RideRecord compatibility
 //
+//  NOTE: This view is still used by RideHistoryView and RideMapView for displaying saved rides.
+//  It is NOT unused - keep for compatibility with RideRecord-based ride history.
+//
 
 import SwiftUI
 import MapKit

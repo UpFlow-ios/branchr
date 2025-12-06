@@ -38,9 +38,19 @@ final class VoiceFeedbackService: NSObject, ObservableObject {
     }
     
     /// Speak a text message (with debounce and safe concurrency)
-    func speak(_ text: String, force: Bool = false) {
+    /// - Parameters:
+    ///   - text: Text to speak
+    ///   - force: Force speech even if debounced
+    ///   - isSafetyAlert: If true, checks voiceSafetyAlerts setting before speaking
+    func speak(_ text: String, force: Bool = false, isSafetyAlert: Bool = false) {
         speechQueue.async { [weak self] in
             guard let self else { return }
+            
+            // Check if safety alerts are disabled
+            if isSafetyAlert && !UserDefaults.standard.bool(forKey: "voiceSafetyAlerts") {
+                print("Branchr VoiceFeedbackService: Safety alerts disabled, skipping: \(text)")
+                return
+            }
             
             // Phase 53: Validate text is not empty
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {

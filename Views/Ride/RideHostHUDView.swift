@@ -31,212 +31,240 @@ struct RideHostHUDView: View {
     let onNext: (() -> Void)?
     
     @ObservedObject private var theme = ThemeManager.shared
+    @ObservedObject private var presence = PresenceManager.shared // For online status ring
     
     var body: some View {
-        // Phase 74: Enhanced HUD with Host badge above Distance, badges above each stat column
-        VStack(alignment: .leading, spacing: 12) {
-            // Top section: Host info (Phase 74: removed Host badge from header)
-            HStack(alignment: .center, spacing: 12) {
-                // Left: Avatar
-                avatarView
-                
-                // Center-left: Host name only
-                Text(hostName)
-                    .font(.subheadline.bold())
-                    .foregroundColor(Color.white)
-                
-                Spacer()
-            }
-            
-            // Phase 74: Centered stats row with Host badge above Distance, Apple Music above Time, Solo Ride above Avg Speed
-            HStack(alignment: .center, spacing: 0) {
-                // Distance column (left) with Host badge above
-                VStack(alignment: .center, spacing: 6) {
-                    // Phase 74: Host badge above Distance
-                    Text("Host")
-                        .font(.caption.bold())
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(theme.brandYellow)
-                        .foregroundColor(.black)
-                        .clipShape(Capsule())
-                    
-                    HostStatItem(
-                        icon: "location.fill",
-                        value: String(format: "%.2f", distanceMiles),
-                        label: "Distance",
-                        unit: "mi"
-                    )
-                }
-                .frame(maxWidth: .infinity)
-                
-                Spacer(minLength: 32)
-                
-                // Time column (middle) with Apple Music badge above
-                VStack(alignment: .center, spacing: 6) {
-                    // Phase 74: Apple Music badge above Time
-                    if let mode = musicSourceMode, mode == .appleMusicSynced {
-                        brandedLogo(for: mode)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .frame(minWidth: 80, minHeight: 28, maxHeight: 28)
-                            .background(Color.black.opacity(0.35))
-                            .clipShape(Capsule())
-                    } else {
-                        // Spacer to maintain alignment when badge is hidden
-                        Spacer()
-                            .frame(height: 28)
-                    }
-                    
-                    HostStatItem(
-                        icon: "clock.fill",
-                        value: durationText,
-                        label: "Time",
-                        unit: nil
-                    )
-                }
-                .frame(maxWidth: .infinity)
-                
-                Spacer(minLength: 32)
-                
-                // Avg Speed column (right) with Solo Ride badge above
-                VStack(alignment: .center, spacing: 6) {
-                    // Phase 74: Solo Ride badge above Avg Speed with green dot
-                    if !isConnected {
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(Color.green) // Phase 73: Green dot for active solo ride
-                                .frame(width: 8, height: 8)
-                            
-                            Text("Solo Ride")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(Color.black.opacity(0.9))
-                                .clipShape(Capsule())
-                        }
-                    } else {
-                        // Spacer to maintain alignment when badge is hidden
-                        Spacer()
-                            .frame(height: 28)
-                    }
-                    
-                    HostStatItem(
-                        icon: "speedometer",
-                        value: String(format: "%.1f", speedMph),
-                        label: "Avg Speed",
-                        unit: "mph"
-                    )
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .frame(maxWidth: .infinity)
-            
-            // Phase 70: Music Now Playing + Transport Controls
-            if musicSourceMode == .appleMusicSynced, let nowPlaying = nowPlaying {
-                HStack(spacing: 12) {
-                    // Phase 70: Crisp artwork (no heavy blur)
-                    if let artwork = nowPlaying.artwork {
-                        Image(uiImage: artwork)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 52, height: 52)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    } else {
-                        Image(systemName: "music.note")
-                            .font(.title3)
-                            .frame(width: 52, height: 52)
-                            .foregroundColor(.white.opacity(0.85))
-                            .background(Color.black.opacity(0.4))
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(nowPlaying.title)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                        
-                        Text(nowPlaying.artist)
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                            .lineLimit(1)
-                    }
-                    
-                    Spacer()
-                    
-                    // Phase 70: Transport controls
-                    HStack(spacing: 18) {
-                        Button(action: { onPrevious?() }) {
-                            Image(systemName: "backward.fill")
-                                .font(.subheadline)
-                                .foregroundColor(theme.brandYellow)
-                        }
-                        
-                        Button(action: { onTogglePlayPause?() }) {
-                            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                                .font(.headline.weight(.bold))
-                                .foregroundColor(.black)
-                                .frame(width: 34, height: 34)
-                                .background(theme.brandYellow)
-                                .clipShape(Circle())
-                        }
-                        
-                        Button(action: { onNext?() }) {
-                            Image(systemName: "forward.fill")
-                                .font(.subheadline)
-                                .foregroundColor(theme.brandYellow)
-                        }
-                    }
-                }
-                .padding(.top, 10)
-            } else if musicSourceMode == .externalPlayer {
-                Text("Using another music app – control playback there while Branchr keeps your ride and voice chat in sync.")
-                    .font(.caption2)
-                    .foregroundColor(.white.opacity(0.6))
-                    .multilineTextAlignment(.leading)
-                    .padding(.top, 8)
-            }
-        }
-        .padding(.horizontal, 20) // Phase 57: Wider padding for full-width feel
-        .padding(.vertical, 12)
-        .frame(maxWidth: .infinity) // Phase 57: Full width within safe margins
-        .background(
+        let isDark = theme.isDarkMode
+        
+        ZStack {
+            // Glass / blur background - more transparent for better map visibility
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(theme.surfaceBackground)
-                .shadow(
-                    color: theme.isDarkMode ? .clear : Color.black.opacity(0.25),
-                    radius: theme.isDarkMode ? 0 : 18,
-                    x: 0,
-                    y: theme.isDarkMode ? 0 : 8
+                .fill(.ultraThinMaterial) // blur effect
+                .background(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(
+                            Color.black.opacity(isDark ? 0.35 : 0.15)
+                        )
                 )
-        )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(
+                            Color.white.opacity(isDark ? 0.12 : 0.06),
+                            lineWidth: 1
+                        )
+                )
+            
+            // HUD content - compact padding
+            hudContent
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+        }
+        .fixedSize(horizontal: false, vertical: true) // Size to content height
+        .frame(maxWidth: 380) // Smaller max width for compact card
     }
     
-    // Phase 43: Avatar view with host ring
+    // MARK: - HUD Content
+    
+    /// Main HUD content layout
+    private var hudContent: some View {
+        // Phase 74: Enhanced HUD with Host badge above Distance, badges above each stat column
+        // Compact spacing for smaller card
+        VStack(alignment: .leading, spacing: 8) {
+                // Top section: Host info (Phase 74: removed Host badge from header)
+                HStack(alignment: .center, spacing: 12) {
+                    // Left: Avatar
+                    avatarView
+                    
+                    // Center-left: Host name only
+                    Text(hostName)
+                        .font(.subheadline.bold())
+                        .foregroundColor(Color.white)
+                    
+                    Spacer()
+                }
+                
+                // Phase 74: Centered stats row with Host badge above Distance, Apple Music above Time, Solo Ride above Avg Speed
+                HStack(alignment: .center, spacing: 0) {
+                    // Distance column (left) with Host badge above
+                    VStack(alignment: .center, spacing: 4) {
+                        // Phase 74: Host badge above Distance
+                        Text("Host")
+                            .font(.caption.bold())
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(theme.brandYellow)
+                            .foregroundColor(.black)
+                            .clipShape(Capsule())
+                        
+                        HostStatItem(
+                            icon: "location.fill",
+                            value: String(format: "%.2f", distanceMiles),
+                            label: "Distance",
+                            unit: "mi"
+                        )
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    Spacer(minLength: 32)
+                    
+                    // Time column (middle) with Apple Music badge above
+                    VStack(alignment: .center, spacing: 4) {
+                        // Phase 74: Apple Music badge above Time
+                        if let mode = musicSourceMode, mode == .appleMusicSynced {
+                            brandedLogo(for: mode)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .frame(minWidth: 80, minHeight: 28, maxHeight: 28)
+                                .background(Color.black.opacity(0.35))
+                                .clipShape(Capsule())
+                        } else {
+                            // Spacer to maintain alignment when badge is hidden
+                            Spacer()
+                                .frame(height: 28)
+                        }
+                        
+                        HostStatItem(
+                            icon: "clock.fill",
+                            value: durationText,
+                            label: "Time",
+                            unit: nil
+                        )
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    Spacer(minLength: 32)
+                    
+                    // Avg Speed column (right) with Solo Ride badge above
+                    VStack(alignment: .center, spacing: 4) {
+                        // Phase 74: Solo Ride badge above Avg Speed with green dot
+                        if !isConnected {
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(Color.green) // Phase 73: Green dot for active solo ride
+                                    .frame(width: 8, height: 8)
+                                
+                                Text("Solo Ride")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(Color.black.opacity(0.9))
+                                    .clipShape(Capsule())
+                            }
+                        } else {
+                            // Spacer to maintain alignment when badge is hidden
+                            Spacer()
+                                .frame(height: 28)
+                        }
+                        
+                        HostStatItem(
+                            icon: "speedometer",
+                            value: String(format: "%.1f", speedMph),
+                            label: "Avg Speed",
+                            unit: "mph"
+                        )
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .frame(maxWidth: .infinity)
+                
+                // Phase 70: Music Now Playing + Transport Controls
+                if musicSourceMode == .appleMusicSynced, let nowPlaying = nowPlaying {
+                    HStack(spacing: 12) {
+                        // Phase 70: Crisp artwork (no heavy blur)
+                        if let artwork = nowPlaying.artwork {
+                            Image(uiImage: artwork)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 52, height: 52)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        } else {
+                            Image(systemName: "music.note")
+                                .font(.title3)
+                                .frame(width: 52, height: 52)
+                                .foregroundColor(.white.opacity(0.85))
+                                .background(Color.black.opacity(0.4))
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(nowPlaying.title)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                            
+                            Text(nowPlaying.artist)
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.7))
+                                .lineLimit(1)
+                        }
+                        
+                        Spacer()
+                        
+                        // Phase 70: Transport controls
+                        HStack(spacing: 18) {
+                            Button(action: { onPrevious?() }) {
+                                Image(systemName: "backward.fill")
+                                    .font(.subheadline)
+                                    .foregroundColor(theme.brandYellow)
+                            }
+                            
+                            Button(action: { onTogglePlayPause?() }) {
+                                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                                    .font(.headline.weight(.bold))
+                                    .foregroundColor(.black)
+                                    .frame(width: 34, height: 34)
+                                    .background(theme.brandYellow)
+                                    .clipShape(Circle())
+                            }
+                            
+                            Button(action: { onNext?() }) {
+                                Image(systemName: "forward.fill")
+                                    .font(.subheadline)
+                                    .foregroundColor(theme.brandYellow)
+                            }
+                        }
+                    }
+                    .padding(.top, 10)
+                } else if musicSourceMode == .externalPlayer {
+                    Text("Using another music app – control playback there while Branchr keeps your ride and voice chat in sync.")
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.6))
+                        .multilineTextAlignment(.leading)
+                        .padding(.top, 8)
+                }
+        }
+    }
+    
+    // Phase 43: Avatar view with green online ring (matching ProfileView)
     private var avatarView: some View {
         ZStack {
-            if let uiImage = hostImage {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-            } else {
+            // Green ring when online (matching ProfileView style)
+            if presence.isOnline {
                 Circle()
-                    .fill(theme.brandYellow)
-                Text(String(hostName.prefix(1)).uppercased())
-                    .font(.headline.bold())
-                    .foregroundColor(.black)
+                    .stroke(Color.green, lineWidth: 3)
+                    .frame(width: 48, height: 48)
             }
+            
+            // Avatar image
+            Group {
+                if let uiImage = hostImage {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Circle()
+                        .fill(theme.brandYellow)
+                    Text(String(hostName.prefix(1)).uppercased())
+                        .font(.headline.bold())
+                        .foregroundColor(.black)
+                }
+            }
+            .frame(width: 44, height: 44)
+            .clipShape(Circle())
         }
-        .frame(width: 44, height: 44)
-        .clipShape(Circle())
-        .overlay(
-            Circle()
-                .stroke(connectionStatusColor, lineWidth: 2.5) // Phase 43: Use connection color for ring
-        )
     }
     
     // Phase 43: Metric label helper (kept for backward compatibility)

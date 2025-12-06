@@ -141,6 +141,12 @@ class RideDataManager: ObservableObject {
         print("Branchr: Cleared all rides")
     }
     
+    /// Clear local ride cache (for Settings)
+    func clearLocalCache() {
+        clearAll()
+        print("Branchr: Local ride cache cleared from Settings")
+    }
+    
     /// Delete a specific ride
     func deleteRide(_ ride: RideRecord) {
         rides.removeAll { $0.id == ride.id }

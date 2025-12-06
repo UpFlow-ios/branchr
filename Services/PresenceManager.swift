@@ -32,8 +32,15 @@ class PresenceManager: ObservableObject {
         }
     }
     
-    /// Update online status
+    /// Update online status (only if user is signed in)
     func setOnline(_ online: Bool) {
+        // Only update if user is signed in
+        guard Auth.auth().currentUser != nil else {
+            print("⚠️ PresenceManager: Cannot set online status - no user signed in")
+            isOnline = false
+            return
+        }
+        
         isOnline = online
         FirebaseService.shared.setUserOnlineStatus(isOnline: online)
     }

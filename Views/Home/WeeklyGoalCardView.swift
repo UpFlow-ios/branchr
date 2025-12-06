@@ -34,7 +34,7 @@ struct WeeklyGoalCardView: View {
     
     var body: some View {
         // Phase 41E: Premium visual redesign with gradient progress bar
-        // Phase 41J: Text colors updated for readability on black background
+        // Phase 41J: Text colors updated for readability on dark backgrounds
         let titleColor = Color.white
         let primaryTextColor = Color.white.opacity(0.92)
         let secondaryTextColor = Color.white.opacity(0.78)
@@ -54,15 +54,15 @@ struct WeeklyGoalCardView: View {
                     .foregroundColor(primaryTextColor)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.12), in: Capsule())
+                    .background(Color.white.opacity(0.16), in: Capsule())
             }
             
             // Gradient progress bar
             VStack(alignment: .leading, spacing: 8) {
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
-                        // Background track - use neutralAccent with mode-aware opacity
-                        let trackColor = theme.neutralAccent.opacity(theme.isDarkMode ? 0.7 : 0.18)
+                        // Background track - neutral accent with mode-aware opacity
+                        let trackColor = theme.neutralAccent.opacity(theme.isDarkMode ? 0.65 : 0.25)
                         Capsule()
                             .fill(trackColor)
                             .frame(height: 12)
@@ -107,17 +107,20 @@ struct WeeklyGoalCardView: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
+        // ✨ Glass background so the artwork shows through
         .background(
-            theme.surfaceBackground,
+            .ultraThinMaterial,
             in: RoundedRectangle(cornerRadius: 16, style: .continuous)
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.white.opacity(0.14), lineWidth: 0.8)
+        )
         .shadow(
-            color: theme.isDarkMode ? .clear : Color.black.opacity(0.25),
-            radius: theme.isDarkMode ? 0 : 18,
+            color: Color.black.opacity(0.35),
+            radius: 18,
             x: 0,
-            y: theme.isDarkMode ? 0 : 8
+            y: 8
         )
     }
 }
-
-

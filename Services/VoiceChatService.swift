@@ -129,39 +129,9 @@ class VoiceChatService: NSObject, ObservableObject {
     // MARK: - Audio Session Setup
     private func setupAudioSession() {
 #if canImport(UIKit)
-        do {
-            // First, deactivate any existing session to avoid conflicts
-            try? audioSession.setActive(false, options: .notifyOthersOnDeactivation)
-            
-            // Phase 51: Configure audio session for voice chat + simultaneous music
-            // mixWithOthers allows music apps to continue playing while voice chat is active
-            try audioSession.setCategory(.playAndRecord, 
-                                      mode: .voiceChat, 
-                                      options: [.allowBluetooth, .allowBluetoothA2DP, .defaultToSpeaker, .mixWithOthers])
-            
-            // Set preferred buffer duration for low latency
-            try audioSession.setPreferredIOBufferDuration(0.005) // 5ms buffer
-            
-            // Set preferred sample rate for compatibility
-            try audioSession.setPreferredSampleRate(44100.0)
-            
-            // Enable audio session with options
-            try audioSession.setActive(true, options: [])
-            
-            print("Branchr: Audio session configured for voice chat")
-            print("Branchr: Audio session is now active: \(audioSession.isOtherAudioPlaying)")
-        } catch {
-            print("Branchr: Failed to configure audio session: \(error)")
-            
-            // Try to activate with minimal configuration as fallback
-            do {
-                try audioSession.setCategory(.playAndRecord)
-                try audioSession.setActive(true)
-                print("Branchr: Audio session activated with minimal configuration")
-            } catch {
-                print("Branchr: Complete audio session setup failed: \(error)")
-            }
-        }
+        // Use centralized AudioSessionManager for high-fidelity music + voice chat
+        // This preserves full-range audio (including bass) while allowing mic input
+        AudioSessionManager.shared.configureForRideMusicAndVoiceChat()
 #endif
     }
     
@@ -321,36 +291,9 @@ class VoiceChatService: NSObject, ObservableObject {
         }
         
 #if canImport(UIKit)
-        // Phase 70: Configure audio session right before starting engine
-        do {
-            let session = AVAudioSession.sharedInstance()
-            
-            // Phase 70: Single, predictable audio session configuration
-            try session.setCategory(
-                .playAndRecord,
-                mode: .voiceChat,
-                options: [
-                    .allowBluetooth,
-                    .allowBluetoothA2DP,
-                    .defaultToSpeaker,
-                    .mixWithOthers  // Apple Music keeps playing while we talk
-                ]
-            )
-            
-            // Phase 70: Activate with notification to other audio apps
-            try session.setActive(true, options: [.notifyOthersOnDeactivation])
-            
-            // Phase 70: Enhanced logging for debugging
-            print("Branchr VoiceChatService: Audio session configured")
-            print("Branchr VoiceChatService: Category: \(session.category.rawValue), Mode: \(session.mode.rawValue)")
-            print("Branchr VoiceChatService: Sample Rate: \(session.sampleRate) Hz, IO Buffer: \(session.ioBufferDuration)s")
-            
-        } catch {
-            print("Branchr VoiceChatService: Failed to configure audio session: \(error)")
-            print("Branchr VoiceChatService: Error code: \((error as NSError).code), domain: \((error as NSError).domain)")
-            isVoiceChatActive = false
-            return
-        }
+        // Configure audio session for high-fidelity music + voice chat
+        // This preserves full-range audio (including bass) while allowing mic input
+        AudioSessionManager.shared.configureForRideMusicAndVoiceChat()
 #endif
         
         do {

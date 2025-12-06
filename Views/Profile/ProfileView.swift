@@ -165,21 +165,31 @@ struct ProfileView: View {
 // MARK: - Stat Item Component
 
 // Phase 75: StatItem visual refresh with pro styling
+// Fixed: Light mode stats now use black text for high contrast
 struct StatItem: View {
     let title: String
     let value: String
     @ObservedObject private var theme = ThemeManager.shared
     
+    // Computed colors that adapt to light/dark mode
+    private var statValueColor: Color {
+        theme.isDarkMode ? theme.branchrYellow : .black
+    }
+    
+    private var statLabelColor: Color {
+        theme.isDarkMode ? theme.branchrYellow.opacity(0.7) : Color.black.opacity(0.7)
+    }
+    
     var body: some View {
         VStack(spacing: 4) {
             Text(value)
                 .font(.system(size: 20, weight: .semibold, design: .rounded))
-                .foregroundColor(Color.branchrAccent)
+                .foregroundColor(statValueColor)
             
             Text(title.uppercased())
                 .font(.caption2)
                 .tracking(0.8)
-                .foregroundColor(Color.branchrTextPrimary.opacity(0.7))
+                .foregroundColor(statLabelColor)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)

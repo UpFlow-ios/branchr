@@ -24,13 +24,9 @@ final class AudioManager: ObservableObject {
     }
     
     private func configureAudioSession() {
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playAndRecord, options: [.mixWithOthers, .defaultToSpeaker])
-            try AVAudioSession.sharedInstance().setActive(true)
-            print("🎵 AudioManager: Audio session configured for mixing")
-        } catch {
-            print("❌ AudioManager: Failed to configure audio session: \(error)")
-        }
+        // Use centralized AudioSessionManager for high-fidelity music + voice chat
+        // This preserves full-range audio (including bass) while allowing mic input
+        AudioSessionManager.shared.configureForRideMusicAndVoiceChat()
     }
     
     func playMusic(named fileName: String) {

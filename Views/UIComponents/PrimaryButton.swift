@@ -84,7 +84,7 @@ struct PrimaryButton: View {
                 }
                 .foregroundColor(theme.primaryButtonText)
                 .padding(.horizontal, 24)
-                .padding(.vertical, isHero ? 18 : 14)
+                .padding(.vertical, isHero ? 12 : 10) // Reduced height for better fit on smaller screens
             }
             .frame(maxWidth: .infinity)
             .scaleEffect(isPressed ? 0.97 : 1.0)

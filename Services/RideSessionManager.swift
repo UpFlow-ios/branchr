@@ -361,6 +361,14 @@ final class RideSessionManager: NSObject, ObservableObject, CLLocationManagerDel
         route.append(newLocation.coordinate)
         lastLocation = newLocation
         
+        // TODO: Wire autoPauseWhenStopped setting - auto-pause when speed is near 0 for extended period
+        // Check if auto-pause is enabled and speed is very low (< 0.5 m/s) for 10+ seconds
+        let autoPauseEnabled = UserDefaults.standard.bool(forKey: "autoPauseWhenStopped")
+        if autoPauseEnabled && currentSpeed < 0.5 {
+            // TODO: Track time at low speed and auto-pause after threshold
+            // For now, this is a placeholder - implement timer-based auto-pause logic
+        }
+        
         if isGroupRide {
             syncCurrentLocationToGroup(newLocation)
         }

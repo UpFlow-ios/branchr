@@ -62,7 +62,8 @@ struct HomeView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 24) {
+            GeometryReader { geometry in
+                VStack(spacing: 12) { // Tighter spacing for non-scrolling layout
                 
                 // Phase 28: SOS Alert Banner
                 if let alert = fcmService.latestSOSAlert, showSOSBanner {
@@ -114,36 +115,11 @@ struct HomeView: View {
                     }
                 }
                 
-                // Top breathing room - push all content down (Phase 60.3: increased for lower header)
+                // Top breathing room - minimal spacing
                 Spacer()
-                    .frame(height: 40) // was 12 – wordmark sits lower, away from status bar
-                
-                // MARK: - Phase 57: Brand Header - Logo and Theme Toggle on One Line
-                ZStack {
-                    // Centered brand title
-                    Text("branchr")
-                        .font(.system(size: 24, weight: .semibold, design: .rounded))
-                        .kerning(0.5)
-                        .foregroundColor(theme.primaryText)
-                    
-                    // Theme toggle aligned to trailing edge
-                    HStack {
-                        Spacer()
-                        Button(action: { theme.toggleTheme() }) {
-                            Image(systemName: theme.isDarkMode ? "sun.max.fill" : "moon.fill")
-                                .font(.title3)
-                                .foregroundColor(theme.accentColor)
-                                .frame(width: 44, height: 44)
-                                .background(theme.cardBackground)
-                                .cornerRadius(10)
-                        }
-                    }
-                }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 8) // Phase 72: Reduced from 16 for tighter spacing
+                    .frame(height: 8)
                 
                 // MARK: - Phase 71: Ride Control & Audio Panel (moved above buttons)
-                // Phase 72: Card sits directly under header with minimal gap
                 RideControlPanelView(
                     preferredMusicSource: $musicSourceMode,
                     connectionManager: connectionManager,
@@ -160,7 +136,7 @@ struct HomeView: View {
                     onDJControlsTap: handleDJControlsTap
                 )
                 .padding(.horizontal, 16)
-                .padding(.top, 8) // Phase 72: Small gap between header and card
+                .padding(.top, 8) // Reduced spacing between header and card
                 .onChange(of: musicSourceMode) { newMode in
                     // Phase 57: Sync musicSourceMode with userPreferences and musicSync
                     userPreferences.preferredMusicSource = newMode
@@ -170,7 +146,7 @@ struct HomeView: View {
                 // MARK: - Main Actions (Phase 2: Unified Button System)
                 // Phase 52: Primary action buttons only - status/controls moved to RideControlPanelView
                 // Phase 71: Buttons moved below RideControlPanelView
-                VStack(spacing: 20) {
+                VStack(spacing: 14) { // Reduced spacing for tighter layout
                     // Start Ride Tracking - Hero Button (Phase 67: No outer glow)
                     // Phase 74: Show "Resume Ride Tracking" when ride is active/paused, just open sheet
                     PrimaryButton(
@@ -263,16 +239,17 @@ struct HomeView: View {
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 20) // Phase 72: Spacing between card and buttons
+                .padding(.top, 12) // Reduced spacing between card and buttons
                 
-                // Phase 72: Minimal bottom spacing
+                // Bottom spacing - minimal to fit all content
                 Spacer()
-                    .frame(height: 24) // Small gap above tab bar
+                    .frame(height: 8)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 8)
+                .frame(maxWidth: .infinity, maxHeight: geometry.size.height)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16) // Phase 72: Reduced top padding for tighter layout
-            .padding(.bottom, 40)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.primaryBackground.ignoresSafeArea())
             .onAppear {
                 print("🏁 HomeView loaded - ready for Start Connection")

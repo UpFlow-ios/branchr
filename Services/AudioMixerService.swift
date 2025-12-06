@@ -113,17 +113,9 @@ class AudioMixerService: NSObject, ObservableObject {
     }
     
     private func setupAudioSession() {
-        do {
-            try audioSession.setCategory(
-                .playAndRecord,
-                mode: .voiceChat,
-                options: [.allowBluetooth, .allowBluetoothA2DP, .defaultToSpeaker]
-            )
-            try audioSession.setActive(true)
-            print("Branchr: Audio session configured for play and record")
-        } catch {
-            print("Branchr: Failed to setup audio session: \(error)")
-        }
+        // Use centralized AudioSessionManager for high-fidelity music + voice chat
+        // This preserves full-range audio (including bass) while allowing mic input
+        AudioSessionManager.shared.configureForRideMusicAndVoiceChat()
     }
     
     // MARK: - Public Methods

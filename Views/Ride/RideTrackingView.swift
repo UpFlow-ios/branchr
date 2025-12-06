@@ -90,7 +90,7 @@ struct RideTrackingView: View {
                                 updateMapRegion()
                             }
                             
-                            // Phase 70: Host HUD overlay on map
+                            // Phase 70: Host HUD overlay on map (floating card)
                             VStack {
                                 if rideService.rideState == .active || rideService.rideState == .paused {
                                     RideHostHUDView(
@@ -117,11 +117,10 @@ struct RideTrackingView: View {
                                             musicService.skipToNextTrack()
                                         }
                                     )
-                                    .padding(.horizontal, 16)
-                                    .padding(.top, 16)
+                                    .padding(.top, 24)
                                 }
                                 
-                                Spacer()
+                                Spacer() // Lets the map fill the remaining space
                             }
                         }
                         .padding(.horizontal, 16)
