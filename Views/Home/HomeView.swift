@@ -138,7 +138,7 @@ struct HomeView: View {
                     )
                 }
                 .frame(maxWidth: .infinity)          // center the whole card row
-                .padding(.horizontal, 16)   // ⬅️ card width
+                .padding(.horizontal, 24)   // <- match button width
                 .padding(.top, 8)
                 .onChange(of: musicSourceMode) { newMode in
                     userPreferences.preferredMusicSource = newMode

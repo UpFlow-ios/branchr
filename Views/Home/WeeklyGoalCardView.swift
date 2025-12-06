@@ -33,8 +33,9 @@ struct WeeklyGoalCardView: View {
     }
     
     var body: some View {
+        // Text colors tuned for glassy background
         let titleColor = Color.white
-        let primaryTextColor = Color.white.opacity(0.95)
+        let primaryTextColor = Color.white.opacity(0.94)
         let secondaryTextColor = Color.white.opacity(0.80)
         
         VStack(alignment: .leading, spacing: 12) {
@@ -52,26 +53,27 @@ struct WeeklyGoalCardView: View {
                     .foregroundColor(primaryTextColor)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(.ultraThinMaterial, in: Capsule())
+                    .background(
+                        Color.white.opacity(0.18),
+                        in: Capsule()
+                    )
             }
             
             // Gradient progress bar
             VStack(alignment: .leading, spacing: 8) {
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
-                        let trackColor = Color.white.opacity(0.18)
+                        // Background track - slightly lighter for clarity
+                        let trackColor = Color.white.opacity(0.15)
                         Capsule()
                             .fill(trackColor)
                             .frame(height: 12)
                         
+                        // Rainbow progress fill
                         Capsule()
                             .fill(theme.rideRainbowGradient)
-                            .frame(width: geometry.size.width * CGFloat(progress),
-                                   height: 12)
-                            .animation(
-                                .spring(response: 0.5, dampingFraction: 0.8),
-                                value: progress
-                            )
+                            .frame(width: geometry.size.width * CGFloat(progress), height: 12)
+                            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: progress)
                     }
                 }
                 .frame(height: 12)
@@ -79,6 +81,7 @@ struct WeeklyGoalCardView: View {
             
             // Bottom row: Three segments
             HStack(spacing: 8) {
+                // Left: Distance vs goal
                 Text(String(format: "%.1f / %.0f mi", totalThisWeekMiles, goalMiles))
                     .font(.caption)
                     .foregroundColor(secondaryTextColor)
@@ -87,6 +90,7 @@ struct WeeklyGoalCardView: View {
                 
                 Spacer()
                 
+                // Center: This week summary
                 Text(String(format: "This week: %.1f mi", totalThisWeekMiles))
                     .font(.caption)
                     .foregroundColor(secondaryTextColor)
@@ -95,6 +99,7 @@ struct WeeklyGoalCardView: View {
                 
                 Spacer()
                 
+                // Right: Streak info
                 Text("🔥 Streak: \(currentStreakDays) • Best: \(bestStreakDays) days")
                     .font(.caption)
                     .foregroundColor(secondaryTextColor)
@@ -105,18 +110,20 @@ struct WeeklyGoalCardView: View {
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
         .background(
+            // Glassy, more transparent background so artwork shows through
+            .ultraThinMaterial,
+            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+        )
+        .overlay(
+            // Soft border to match system Now Playing style
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.white.opacity(0.18), lineWidth: 1)
-                )
+                .stroke(Color.white.opacity(0.14), lineWidth: 1)
         )
         .shadow(
-            color: Color.black.opacity(0.40),
-            radius: 18,
+            color: Color.black.opacity(0.35),
+            radius: 20,
             x: 0,
-            y: 12
+            y: 10
         )
     }
 }
