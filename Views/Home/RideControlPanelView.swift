@@ -37,6 +37,7 @@ struct RideControlPanelView: View {
     
     // Music Service for Now Playing
     @ObservedObject private var musicService = MusicService.shared
+    
     @ObservedObject private var theme = ThemeManager.shared
     
     // MARK: - Computed Properties
@@ -69,29 +70,28 @@ struct RideControlPanelView: View {
     
     var body: some View {
         ZStack {
-            // Background: large centered artwork filling the card
+            // Background: Large artwork that fills the card
             if preferredMusicSource == .appleMusicSynced,
                let nowPlaying = musicService.nowPlaying,
                let artwork = nowPlaying.artwork {
                 
                 Image(uiImage: artwork)
                     .resizable()
-                    .scaledToFill()
+                    .aspectRatio(1, contentMode: .fill)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
             } else {
+                // Fallback: dark background when no artwork
                 theme.surfaceBackground
             }
             
             // Gradient overlay for text readability
             LinearGradient(
-                colors: [
-                    Color.black.opacity(0.55),
-                    Color.black.opacity(0.25)
-                ],
+                colors: [Color.black.opacity(0.55), Color.black.opacity(0.2)],
                 startPoint: .top,
                 endPoint: .bottom
             )
+            .blendMode(.multiply)
             
             // Content overlaying the artwork
             VStack(spacing: 16) {
@@ -112,19 +112,19 @@ struct RideControlPanelView: View {
                             .scaleEffect(connectionManager.isConnected ? 1.05 : 1.0)
                             .animation(
                                 connectionManager.isConnected
-                                ? .easeInOut(duration: 1.0).repeatForever(autoreverses: true)
+                                ? Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)
                                 : .default,
                                 value: connectionManager.isConnected
                             )
                         
                         Text(connectionStatusLabel)
                             .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundColor(.white)
+                            .foregroundColor(connectionStatusColor)
                             .animation(.easeInOut, value: connectionManager.isConnected)
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 8)
-                    .background(.ultraThinMaterial)
+                    .background(Color(.systemGray6).opacity(0.3))
                     .clipShape(Capsule())
                     
                     Spacer()
@@ -138,15 +138,15 @@ struct RideControlPanelView: View {
                    let nowPlaying = musicService.nowPlaying {
                     
                     VStack(spacing: 12) {
-                        // Playback controls - white, glassy like Control Center
-                        HStack(spacing: 28) {
+                        // Playback controls - centered
+                        HStack(spacing: 20) {
                             Button(action: {
                                 HapticsService.shared.lightTap()
                                 musicService.skipToPreviousTrack()
                             }) {
                                 Image(systemName: "backward.fill")
-                                    .font(.title2.weight(.semibold))
-                                    .foregroundColor(.white)
+                                    .font(.title2)
+                                    .foregroundColor(theme.brandYellow)
                                     .frame(width: 44, height: 44)
                                     .background(.ultraThinMaterial)
                                     .clipShape(Circle())
@@ -160,12 +160,9 @@ struct RideControlPanelView: View {
                                     .font(.title.bold())
                                     .foregroundColor(.black)
                                     .frame(width: 56, height: 56)
-                                    .background(.white)
+                                    .background(theme.brandYellow)
                                     .clipShape(Circle())
-                                    .shadow(color: .black.opacity(0.35),
-                                            radius: 8,
-                                            x: 0,
-                                            y: 4)
+                                    .shadow(color: theme.brandYellow.opacity(0.5), radius: 8, x: 0, y: 4)
                             }
                             
                             Button(action: {
@@ -173,8 +170,8 @@ struct RideControlPanelView: View {
                                 musicService.skipToNextTrack()
                             }) {
                                 Image(systemName: "forward.fill")
-                                    .font(.title2.weight(.semibold))
-                                    .foregroundColor(.white)
+                                    .font(.title2)
+                                    .foregroundColor(theme.brandYellow)
                                     .frame(width: 44, height: 44)
                                     .background(.ultraThinMaterial)
                                     .clipShape(Circle())
@@ -189,19 +186,13 @@ struct RideControlPanelView: View {
                                 .foregroundColor(.white)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.center)
-                                .shadow(color: .black.opacity(0.5),
-                                        radius: 4,
-                                        x: 0,
-                                        y: 2)
+                                .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
                             
                             Text(nowPlaying.artist)
                                 .font(.subheadline)
                                 .foregroundColor(.white.opacity(0.9))
                                 .lineLimit(1)
-                                .shadow(color: .black.opacity(0.5),
-                                        radius: 4,
-                                        x: 0,
-                                        y: 2)
+                                .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
                         }
                         .padding(.horizontal, 8)
                     }
@@ -210,30 +201,22 @@ struct RideControlPanelView: View {
                     VStack(spacing: 8) {
                         Image(systemName: "music.note")
                             .font(.system(size: 40))
-                            .foregroundColor(.white.opacity(0.9))
+                            .foregroundColor(theme.brandYellow.opacity(0.8))
                         
                         Text("Apple Music Ready")
                             .font(.headline)
                             .foregroundColor(.white)
-                            .shadow(color: .black.opacity(0.5),
-                                    radius: 4,
-                                    x: 0,
-                                    y: 2)
+                            .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
                     }
                 }
                 
                 Spacer(minLength: 0)
                 
-                // BOTTOM: Weekly Goal (glass background; no extra dark card)
-                WeeklyGoalCardView(
-                    totalThisWeekMiles: totalThisWeekMiles,
-                    goalMiles: goalMiles,
-                    currentStreakDays: currentStreakDays,
-                    bestStreakDays: bestStreakDays
-                )
-                
-                // Voice/Audio Controls Row – glassy buttons
+                // NEW ORDER:
+                // 1) Audio controls row
+                // 2) Weekly goal card at very bottom of the panel
                 HStack(spacing: 16) {
+                    // Voice Mute Toggle
                     AudioControlButton(
                         icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
                         title: isVoiceMuted ? "Muted" : "Unmuted",
@@ -242,6 +225,7 @@ struct RideControlPanelView: View {
                         onToggleMute()
                     }
                     
+                    // DJ Controls
                     AudioControlButton(
                         icon: "music.quarternote.3",
                         title: "DJ Controls",
@@ -250,6 +234,7 @@ struct RideControlPanelView: View {
                         onDJControlsTap()
                     }
                     
+                    // Music Toggle
                     AudioControlButton(
                         icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
                         title: isMusicMuted ? "Music Off" : "Music On",
@@ -259,23 +244,37 @@ struct RideControlPanelView: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
+                
+                // Weekly Goal pinned to the bottom of the card
+                WeeklyGoalCardView(
+                    totalThisWeekMiles: totalThisWeekMiles,
+                    goalMiles: goalMiles,
+                    currentStreakDays: currentStreakDays,
+                    bestStreakDays: bestStreakDays
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.black.opacity(0.3)) // glassy look over artwork
+                )
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
         }
-        .frame(maxWidth: .infinity)              // make the card fill the row
         .clipShape(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
         )
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(.ultraThinMaterial)        // subtle glass behind artwork
-                .shadow(color: Color.black.opacity(0.35),
-                        radius: 18,
-                        x: 0,
-                        y: 8)
+                .fill(theme.surfaceBackground) // Fallback background
+                .shadow(
+                    color: theme.isDarkMode ? .clear : Color.black.opacity(0.25),
+                    radius: theme.isDarkMode ? 0 : 18,
+                    x: 0,
+                    y: theme.isDarkMode ? 0 : 8
+                )
         )
         .onAppear {
+            // Refresh now playing when view appears
             if preferredMusicSource == .appleMusicSynced {
                 musicService.refreshNowPlayingFromNowPlayingInfoCenter()
             }
@@ -283,7 +282,7 @@ struct RideControlPanelView: View {
     }
 }
 
-// MARK: - Audio Control Button
+// MARK: - Audio Control Button (reused from HomeView)
 
 private struct AudioControlButton: View {
     let icon: String
@@ -298,22 +297,24 @@ private struct AudioControlButton: View {
             VStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
                     .frame(width: 40, height: 40)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(.ultraThinMaterial) // glassy tile
+                    )
+                    .foregroundColor(.white)
                 
                 Text(title)
                     .font(.caption.bold())
                     .foregroundColor(
-                        Color.white.opacity(isActive ? 1.0 : 0.85)
+                        isActive ? .white : Color.white.opacity(0.85)
                     )
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(.ultraThinMaterial)
+                    .fill(Color.black.opacity(0.35)) // subtle glass over artwork
             )
         }
         .buttonStyle(.plain)

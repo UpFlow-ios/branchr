@@ -240,7 +240,7 @@ struct HomeView: View {
                         showingSafetySettings = true
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 16)   // ⬅️ MATCHES CARD WIDTH
                 .padding(.top, 12) // Reduced spacing between card and buttons
                 
                 // Bottom spacing - minimal to fit all content
