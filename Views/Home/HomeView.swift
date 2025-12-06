@@ -138,7 +138,7 @@ struct HomeView: View {
                     )
                 }
                 .frame(maxWidth: .infinity)          // center the whole card row
-                .padding(.horizontal, 24)   // ⬅️ match yellow buttons
+                .padding(.horizontal, 16)   // ⬅️ card width
                 .padding(.top, 8)
                 .onChange(of: musicSourceMode) { newMode in
                     userPreferences.preferredMusicSource = newMode
@@ -240,7 +240,7 @@ struct HomeView: View {
                         showingSafetySettings = true
                     }
                 }
-                .padding(.horizontal, 24)   // ⬅️ MATCHES CARD WIDTH
+                .padding(.horizontal, 16)   // match the card width
                 .padding(.top, 12) // Reduced spacing between card and buttons
                 
                 // Bottom spacing - minimal to fit all content
