@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "yellowiconn.png",
+      "filename" : "branchrappicon 2.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "yellowiconn 1.png",
+      "filename" : "branchrappicon.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "yellowiconn 2.png",
+      "filename" : "branchrappicon 1.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
