@@ -33,11 +33,10 @@ struct WeeklyGoalCardView: View {
     }
     
     var body: some View {
-        // Phase 41E: Premium visual redesign with gradient progress bar
-        // Phase 41J: Text colors updated for readability on dark backgrounds
+        // Text colors tuned for glass over artwork
         let titleColor = Color.white
-        let primaryTextColor = Color.white.opacity(0.92)
-        let secondaryTextColor = Color.white.opacity(0.78)
+        let primaryTextColor = Color.white.opacity(0.95)
+        let secondaryTextColor = Color.white.opacity(0.82)
         
         VStack(alignment: .leading, spacing: 12) {
             // Top row: Title + percent pill
@@ -54,20 +53,23 @@ struct WeeklyGoalCardView: View {
                     .foregroundColor(primaryTextColor)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.16), in: Capsule())
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.18))
+                    )
             }
             
             // Gradient progress bar
             VStack(alignment: .leading, spacing: 8) {
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
-                        // Background track - neutral accent with mode-aware opacity
-                        let trackColor = theme.neutralAccent.opacity(theme.isDarkMode ? 0.65 : 0.25)
+                        // Background track
+                        let trackColor = Color.white.opacity(0.20)
                         Capsule()
                             .fill(trackColor)
                             .frame(height: 12)
                         
-                        // Phase 67: Rainbow progress fill
+                        // Rainbow progress fill
                         Capsule()
                             .fill(theme.rideRainbowGradient)
                             .frame(width: geometry.size.width * CGFloat(progress), height: 12)
@@ -79,7 +81,6 @@ struct WeeklyGoalCardView: View {
             
             // Bottom row: Three segments
             HStack(spacing: 8) {
-                // Left: Distance vs goal
                 Text(String(format: "%.1f / %.0f mi", totalThisWeekMiles, goalMiles))
                     .font(.caption)
                     .foregroundColor(secondaryTextColor)
@@ -88,7 +89,6 @@ struct WeeklyGoalCardView: View {
                 
                 Spacer()
                 
-                // Center: This week summary
                 Text(String(format: "This week: %.1f mi", totalThisWeekMiles))
                     .font(.caption)
                     .foregroundColor(secondaryTextColor)
@@ -97,7 +97,6 @@ struct WeeklyGoalCardView: View {
                 
                 Spacer()
                 
-                // Right: Streak info
                 Text("🔥 Streak: \(currentStreakDays) • Best: \(bestStreakDays) days")
                     .font(.caption)
                     .foregroundColor(secondaryTextColor)
@@ -107,20 +106,15 @@ struct WeeklyGoalCardView: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
-        // ✨ Glass background so the artwork shows through
         .background(
+            // Glass background so you can see the artwork behind it
             .ultraThinMaterial,
-            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.white.opacity(0.14), lineWidth: 0.8)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.16), lineWidth: 0.75)
         )
-        .shadow(
-            color: Color.black.opacity(0.35),
-            radius: 18,
-            x: 0,
-            y: 8
-        )
+        .shadow(color: Color.black.opacity(0.25), radius: 14, x: 0, y: 6)
     }
 }
