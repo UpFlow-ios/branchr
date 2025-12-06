@@ -33,10 +33,9 @@ struct WeeklyGoalCardView: View {
     }
     
     var body: some View {
-        // Text colors tuned for glass over artwork
         let titleColor = Color.white
         let primaryTextColor = Color.white.opacity(0.95)
-        let secondaryTextColor = Color.white.opacity(0.82)
+        let secondaryTextColor = Color.white.opacity(0.80)
         
         VStack(alignment: .leading, spacing: 12) {
             // Top row: Title + percent pill
@@ -53,27 +52,26 @@ struct WeeklyGoalCardView: View {
                     .foregroundColor(primaryTextColor)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(Color.white.opacity(0.18))
-                    )
+                    .background(.ultraThinMaterial, in: Capsule())
             }
             
             // Gradient progress bar
             VStack(alignment: .leading, spacing: 8) {
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
-                        // Background track
-                        let trackColor = Color.white.opacity(0.20)
+                        let trackColor = Color.white.opacity(0.18)
                         Capsule()
                             .fill(trackColor)
                             .frame(height: 12)
                         
-                        // Rainbow progress fill
                         Capsule()
                             .fill(theme.rideRainbowGradient)
-                            .frame(width: geometry.size.width * CGFloat(progress), height: 12)
-                            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: progress)
+                            .frame(width: geometry.size.width * CGFloat(progress),
+                                   height: 12)
+                            .animation(
+                                .spring(response: 0.5, dampingFraction: 0.8),
+                                value: progress
+                            )
                     }
                 }
                 .frame(height: 12)
@@ -107,14 +105,8 @@ struct WeeklyGoalCardView: View {
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
         .background(
-            // Glass background so you can see the artwork behind it
             .ultraThinMaterial,
-            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.16), lineWidth: 0.75)
-        )
-        .shadow(color: Color.black.opacity(0.25), radius: 14, x: 0, y: 6)
     }
 }

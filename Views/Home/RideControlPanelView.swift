@@ -37,7 +37,6 @@ struct RideControlPanelView: View {
     
     // Music Service for Now Playing
     @ObservedObject private var musicService = MusicService.shared
-    
     @ObservedObject private var theme = ThemeManager.shared
     
     // MARK: - Computed Properties
@@ -70,237 +69,213 @@ struct RideControlPanelView: View {
     
     var body: some View {
         ZStack {
-            // Base card background (dark glass)
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .background(theme.surfaceBackground)
-                .shadow(color: Color.black.opacity(0.35), radius: 22, x: 0, y: 14)
-            
-            // Optional blurred artwork wash behind everything
+            // Background: large centered artwork filling the card
             if preferredMusicSource == .appleMusicSynced,
                let nowPlaying = musicService.nowPlaying,
                let artwork = nowPlaying.artwork {
+                
                 Image(uiImage: artwork)
                     .resizable()
                     .scaledToFill()
-                    .opacity(0.55)
-                    .blur(radius: 18)
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+            } else {
+                theme.surfaceBackground
             }
             
-            // Subtle top-to-bottom gradient for depth
+            // Gradient overlay for text readability
             LinearGradient(
                 colors: [
                     Color.black.opacity(0.55),
-                    Color.black.opacity(0.25),
-                    Color.black.opacity(0.10)
+                    Color.black.opacity(0.25)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             
-            // Content overlay
+            // Content overlaying the artwork
             VStack(spacing: 16) {
-                // TOP: Connection Status pill
+                // TOP: Connection Status
                 HStack {
                     Spacer()
                     
                     HStack(spacing: 8) {
                         Circle()
                             .fill(connectionStatusColor)
-                            .frame(width: 10, height: 10)
+                            .frame(width: 12, height: 12)
                             .shadow(
-                                color: connectionStatusColor.opacity(0.6),
+                                color: connectionStatusColor.opacity(0.5),
                                 radius: 8,
                                 x: 0,
                                 y: 0
                             )
-                            .scaleEffect(connectionManager.isConnected ? 1.08 : 1.0)
+                            .scaleEffect(connectionManager.isConnected ? 1.05 : 1.0)
                             .animation(
                                 connectionManager.isConnected
-                                ? Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)
+                                ? .easeInOut(duration: 1.0).repeatForever(autoreverses: true)
                                 : .default,
                                 value: connectionManager.isConnected
                             )
                         
                         Text(connectionStatusLabel)
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .font(.system(size: 16, weight: .medium, design: .rounded))
                             .foregroundColor(.white)
                             .animation(.easeInOut, value: connectionManager.isConnected)
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 7)
-                    .background(
-                        Capsule()
-                            .fill(.ultraThinMaterial)
-                            .overlay(
-                                Capsule()
-                                    .stroke(Color.white.opacity(0.18), lineWidth: 0.75)
-                            )
-                    )
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
                     
                     Spacer()
                 }
-                .padding(.top, 6)
+                .padding(.top, 4)
                 
-                // MIDDLE: Big square artwork with controls over it
+                Spacer(minLength: 0)
+                
+                // MIDDLE: Centered playback controls + track info (only when Apple Music is active)
                 if preferredMusicSource == .appleMusicSynced,
-                   let nowPlaying = musicService.nowPlaying,
-                   let artwork = nowPlaying.artwork {
+                   let nowPlaying = musicService.nowPlaying {
                     
-                    ZStack {
-                        // Large square artwork
-                        Image(uiImage: artwork)
-                            .resizable()
-                            .aspectRatio(1, contentMode: .fit)
-                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                            .shadow(color: Color.black.opacity(0.45), radius: 18, x: 0, y: 10)
-                        
-                        // Playback controls floating over artwork
-                        VStack {
-                            Spacer()
-                            
-                            HStack(spacing: 32) {
-                                // Previous
-                                Button(action: {
-                                    HapticsService.shared.lightTap()
-                                    musicService.skipToPreviousTrack()
-                                }) {
-                                    Image(systemName: "backward.fill")
-                                        .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .frame(width: 44, height: 44)
-                                        .background(.ultraThinMaterial)
-                                        .clipShape(Circle())
-                                        .overlay(
-                                            Circle()
-                                                .stroke(Color.white.opacity(0.25), lineWidth: 0.75)
-                                        )
-                                }
-                                
-                                // Play / Pause (slightly bigger)
-                                Button(action: {
-                                    HapticsService.shared.mediumTap()
-                                    musicService.togglePlayPause()
-                                }) {
-                                    Image(systemName: musicService.isPlaying ? "pause.fill" : "play.fill")
-                                        .font(.system(size: 22, weight: .heavy))
-                                        .foregroundColor(.black)
-                                        .frame(width: 56, height: 56)
-                                        .background(
-                                            Circle()
-                                                .fill(Color.white)
-                                                .shadow(color: Color.black.opacity(0.45), radius: 10, x: 0, y: 5)
-                                        )
-                                }
-                                
-                                // Next
-                                Button(action: {
-                                    HapticsService.shared.lightTap()
-                                    musicService.skipToNextTrack()
-                                }) {
-                                    Image(systemName: "forward.fill")
-                                        .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .frame(width: 44, height: 44)
-                                        .background(.ultraThinMaterial)
-                                        .clipShape(Circle())
-                                        .overlay(
-                                            Circle()
-                                                .stroke(Color.white.opacity(0.25), lineWidth: 0.75)
-                                        )
-                                }
+                    VStack(spacing: 12) {
+                        // Playback controls - white, glassy like Control Center
+                        HStack(spacing: 28) {
+                            Button(action: {
+                                HapticsService.shared.lightTap()
+                                musicService.skipToPreviousTrack()
+                            }) {
+                                Image(systemName: "backward.fill")
+                                    .font(.title2.weight(.semibold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 44, height: 44)
+                                    .background(.ultraThinMaterial)
+                                    .clipShape(Circle())
                             }
-                            .padding(.bottom, 18)
+                            
+                            Button(action: {
+                                HapticsService.shared.mediumTap()
+                                musicService.togglePlayPause()
+                            }) {
+                                Image(systemName: musicService.isPlaying ? "pause.fill" : "play.fill")
+                                    .font(.title.bold())
+                                    .foregroundColor(.black)
+                                    .frame(width: 56, height: 56)
+                                    .background(.white)
+                                    .clipShape(Circle())
+                                    .shadow(color: .black.opacity(0.35),
+                                            radius: 8,
+                                            x: 0,
+                                            y: 4)
+                            }
+                            
+                            Button(action: {
+                                HapticsService.shared.lightTap()
+                                musicService.skipToNextTrack()
+                            }) {
+                                Image(systemName: "forward.fill")
+                                    .font(.title2.weight(.semibold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 44, height: 44)
+                                    .background(.ultraThinMaterial)
+                                    .clipShape(Circle())
+                            }
                         }
-                        .padding(.horizontal, 18)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 260) // this is what makes the artwork "big"
-                    
-                    // Track title + artist under the square
-                    VStack(spacing: 4) {
-                        Text(nowPlaying.title)
-                            .font(.headline.bold())
-                            .foregroundColor(.white)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.center)
-                            .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                        .frame(maxWidth: .infinity)
                         
-                        Text(nowPlaying.artist)
-                            .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.9))
-                            .lineLimit(1)
-                            .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                        // Track title and artist
+                        VStack(spacing: 4) {
+                            Text(nowPlaying.title)
+                                .font(.headline.bold())
+                                .foregroundColor(.white)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.center)
+                                .shadow(color: .black.opacity(0.5),
+                                        radius: 4,
+                                        x: 0,
+                                        y: 2)
+                            
+                            Text(nowPlaying.artist)
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.9))
+                                .lineLimit(1)
+                                .shadow(color: .black.opacity(0.5),
+                                        radius: 4,
+                                        x: 0,
+                                        y: 2)
+                        }
+                        .padding(.horizontal, 8)
                     }
-                    .padding(.horizontal, 8)
-                    
                 } else if preferredMusicSource == .appleMusicSynced {
                     // Placeholder when Apple Music selected but no track
-                    VStack(spacing: 10) {
+                    VStack(spacing: 8) {
                         Image(systemName: "music.note")
-                            .font(.system(size: 44, weight: .semibold))
-                            .foregroundColor(theme.brandYellow.opacity(0.9))
+                            .font(.system(size: 40))
+                            .foregroundColor(.white.opacity(0.9))
                         
                         Text("Apple Music Ready")
                             .font(.headline)
                             .foregroundColor(.white)
-                            .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                            .shadow(color: .black.opacity(0.5),
+                                    radius: 4,
+                                    x: 0,
+                                    y: 2)
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 220)
                 }
                 
-                // BOTTOM: Weekly Goal + Audio Controls
-                VStack(spacing: 14) {
-                    // Weekly Goal – now glassy, no extra dark box
-                    WeeklyGoalCardView(
-                        totalThisWeekMiles: totalThisWeekMiles,
-                        goalMiles: goalMiles,
-                        currentStreakDays: currentStreakDays,
-                        bestStreakDays: bestStreakDays
-                    )
+                Spacer(minLength: 0)
+                
+                // BOTTOM: Weekly Goal (glass background; no extra dark card)
+                WeeklyGoalCardView(
+                    totalThisWeekMiles: totalThisWeekMiles,
+                    goalMiles: goalMiles,
+                    currentStreakDays: currentStreakDays,
+                    bestStreakDays: bestStreakDays
+                )
+                
+                // Voice/Audio Controls Row – glassy buttons
+                HStack(spacing: 16) {
+                    AudioControlButton(
+                        icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
+                        title: isVoiceMuted ? "Muted" : "Unmuted",
+                        isActive: !isVoiceMuted
+                    ) {
+                        onToggleMute()
+                    }
                     
-                    // Voice / Audio Controls Row – also glassy
-                    HStack(spacing: 16) {
-                        AudioControlButton(
-                            icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
-                            title: isVoiceMuted ? "Muted" : "Unmuted",
-                            isActive: !isVoiceMuted
-                        ) {
-                            onToggleMute()
-                        }
-                        
-                        AudioControlButton(
-                            icon: "music.quarternote.3",
-                            title: "DJ Controls",
-                            isActive: false
-                        ) {
-                            onDJControlsTap()
-                        }
-                        
-                        AudioControlButton(
-                            icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
-                            title: isMusicMuted ? "Music Off" : "Music On",
-                            isActive: !isMusicMuted
-                        ) {
-                            onToggleMusic()
-                        }
+                    AudioControlButton(
+                        icon: "music.quarternote.3",
+                        title: "DJ Controls",
+                        isActive: false
+                    ) {
+                        onDJControlsTap()
                     }
-                    .frame(maxWidth: .infinity)
+                    
+                    AudioControlButton(
+                        icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
+                        title: isMusicMuted ? "Music Off" : "Music On",
+                        isActive: !isMusicMuted
+                    ) {
+                        onToggleMusic()
+                    }
                 }
-                
-                Spacer(minLength: 4)
+                .frame(maxWidth: .infinity)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
         }
+        .frame(maxWidth: .infinity)              // make the card fill the row
         .clipShape(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
         )
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(.ultraThinMaterial)        // subtle glass behind artwork
+                .shadow(color: Color.black.opacity(0.35),
+                        radius: 18,
+                        x: 0,
+                        y: 8)
+        )
         .onAppear {
-            // Refresh now playing when view appears
             if preferredMusicSource == .appleMusicSynced {
                 musicService.refreshNowPlayingFromNowPlayingInfoCenter()
             }
@@ -308,7 +283,7 @@ struct RideControlPanelView: View {
     }
 }
 
-// MARK: - Audio Control Button (glass version)
+// MARK: - Audio Control Button
 
 private struct AudioControlButton: View {
     let icon: String
@@ -322,33 +297,23 @@ private struct AudioControlButton: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 19, weight: .semibold))
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
                     .frame(width: 40, height: 40)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(.ultraThinMaterial)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .stroke(Color.white.opacity(isActive ? 0.35 : 0.18),
-                                            lineWidth: isActive ? 1.2 : 0.8)
-                            )
-                    )
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 
                 Text(title)
                     .font(.caption.bold())
-                    .foregroundColor(.white.opacity(0.95))
+                    .foregroundColor(
+                        Color.white.opacity(isActive ? 1.0 : 0.85)
+                    )
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(Color.white.opacity(isActive ? 0.30 : 0.18), lineWidth: 0.9)
-                    )
-                    .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 6)
             )
         }
         .buttonStyle(.plain)

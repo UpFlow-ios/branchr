@@ -120,24 +120,27 @@ struct HomeView: View {
                     .frame(height: 8)
                 
                 // MARK: - Phase 71: Ride Control & Audio Panel (moved above buttons)
-                RideControlPanelView(
-                    preferredMusicSource: $musicSourceMode,
-                    connectionManager: connectionManager,
-                    rideService: rideService,
-                    userPreferences: userPreferences,
-                    totalThisWeekMiles: totalThisWeekMiles,
-                    goalMiles: userPreferences.weeklyDistanceGoalMiles,
-                    currentStreakDays: currentStreakDays,
-                    bestStreakDays: bestStreakDays,
-                    isVoiceMuted: $isVoiceMuted,
-                    isMusicMuted: $isMusicMuted,
-                    onToggleMute: handleToggleMute,
-                    onToggleMusic: handleToggleMusic,
-                    onDJControlsTap: handleDJControlsTap
-                )
-                .padding(.top, 8) // Reduced spacing between header and card
+                HStack {
+                    RideControlPanelView(
+                        preferredMusicSource: $musicSourceMode,
+                        connectionManager: connectionManager,
+                        rideService: rideService,
+                        userPreferences: userPreferences,
+                        totalThisWeekMiles: totalThisWeekMiles,
+                        goalMiles: userPreferences.weeklyDistanceGoalMiles,
+                        currentStreakDays: currentStreakDays,
+                        bestStreakDays: bestStreakDays,
+                        isVoiceMuted: $isVoiceMuted,
+                        isMusicMuted: $isMusicMuted,
+                        onToggleMute: handleToggleMute,
+                        onToggleMusic: handleToggleMusic,
+                        onDJControlsTap: handleDJControlsTap
+                    )
+                }
+                .frame(maxWidth: .infinity)          // center the whole card row
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
                 .onChange(of: musicSourceMode) { newMode in
-                    // Phase 57: Sync musicSourceMode with userPreferences and musicSync
                     userPreferences.preferredMusicSource = newMode
                     musicSync.setMusicSourceMode(newMode)
                 }
