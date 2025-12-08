@@ -33,10 +33,10 @@ struct WeeklyGoalCardView: View {
     }
     
     var body: some View {
-        // Text colors tuned for glassy background
+        // Text colors optimized for glassy background over artwork
         let titleColor = Color.white
-        let primaryTextColor = Color.white.opacity(0.94)
-        let secondaryTextColor = Color.white.opacity(0.80)
+        let primaryTextColor = Color.white.opacity(0.9)
+        let secondaryTextColor = Color.white.opacity(0.8)
         
         VStack(alignment: .leading, spacing: 12) {
             // Top row: Title + percent pill
@@ -54,17 +54,17 @@ struct WeeklyGoalCardView: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(
-                        Color.white.opacity(0.18),
+                        Color.white.opacity(0.20),
                         in: Capsule()
                     )
             }
             
-            // Gradient progress bar
+            // Progress bar with better contrast
             VStack(alignment: .leading, spacing: 8) {
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
-                        // Background track - slightly lighter for clarity
-                        let trackColor = Color.white.opacity(0.15)
+                        // Background track - more visible on artwork
+                        let trackColor = Color.white.opacity(0.18)
                         Capsule()
                             .fill(trackColor)
                             .frame(height: 12)
@@ -81,7 +81,6 @@ struct WeeklyGoalCardView: View {
             
             // Bottom row: Three segments
             HStack(spacing: 8) {
-                // Left: Distance vs goal
                 Text(String(format: "%.1f / %.0f mi", totalThisWeekMiles, goalMiles))
                     .font(.caption)
                     .foregroundColor(secondaryTextColor)
@@ -90,7 +89,6 @@ struct WeeklyGoalCardView: View {
                 
                 Spacer()
                 
-                // Center: This week summary
                 Text(String(format: "This week: %.1f mi", totalThisWeekMiles))
                     .font(.caption)
                     .foregroundColor(secondaryTextColor)
@@ -99,7 +97,6 @@ struct WeeklyGoalCardView: View {
                 
                 Spacer()
                 
-                // Right: Streak info
                 Text("🔥 Streak: \(currentStreakDays) • Best: \(bestStreakDays) days")
                     .font(.caption)
                     .foregroundColor(secondaryTextColor)
@@ -110,20 +107,12 @@ struct WeeklyGoalCardView: View {
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
         .background(
-            // Glassy, more transparent background so artwork shows through
             .ultraThinMaterial,
             in: RoundedRectangle(cornerRadius: 16, style: .continuous)
         )
         .overlay(
-            // Soft border to match system Now Playing style
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.white.opacity(0.14), lineWidth: 1)
-        )
-        .shadow(
-            color: Color.black.opacity(0.35),
-            radius: 20,
-            x: 0,
-            y: 10
+                .stroke(Color.white.opacity(0.10), lineWidth: 1)
         )
     }
 }

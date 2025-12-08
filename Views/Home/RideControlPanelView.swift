@@ -10,7 +10,7 @@ import SwiftUI
 /**
  * 🎛️ Ride Control & Audio Panel
  *
- * Groups music source selector, connection status, weekly goal, and audio controls
+ * Groups music artwork, connection status, weekly goal, and playback controls
  * into a single organized card for better visual hierarchy.
  */
 struct RideControlPanelView: View {
@@ -26,22 +26,13 @@ struct RideControlPanelView: View {
     let currentStreakDays: Int
     let bestStreakDays: Int
     
-    // Audio Control State
-    @Binding var isVoiceMuted: Bool
-    @Binding var isMusicMuted: Bool
-    
-    // Audio Control Handlers
-    let onToggleMute: () -> Void
-    let onToggleMusic: () -> Void
-    let onDJControlsTap: () -> Void
-    
     // Music Service for Now Playing
     @ObservedObject private var musicService = MusicService.shared
     
     @ObservedObject private var theme = ThemeManager.shared
     
-    // Fixed card height so it doesn't shrink when artwork is missing
-    private let cardHeight: CGFloat = 360
+    // Fixed card height - 260pt as specified
+    private let cardHeight: CGFloat = 260
     
     // MARK: - Computed Properties
     
@@ -80,16 +71,24 @@ struct RideControlPanelView: View {
                 
                 Image(uiImage: artwork)
                     .resizable()
-                    .aspectRatio(1, contentMode: .fill)
+                    .scaledToFill()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
             } else {
-                theme.surfaceBackground
+                // Neutral gradient when no artwork
+                LinearGradient(
+                    colors: [
+                        theme.surfaceBackground,
+                        theme.surfaceBackground.opacity(0.85)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
             }
             
             // Gradient overlay for text readability
             LinearGradient(
-                colors: [Color.black.opacity(0.55), Color.black.opacity(0.2)],
+                colors: [Color.black.opacity(0.45), Color.black.opacity(0.15)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -97,18 +96,17 @@ struct RideControlPanelView: View {
             
             // Content overlaying the artwork
             VStack(spacing: 16) {
-                // TOP: Connection Status
+                // TOP: Connection Status Pill - glassy iOS Control Center style
                 HStack {
                     Spacer()
                     
-                    // Connection Status Pill
                     HStack(spacing: 8) {
                         Circle()
                             .fill(connectionStatusColor)
-                            .frame(width: 12, height: 12)
+                            .frame(width: 10, height: 10)
                             .shadow(
-                                color: connectionStatusColor.opacity(0.5),
-                                radius: 8,
+                                color: connectionStatusColor.opacity(0.6),
+                                radius: 6,
                                 x: 0,
                                 y: 0
                             )
@@ -121,27 +119,33 @@ struct RideControlPanelView: View {
                             )
                         
                         Text(connectionStatusLabel)
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundColor(connectionStatusColor)
-                            .animation(.easeInOut, value: connectionManager.isConnected)
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGray6).opacity(0.35))
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 7)
+                    .background(.ultraThinMaterial)
                     .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                    )
                     
                     Spacer()
                 }
-                .padding(.top, 4)
+                .padding(.top, 12)
                 
                 Spacer(minLength: 0)
                 
-                // MIDDLE: Centered playback controls + track info (only when Apple Music is active)
+                // MIDDLE: Playback controls + track info
                 if preferredMusicSource == .appleMusicSynced,
                    let nowPlaying = musicService.nowPlaying {
-                    VStack(spacing: 12) {
-                        // Playback controls - centered
-                        HStack(spacing: 40) { // a bit more spread out
+                    VStack(spacing: 14) {
+                        // Playback controls - symmetrically spaced
+                        HStack(spacing: 0) {
+                            Spacer()
+                            
                             Button(action: {
                                 HapticsService.shared.lightTap()
                                 musicService.skipToPreviousTrack()
@@ -154,6 +158,8 @@ struct RideControlPanelView: View {
                                     .clipShape(Circle())
                             }
                             
+                            Spacer()
+                            
                             Button(action: {
                                 HapticsService.shared.mediumTap()
                                 musicService.togglePlayPause()
@@ -161,11 +167,13 @@ struct RideControlPanelView: View {
                                 Image(systemName: musicService.isPlaying ? "pause.fill" : "play.fill")
                                     .font(.title.bold())
                                     .foregroundColor(.black)
-                                    .frame(width: 56, height: 56)
+                                    .frame(width: 58, height: 58)
                                     .background(theme.brandYellow)
                                     .clipShape(Circle())
-                                    .shadow(color: theme.brandYellow.opacity(0.5), radius: 8, x: 0, y: 4)
+                                    .shadow(color: theme.brandYellow.opacity(0.5), radius: 10, x: 0, y: 5)
                             }
+                            
+                            Spacer()
                             
                             Button(action: {
                                 HapticsService.shared.lightTap()
@@ -178,8 +186,9 @@ struct RideControlPanelView: View {
                                     .background(.ultraThinMaterial)
                                     .clipShape(Circle())
                             }
+                            
+                            Spacer()
                         }
-                        .frame(maxWidth: .infinity)
                         
                         // Track title and artist
                         VStack(spacing: 4) {
@@ -196,14 +205,14 @@ struct RideControlPanelView: View {
                                 .lineLimit(1)
                                 .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
                         }
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, 12)
                     }
                 } else if preferredMusicSource == .appleMusicSynced {
                     // Placeholder when Apple Music selected but no track
-                    VStack(spacing: 8) {
+                    VStack(spacing: 10) {
                         Image(systemName: "music.note")
-                            .font(.system(size: 40))
-                            .foregroundColor(theme.brandYellow.opacity(0.8))
+                            .font(.system(size: 42))
+                            .foregroundColor(theme.brandYellow.opacity(0.85))
                         
                         Text("Apple Music Ready")
                             .font(.headline)
@@ -214,110 +223,36 @@ struct RideControlPanelView: View {
                 
                 Spacer(minLength: 0)
                 
-                // BOTTOM: Weekly Goal
+                // BOTTOM: Weekly Goal only (audio controls moved outside)
                 WeeklyGoalCardView(
                     totalThisWeekMiles: totalThisWeekMiles,
                     goalMiles: goalMiles,
                     currentStreakDays: currentStreakDays,
                     bestStreakDays: bestStreakDays
                 )
-                
-                // Voice/Audio Controls Row – stretched to match Weekly Goal width
-                HStack {
-                    AudioControlButton(
-                        icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
-                        title: isVoiceMuted ? "Muted" : "Unmuted",
-                        isActive: !isVoiceMuted
-                    ) {
-                        onToggleMute()
-                    }
-                    
-                    Spacer(minLength: 16)
-                    
-                    AudioControlButton(
-                        icon: "music.quarternote.3",
-                        title: "DJ Controls",
-                        isActive: false // DJ Controls is not a toggle
-                    ) {
-                        onDJControlsTap()
-                    }
-                    
-                    Spacer(minLength: 16)
-                    
-                    AudioControlButton(
-                        icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
-                        title: isMusicMuted ? "Music Off" : "Music On",
-                        isActive: !isMusicMuted
-                    ) {
-                        onToggleMusic()
-                    }
-                }
-                .frame(maxWidth: .infinity)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
         }
-        // Make the card width fill horizontally
         .frame(maxWidth: .infinity)
-        // Lock the vertical height so it doesn't shrink when artwork is missing
         .frame(height: cardHeight)
         .clipShape(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
         )
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(theme.surfaceBackground) // Fallback background
+                .fill(theme.surfaceBackground)
                 .shadow(
                     color: theme.isDarkMode ? .clear : Color.black.opacity(0.25),
-                    radius: theme.isDarkMode ? 0 : 18,
+                    radius: theme.isDarkMode ? 0 : 20,
                     x: 0,
-                    y: theme.isDarkMode ? 0 : 8
+                    y: theme.isDarkMode ? 0 : 10
                 )
         )
         .onAppear {
-            // Refresh now playing when view appears
             if preferredMusicSource == .appleMusicSynced {
                 musicService.refreshNowPlayingFromNowPlayingInfoCenter()
             }
         }
-    }
-}
-
-// MARK: - Audio Control Button (reused from HomeView)
-
-private struct AudioControlButton: View {
-    let icon: String
-    let title: String
-    let isActive: Bool
-    let action: () -> Void
-    
-    @ObservedObject private var theme = ThemeManager.shared
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 40, height: 40)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(isActive ? theme.brandYellow : Color.black.opacity(0.55))
-                    )
-                    .foregroundColor(isActive ? .black : .white)
-                
-                Text(title)
-                    .font(.caption.bold())
-                    .foregroundColor(
-                        isActive ? .white : Color.white.opacity(0.85)
-                    )
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.black.opacity(isActive ? 0.9 : 0.7))
-            )
-        }
-        .buttonStyle(.plain)
     }
 }

@@ -63,30 +63,204 @@ struct HomeView: View {
     
     var body: some View {
         NavigationView {
-            ZStack {
-                // Full-screen black background
-                Color.black
-                    .ignoresSafeArea()
-                
-                VStack {
-                    Spacer(minLength: 0)
-                    
-                    mainRideCard
-                        .frame(maxWidth: .infinity)
+            GeometryReader { geometry in
+                VStack(spacing: 12) {
+                    // Phase 28: SOS Alert Banner
+                    if let alert = fcmService.latestSOSAlert, showSOSBanner {
+                        Button(action: {
+                            showSOSBanner = false
+                            openMap(latitude: alert.latitude, longitude: alert.longitude)
+                        }) {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                
+                                if let distance = alert.distance(from: locationService.locations.last) {
+                                    Text("\(alert.name) triggered SOS nearby (\(String(format: "%.1f", distance)) mi away)! Tap to open live location.")
+                                        .font(.subheadline.bold())
+                                        .foregroundColor(.white)
+                                } else {
+                                    Text("\(alert.name) triggered SOS nearby! Tap to open live location.")
+                                        .font(.subheadline.bold())
+                                        .foregroundColor(.white)
+                                }
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    showSOSBanner = false
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.white.opacity(0.8))
+                                }
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.red)
+                            .cornerRadius(12)
+                            .shadow(color: .red.opacity(0.5), radius: 10, x: 0, y: 5)
+                        }
                         .padding(.horizontal, 16)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .animation(.spring(response: 0.5, dampingFraction: 0.7), value: showSOSBanner)
+                        .onAppear {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                                withAnimation {
+                                    showSOSBanner = false
+                                }
+                            }
+                        }
+                    }
                     
-                    Spacer(minLength: 12)
+                    Spacer()
+                        .frame(height: 8)
+                    
+                    // MARK: - Ride Control Panel
+                    RideControlPanelView(
+                        preferredMusicSource: $musicSourceMode,
+                        connectionManager: connectionManager,
+                        rideService: rideService,
+                        userPreferences: userPreferences,
+                        totalThisWeekMiles: totalThisWeekMiles,
+                        goalMiles: userPreferences.weeklyDistanceGoalMiles,
+                        currentStreakDays: currentStreakDays,
+                        bestStreakDays: bestStreakDays
+                    )
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
+                    .onChange(of: musicSourceMode) { newMode in
+                        userPreferences.preferredMusicSource = newMode
+                        musicSync.setMusicSourceMode(newMode)
+                    }
+                    
+                    // MARK: - Audio Controls Row (outside card, between card and buttons)
+                    HStack(spacing: 16) {
+                        AudioControlButton(
+                            icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
+                            title: isVoiceMuted ? "Muted" : "Unmuted",
+                            isActive: !isVoiceMuted
+                        ) {
+                            handleToggleMute()
+                        }
+                        
+                        AudioControlButton(
+                            icon: "music.quarternote.3",
+                            title: "DJ Controls",
+                            isActive: false
+                        ) {
+                            handleDJControlsTap()
+                        }
+                        
+                        AudioControlButton(
+                            icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
+                            title: isMusicMuted ? "Music Off" : "Music On",
+                            isActive: !isMusicMuted
+                        ) {
+                            handleToggleMusic()
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
+                    
+                    // MARK: - Main Actions
+                    VStack(spacing: 14) {
+                        PrimaryButton(
+                            primaryRideActionTitle,
+                            systemImage: nil,
+                            isHero: true,
+                            isNeonHalo: true,
+                            disableOuterGlow: true
+                        ) {
+                            if rideSession.rideState == .idle || rideSession.rideState == .ended {
+                                RideSessionManager.shared.startSoloRide(musicSource: musicSourceMode)
+                                withAnimation(.spring()) { showSmartRideSheet = true }
+                            } else {
+                                withAnimation(.spring()) { showSmartRideSheet = true }
+                            }
+                        }
+                        .frame(height: 54)
+                        .rainbowGlow(active: rideSession.rideState == .active)
+                        
+                        PrimaryButton(
+                            connectionManager.state == .connected
+                                ? "Stop Connection"
+                                : connectionManager.state == .connecting
+                                  ? "Connecting..."
+                                  : "Start Connection",
+                            systemImage: nil,
+                            isHero: false,
+                            isNeonHalo: true
+                        ) {
+                            connectionManager.toggleConnection()
+                        }
+                        .frame(height: 54)
+                        .rainbowGlow(active: connectionManager.state == .connecting || connectionManager.state == .connected)
+                        
+                        if !connectionManager.connectedPeers.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Connected Riders:")
+                                    .font(.headline)
+                                    .foregroundColor(theme.primaryText)
+                                    .padding(.horizontal, 20)
+                                
+                                ForEach(connectionManager.connectedPeers, id: \.self) { peer in
+                                    HStack {
+                                        Circle()
+                                            .fill(.green)
+                                            .frame(width: 8, height: 8)
+                                        Text(peer.displayName)
+                                            .font(.subheadline)
+                                            .foregroundColor(theme.primaryText)
+                                    }
+                                    .padding(.horizontal, 20)
+                                }
+                            }
+                            .padding(.top, 8)
+                        }
+                        
+                        PrimaryButton(
+                            voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
+                            systemImage: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill",
+                            isHero: false,
+                            isNeonHalo: true
+                        ) {
+                            if voiceService.isVoiceChatActive {
+                                voiceService.stopVoiceChat()
+                            } else {
+                                voiceService.startVoiceChat()
+                            }
+                        }
+                        .frame(height: 54)
+                        .rainbowGlow(active: voiceService.isVoiceChatActive)
+                        
+                        SafetyButton(
+                            "Safety & SOS",
+                            systemImage: "exclamationmark.triangle.fill"
+                        ) {
+                            showingSafetySettings = true
+                        }
+                        .frame(height: 54)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 12)
+                    
+                    Spacer()
+                        .frame(height: 8)
                 }
+                .padding(.top, 8)
+                .padding(.bottom, 8)
+                .frame(maxWidth: .infinity, maxHeight: geometry.size.height)
             }
+            .background(theme.primaryBackground.ignoresSafeArea())
             .onAppear {
                 print("🏁 HomeView loaded - ready for Start Connection")
                 fcmService.startListeningForSOSAlerts()
                 updateGoalAndStreakData()
                 musicSourceMode = userPreferences.preferredMusicSource
                 musicSync.setMusicSourceMode(musicSourceMode)
-                if musicSourceMode == .appleMusicSynced {
-                    musicService.refreshNowPlayingFromNowPlayingInfoCenter()
-                }
             }
             .onChange(of: rideDataManager.rides.count) { _ in
                 updateGoalAndStreakData()
@@ -97,13 +271,6 @@ struct HomeView: View {
             .onChange(of: fcmService.latestSOSAlert) { alert in
                 if alert != nil {
                     showSOSBanner = true
-                }
-            }
-            .onChange(of: musicSourceMode) { newMode in
-                userPreferences.preferredMusicSource = newMode
-                musicSync.setMusicSourceMode(newMode)
-                if newMode == .appleMusicSynced {
-                    musicService.refreshNowPlayingFromNowPlayingInfoCenter()
                 }
             }
         }
@@ -165,231 +332,6 @@ struct HomeView: View {
         }
     }
     
-    // MARK: - Main Card Container
-    
-    private var mainRideCard: some View {
-        ZStack(alignment: .topTrailing) {
-            // Card content
-            VStack(alignment: .leading, spacing: 20) {
-                // Top spacing so connection pill doesn't overlap
-                Spacer().frame(height: 8)
-                
-                nowPlayingBlock
-                
-                weeklyGoalSection
-                
-                pillControlsRow
-                
-                primaryActionButtons
-            }
-            .padding(20)
-            
-            connectionStatusPill
-                .padding(.top, 12)
-                .padding(.trailing, 12)
-        }
-        .background(
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .fill(Color(.systemGray6).opacity(0.15))
-        )
-        .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
-    }
-    
-    // MARK: - Connection Status Pill
-    
-    private var connectionStatusPill: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(connectionStatusColor)
-                .frame(width: 10, height: 10)
-            
-            Text(connectionText)
-                .font(.system(size: 14, weight: .semibold))
-        }
-        .foregroundColor(.white)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .background(
-            Capsule()
-                .fill(Color(.systemGray5).opacity(0.2))
-        )
-    }
-    
-    private var connectionText: String {
-        if rideService.rideState == .active || rideService.rideState == .paused {
-            if !connectionManager.isConnected {
-                return "Solo Ride"
-            }
-        }
-        if connectionManager.isConnected {
-            return "Connected"
-        } else if connectionManager.state == .connecting {
-            return "Connecting..."
-        } else {
-            return "Disconnected"
-        }
-    }
-    
-    private var connectionStatusColor: Color {
-        if (rideService.rideState == .active || rideService.rideState == .paused) && !connectionManager.isConnected {
-            return Color.branchrAccent
-        } else if connectionManager.isConnected {
-            return .green
-        } else {
-            return .red
-        }
-    }
-    
-    // MARK: - Now Playing Block
-    
-    private var nowPlayingBlock: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Large tile
-            ZStack {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color(.systemGray6).opacity(0.15))
-                
-                if let nowPlaying = musicService.nowPlaying,
-                   let artwork = nowPlaying.artwork {
-                    Image(uiImage: artwork)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "music.note")
-                            .font(.system(size: 48))
-                            .foregroundColor(theme.brandYellow.opacity(0.6))
-                        
-                        Text("No Music Playing")
-                            .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.6))
-                    }
-                }
-            }
-            .frame(height: 220)
-            
-            // Text below
-            VStack(alignment: .leading, spacing: 4) {
-                Text(currentTrackTitle)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                Text(currentArtistName)
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-            }
-        }
-    }
-    
-    private var currentTrackTitle: String {
-        if let nowPlaying = musicService.nowPlaying {
-            return nowPlaying.title
-        }
-        return "No song playing"
-    }
-    
-    private var currentArtistName: String {
-        if let nowPlaying = musicService.nowPlaying {
-            return nowPlaying.artist
-        }
-        return ""
-    }
-    
-    // MARK: - Weekly Goal Section
-    
-    private var weeklyGoalSection: some View {
-        WeeklyGoalCardView(
-            totalThisWeekMiles: totalThisWeekMiles,
-            goalMiles: userPreferences.weeklyDistanceGoalMiles,
-            currentStreakDays: currentStreakDays,
-            bestStreakDays: bestStreakDays
-        )
-        .padding(.top, 4)
-    }
-    
-    // MARK: - Pill Controls Row
-    
-    private var pillControlsRow: some View {
-        HStack(spacing: 12) {
-            PillControlButton(
-                iconName: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
-                title: isVoiceMuted ? "Muted" : "Unmuted",
-                isActive: !isVoiceMuted
-            ) {
-                handleToggleMute()
-            }
-            
-            PillControlButton(
-                iconName: "slider.horizontal.3",
-                title: "DJ Controls",
-                isActive: showDJSheet
-            ) {
-                handleDJControlsTap()
-            }
-            
-            PillControlButton(
-                iconName: "music.note.list",
-                title: "Music",
-                isActive: !isMusicMuted
-            ) {
-                handleToggleMusic()
-            }
-        }
-    }
-    
-    // MARK: - Primary Action Buttons
-    
-    private var primaryActionButtons: some View {
-        VStack(spacing: 12) {
-            PrimaryButton(
-                primaryRideActionTitle,
-                systemImage: nil,
-                isHero: true,
-                isNeonHalo: true,
-                disableOuterGlow: true
-            ) {
-                if rideSession.rideState == .idle || rideSession.rideState == .ended {
-                    RideSessionManager.shared.startSoloRide(musicSource: musicSourceMode)
-                    withAnimation(.spring()) { showSmartRideSheet = true }
-                } else {
-                    withAnimation(.spring()) { showSmartRideSheet = true }
-                }
-            }
-            .rainbowGlow(active: rideSession.rideState == .active)
-            
-            PrimaryButton(
-                connectionManager.state == .connected
-                    ? "Stop Connection"
-                    : connectionManager.state == .connecting
-                      ? "Connecting..."
-                      : "Start Connection",
-                systemImage: nil,
-                isHero: false,
-                isNeonHalo: true
-            ) {
-                connectionManager.toggleConnection()
-            }
-            .rainbowGlow(active: connectionManager.state == .connecting || connectionManager.state == .connected)
-            
-            PrimaryButton(
-                voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
-                systemImage: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill",
-                isHero: false,
-                isNeonHalo: true
-            ) {
-                if voiceService.isVoiceChatActive {
-                    voiceService.stopVoiceChat()
-                } else {
-                    voiceService.startVoiceChat()
-                }
-            }
-            .rainbowGlow(active: voiceService.isVoiceChatActive)
-        }
-        .padding(.top, 8)
-    }
-    
     // MARK: - Phase 28: SOS Alert Helpers
     
     private func openMap(latitude: Double, longitude: Double) {
@@ -447,30 +389,45 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Pill Control Button
+// MARK: - Audio Control Button
 
-private struct PillControlButton: View {
-    let iconName: String?
+struct AudioControlButton: View {
+    let icon: String
     let title: String
     let isActive: Bool
     let action: () -> Void
     
+    @ObservedObject private var theme = ThemeManager.shared
+    
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 6) {
-                if let iconName {
-                    Image(systemName: iconName)
-                        .font(.system(size: 14, weight: .semibold))
-                }
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 42, height: 42)
+                    .background(
+                        Group {
+                            if isActive {
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(theme.brandYellow)
+                            } else {
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(.ultraThinMaterial)
+                            }
+                        }
+                    )
+                    .foregroundColor(isActive ? .black : .white)
+                
                 Text(title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.caption.bold())
+                    .foregroundColor(.white.opacity(isActive ? 1.0 : 0.85))
             }
-            .foregroundColor(.white)
-            .padding(.vertical, 10)
             .frame(maxWidth: .infinity)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(isActive ? Color.yellow.opacity(0.25) : Color(.systemGray5).opacity(0.25))
+                    .fill(Color.black.opacity(isActive ? 0.85 : 0.65))
             )
         }
         .buttonStyle(.plain)
