@@ -22,6 +22,7 @@ struct HomeView: View {
     @ObservedObject private var theme = ThemeManager.shared
     @ObservedObject private var rideDataManager = RideDataManager.shared
     @ObservedObject private var userPreferences = UserPreferenceManager.shared
+    @ObservedObject private var musicService = MusicService.shared
     
     // Phase 25B: Animation State removed (replaced by logo in Phase 29)
     
@@ -62,221 +63,49 @@ struct HomeView: View {
     
     var body: some View {
         NavigationView {
-            GeometryReader { geometry in
-                VStack(spacing: 12) { // Tighter spacing for non-scrolling layout
+            ZStack {
+                // Full-screen black background
+                Color.black
+                    .ignoresSafeArea()
                 
-                // Phase 28: SOS Alert Banner
-                if let alert = fcmService.latestSOSAlert, showSOSBanner {
-                    Button(action: {
-                        showSOSBanner = false
-                        openMap(latitude: alert.latitude, longitude: alert.longitude)
-                    }) {
-                        HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                            
-                            // Calculate distance if location available
-                            if let distance = alert.distance(from: locationService.locations.last) {
-                                Text("\(alert.name) triggered SOS nearby (\(String(format: "%.1f", distance)) mi away)! Tap to open live location.")
-                                    .font(.subheadline.bold())
-                                    .foregroundColor(.white)
-                            } else {
-                                Text("\(alert.name) triggered SOS nearby! Tap to open live location.")
-                                    .font(.subheadline.bold())
-                                    .foregroundColor(.white)
-                            }
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                showSOSBanner = false
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.white.opacity(0.8))
-                            }
-                        }
-                        .padding()
+                VStack {
+                    Spacer(minLength: 0)
+                    
+                    mainRideCard
                         .frame(maxWidth: .infinity)
-                        .background(Color.red)
-                        .cornerRadius(12)
-                        .shadow(color: .red.opacity(0.5), radius: 10, x: 0, y: 5)
-                    }
-                    .padding(.horizontal, 16)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                    .animation(.spring(response: 0.5, dampingFraction: 0.7), value: showSOSBanner)
-                    .onAppear {
-                        // Auto-dismiss after 10 seconds
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
-                            withAnimation {
-                                showSOSBanner = false
-                            }
-                        }
-                    }
-                }
-                
-                // Top breathing room - minimal spacing
-                Spacer()
-                    .frame(height: 8)
-                
-                // MARK: - Phase 71: Ride Control & Audio Panel (moved above buttons)
-                HStack {
-                    RideControlPanelView(
-                        preferredMusicSource: $musicSourceMode,
-                        connectionManager: connectionManager,
-                        rideService: rideService,
-                        userPreferences: userPreferences,
-                        totalThisWeekMiles: totalThisWeekMiles,
-                        goalMiles: userPreferences.weeklyDistanceGoalMiles,
-                        currentStreakDays: currentStreakDays,
-                        bestStreakDays: bestStreakDays,
-                        isVoiceMuted: $isVoiceMuted,
-                        isMusicMuted: $isMusicMuted,
-                        onToggleMute: handleToggleMute,
-                        onToggleMusic: handleToggleMusic,
-                        onDJControlsTap: handleDJControlsTap
-                    )
-                }
-                .frame(maxWidth: .infinity)          // center the whole card row
-                .padding(.horizontal, 24)   // <- match button width
-                .padding(.top, 8)
-                .onChange(of: musicSourceMode) { newMode in
-                    userPreferences.preferredMusicSource = newMode
-                    musicSync.setMusicSourceMode(newMode)
-                }
-                
-                // MARK: - Main Actions (Phase 2: Unified Button System)
-                // Phase 52: Primary action buttons only - status/controls moved to RideControlPanelView
-                // Phase 71: Buttons moved below RideControlPanelView
-                VStack(spacing: 14) { // Reduced spacing for tighter layout
-                    // Start Ride Tracking - Hero Button (Phase 67: No outer glow)
-                    // Phase 74: Show "Resume Ride Tracking" when ride is active/paused, just open sheet
-                    PrimaryButton(
-                        primaryRideActionTitle,
-                        systemImage: nil,
-                        isHero: true,
-                        isNeonHalo: true,  // Phase 34D: Thin neon halo on press
-                        disableOuterGlow: true  // Phase 67: Remove outer glow
-                    ) {
-                        if rideSession.rideState == .idle || rideSession.rideState == .ended {
-                            // Start new ride
-                            RideSessionManager.shared.startSoloRide(musicSource: musicSourceMode)
-                            withAnimation(.spring()) { showSmartRideSheet = true }
-                        } else {
-                            // Phase 74: If ride is active/paused, just reopen the sheet
-                            withAnimation(.spring()) { showSmartRideSheet = true }
-                        }
-                    }
-                    .rainbowGlow(active: rideSession.rideState == .active)  // Phase 34D: Active-state glow
-                    .sheet(isPresented: $showSmartRideSheet) {
-                        RideSheetView()
-                            .presentationDetents([.large])
-                    }
-                    .onChange(of: rideSession.rideState) { state in
-                        // Keep sheet open for entire ride lifecycle
-                        if state == .active || state == .paused {
-                            withAnimation(.spring()) { showSmartRideSheet = true }
-                        }
-                    }
+                        .padding(.horizontal, 16)
                     
-                    // Start Connection Button
-                    PrimaryButton(
-                        connectionManager.state == .connected
-                            ? "Stop Connection"
-                            : connectionManager.state == .connecting
-                              ? "Connecting..."
-                              : "Start Connection",
-                        systemImage: nil,
-                        isHero: false,
-                        isNeonHalo: true  // Phase 34D: Thin neon halo on press
-                    ) {
-                        connectionManager.toggleConnection()
-                    }
-                    .rainbowGlow(active: connectionManager.state == .connecting || connectionManager.state == .connected)  // Phase 34D: Active-state glow
-                    
-                    // Show connected peers if any
-                    if !connectionManager.connectedPeers.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Connected Riders:")
-                                .font(.headline)
-                                .foregroundColor(theme.primaryText)
-                                .padding(.horizontal, 20)
-                            
-                            ForEach(connectionManager.connectedPeers, id: \.self) { peer in
-                                HStack {
-                                    Circle()
-                                        .fill(.green)
-                                        .frame(width: 8, height: 8)
-                                    Text(peer.displayName)
-                                        .font(.subheadline)
-                                        .foregroundColor(theme.primaryText)
-                                }
-                                .padding(.horizontal, 20)
-                            }
-                        }
-                        .padding(.top, 8)
-                    }
-                    
-                    // Start Voice Chat Button
-                    PrimaryButton(
-                        voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
-                        systemImage: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill",
-                        isHero: false,
-                        isNeonHalo: true  // Phase 34D: Thin neon halo on press
-                    ) {
-                        if voiceService.isVoiceChatActive {
-                            voiceService.stopVoiceChat()
-                        } else {
-                            voiceService.startVoiceChat()
-                        }
-                    }
-                    .rainbowGlow(active: voiceService.isVoiceChatActive)  // Phase 34D: Active-state glow
-                    
-                    // Safety & SOS Button
-                    SafetyButton(
-                        "Safety & SOS",
-                        systemImage: "exclamationmark.triangle.fill"
-                    ) {
-                        showingSafetySettings = true
-                    }
+                    Spacer(minLength: 12)
                 }
-                .padding(.horizontal, 16)   // match the card width
-                .padding(.top, 12) // Reduced spacing between card and buttons
-                
-                // Bottom spacing - minimal to fit all content
-                Spacer()
-                    .frame(height: 8)
-                }
-                .padding(.top, 8)
-                .padding(.bottom, 8)
-                .frame(maxWidth: .infinity, maxHeight: geometry.size.height)
             }
-            .background(theme.primaryBackground.ignoresSafeArea())
             .onAppear {
                 print("🏁 HomeView loaded - ready for Start Connection")
-                // Phase 28: Start listening for SOS alerts
                 fcmService.startListeningForSOSAlerts()
-                // Phase 41: Update goal and streak data
                 updateGoalAndStreakData()
-                // Phase 57: Initialize musicSourceMode from userPreferences
                 musicSourceMode = userPreferences.preferredMusicSource
                 musicSync.setMusicSourceMode(musicSourceMode)
+                if musicSourceMode == .appleMusicSynced {
+                    musicService.refreshNowPlayingFromNowPlayingInfoCenter()
+                }
             }
             .onChange(of: rideDataManager.rides.count) { _ in
-                // Phase 41: Update when rides change
                 updateGoalAndStreakData()
             }
             .onChange(of: userPreferences.weeklyDistanceGoalMiles) { _ in
-                // Phase 41: Update when goal changes
                 updateGoalAndStreakData()
             }
             .onChange(of: fcmService.latestSOSAlert) { alert in
-                // Show banner when new SOS alert arrives
                 if alert != nil {
                     showSOSBanner = true
                 }
             }
-            // Phase 41C: Theme toggle moved to compact header, removed from toolbar
+            .onChange(of: musicSourceMode) { newMode in
+                userPreferences.preferredMusicSource = newMode
+                musicSync.setMusicSourceMode(newMode)
+                if newMode == .appleMusicSynced {
+                    musicService.refreshNowPlayingFromNowPlayingInfoCenter()
+                }
+            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .sheet(isPresented: $showingGroupRide) {
@@ -293,7 +122,7 @@ struct HomeView: View {
             VoiceSettingsView()
         }
         .sheet(isPresented: $showingSafetySettings) {
-            SOSView() // Phase 27: Updated to use new SOSView
+            SOSView()
         }
         .sheet(isPresented: $showingDJControls) {
             NavigationView {
@@ -316,22 +145,253 @@ struct HomeView: View {
         .fullScreenCover(isPresented: $showRideSummary) {
             Phase20RideSummaryView(rideService: rideService)
         }
-        // Phase 31: Unified Ride Tracking Sheet
         .sheet(isPresented: $showRideTracking) {
             RideTrackingView()
-                .ignoresSafeArea() // Phase 34D: Full-screen coverage for map
+                .ignoresSafeArea()
                 .presentationDetents([.large, .fraction(0.3)], selection: $rideDetent)
                 .presentationDragIndicator(.visible)
                 .onAppear {
-                    // Phase 34D: Start the sheet fully expanded
                     rideDetent = .large
                 }
         }
+        .sheet(isPresented: $showSmartRideSheet) {
+            RideSheetView()
+                .presentationDetents([.large])
+        }
+        .onChange(of: rideSession.rideState) { state in
+            if state == .active || state == .paused {
+                withAnimation(.spring()) { showSmartRideSheet = true }
+            }
+        }
+    }
+    
+    // MARK: - Main Card Container
+    
+    private var mainRideCard: some View {
+        ZStack(alignment: .topTrailing) {
+            // Card content
+            VStack(alignment: .leading, spacing: 20) {
+                // Top spacing so connection pill doesn't overlap
+                Spacer().frame(height: 8)
+                
+                nowPlayingBlock
+                
+                weeklyGoalSection
+                
+                pillControlsRow
+                
+                primaryActionButtons
+            }
+            .padding(20)
+            
+            connectionStatusPill
+                .padding(.top, 12)
+                .padding(.trailing, 12)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .fill(Color(.systemGray6).opacity(0.15))
+        )
+        .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
+    }
+    
+    // MARK: - Connection Status Pill
+    
+    private var connectionStatusPill: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(connectionStatusColor)
+                .frame(width: 10, height: 10)
+            
+            Text(connectionText)
+                .font(.system(size: 14, weight: .semibold))
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(
+            Capsule()
+                .fill(Color(.systemGray5).opacity(0.2))
+        )
+    }
+    
+    private var connectionText: String {
+        if rideService.rideState == .active || rideService.rideState == .paused {
+            if !connectionManager.isConnected {
+                return "Solo Ride"
+            }
+        }
+        if connectionManager.isConnected {
+            return "Connected"
+        } else if connectionManager.state == .connecting {
+            return "Connecting..."
+        } else {
+            return "Disconnected"
+        }
+    }
+    
+    private var connectionStatusColor: Color {
+        if (rideService.rideState == .active || rideService.rideState == .paused) && !connectionManager.isConnected {
+            return Color.branchrAccent
+        } else if connectionManager.isConnected {
+            return .green
+        } else {
+            return .red
+        }
+    }
+    
+    // MARK: - Now Playing Block
+    
+    private var nowPlayingBlock: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Large tile
+            ZStack {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color(.systemGray6).opacity(0.15))
+                
+                if let nowPlaying = musicService.nowPlaying,
+                   let artwork = nowPlaying.artwork {
+                    Image(uiImage: artwork)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                } else {
+                    VStack(spacing: 12) {
+                        Image(systemName: "music.note")
+                            .font(.system(size: 48))
+                            .foregroundColor(theme.brandYellow.opacity(0.6))
+                        
+                        Text("No Music Playing")
+                            .font(.subheadline)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                }
+            }
+            .frame(height: 220)
+            
+            // Text below
+            VStack(alignment: .leading, spacing: 4) {
+                Text(currentTrackTitle)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                Text(currentArtistName)
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+        }
+    }
+    
+    private var currentTrackTitle: String {
+        if let nowPlaying = musicService.nowPlaying {
+            return nowPlaying.title
+        }
+        return "No song playing"
+    }
+    
+    private var currentArtistName: String {
+        if let nowPlaying = musicService.nowPlaying {
+            return nowPlaying.artist
+        }
+        return ""
+    }
+    
+    // MARK: - Weekly Goal Section
+    
+    private var weeklyGoalSection: some View {
+        WeeklyGoalCardView(
+            totalThisWeekMiles: totalThisWeekMiles,
+            goalMiles: userPreferences.weeklyDistanceGoalMiles,
+            currentStreakDays: currentStreakDays,
+            bestStreakDays: bestStreakDays
+        )
+        .padding(.top, 4)
+    }
+    
+    // MARK: - Pill Controls Row
+    
+    private var pillControlsRow: some View {
+        HStack(spacing: 12) {
+            PillControlButton(
+                iconName: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
+                title: isVoiceMuted ? "Muted" : "Unmuted",
+                isActive: !isVoiceMuted
+            ) {
+                handleToggleMute()
+            }
+            
+            PillControlButton(
+                iconName: "slider.horizontal.3",
+                title: "DJ Controls",
+                isActive: showDJSheet
+            ) {
+                handleDJControlsTap()
+            }
+            
+            PillControlButton(
+                iconName: "music.note.list",
+                title: "Music",
+                isActive: !isMusicMuted
+            ) {
+                handleToggleMusic()
+            }
+        }
+    }
+    
+    // MARK: - Primary Action Buttons
+    
+    private var primaryActionButtons: some View {
+        VStack(spacing: 12) {
+            PrimaryButton(
+                primaryRideActionTitle,
+                systemImage: nil,
+                isHero: true,
+                isNeonHalo: true,
+                disableOuterGlow: true
+            ) {
+                if rideSession.rideState == .idle || rideSession.rideState == .ended {
+                    RideSessionManager.shared.startSoloRide(musicSource: musicSourceMode)
+                    withAnimation(.spring()) { showSmartRideSheet = true }
+                } else {
+                    withAnimation(.spring()) { showSmartRideSheet = true }
+                }
+            }
+            .rainbowGlow(active: rideSession.rideState == .active)
+            
+            PrimaryButton(
+                connectionManager.state == .connected
+                    ? "Stop Connection"
+                    : connectionManager.state == .connecting
+                      ? "Connecting..."
+                      : "Start Connection",
+                systemImage: nil,
+                isHero: false,
+                isNeonHalo: true
+            ) {
+                connectionManager.toggleConnection()
+            }
+            .rainbowGlow(active: connectionManager.state == .connecting || connectionManager.state == .connected)
+            
+            PrimaryButton(
+                voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
+                systemImage: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill",
+                isHero: false,
+                isNeonHalo: true
+            ) {
+                if voiceService.isVoiceChatActive {
+                    voiceService.stopVoiceChat()
+                } else {
+                    voiceService.startVoiceChat()
+                }
+            }
+            .rainbowGlow(active: voiceService.isVoiceChatActive)
+        }
+        .padding(.top, 8)
     }
     
     // MARK: - Phase 28: SOS Alert Helpers
     
-    /// Open Apple Maps with SOS location
     private func openMap(latitude: Double, longitude: Double) {
         if let url = URL(string: "https://maps.apple.com/?q=\(latitude),\(longitude)") {
             UIApplication.shared.open(url)
@@ -340,16 +400,14 @@ struct HomeView: View {
     
     // MARK: - Phase 41: Weekly Goal & Streak Helpers
     
-    /// Update goal and streak data from RideDataManager
     private func updateGoalAndStreakData() {
         totalThisWeekMiles = rideDataManager.totalDistanceThisWeek()
         currentStreakDays = rideDataManager.currentStreakDays()
         bestStreakDays = rideDataManager.bestStreakDays()
     }
     
-    // MARK: - Phase 44: Audio Control Handlers (used by RideControlPanelView)
+    // MARK: - Phase 44: Audio Control Handlers
     
-    /// Handle mute toggle with haptics
     private func handleToggleMute() {
         isVoiceMuted.toggle()
         AudioManager.shared.toggleVoiceChat(active: !isVoiceMuted)
@@ -357,7 +415,6 @@ struct HomeView: View {
         print(isVoiceMuted ? "Voice muted" : "Voice unmuted")
     }
     
-    /// Handle music toggle with haptics
     private func handleToggleMusic() {
         isMusicMuted.toggle()
         if isMusicMuted {
@@ -367,7 +424,6 @@ struct HomeView: View {
         print(isMusicMuted ? "Music muted" : "Music unmuted")
     }
     
-    /// Handle DJ controls tap with haptics
     private func handleDJControlsTap() {
         showDJSheet.toggle()
         HapticsService.shared.mediumTap()
@@ -376,34 +432,50 @@ struct HomeView: View {
     
     // MARK: - Ride Tracking
     
-    /**
-     * 🚴‍♂️ Handle Ride Button Press
-     *
-     * Handles button press based on current ride state.
-     * Phase 20: Full implementation with state management.
-     */
     private func handleRideButtonPress() {
         switch rideService.rideState {
         case .idle, .ended:
-            // Start new ride
             rideService.startRide()
-            // Also start location tracking service if needed
             if !locationService.isTracking {
                 locationService.startTracking()
             }
-            
         case .active:
-            // Show options modal (Pause, End, SOS)
             showRideOptions = true
-            
         case .paused:
-            // Resume ride (should be handled by modal, but fallback)
             rideService.resumeRide()
         }
     }
 }
 
-// MARK: - Phase 44: Audio Control Button Component
+// MARK: - Pill Control Button
+
+private struct PillControlButton: View {
+    let iconName: String?
+    let title: String
+    let isActive: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                if let iconName {
+                    Image(systemName: iconName)
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                Text(title)
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .foregroundColor(.white)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(isActive ? Color.yellow.opacity(0.25) : Color(.systemGray5).opacity(0.25))
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
 
 // MARK: - Control Button Component (Legacy - kept for compatibility)
 
@@ -415,18 +487,16 @@ struct ControlButton: View {
     
     var body: some View {
         Button(action: action) {
-            // Phase 41B: More compact layout
-            // Phase 41J: Updated colors for black card background
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 18))
-                    .foregroundColor(theme.brandYellow) // Brand yellow for icons on black
+                    .foregroundColor(theme.brandYellow)
                     .frame(width: 44, height: 44)
                     .background(theme.cardBackground)
                     .cornerRadius(10)
                 Text(title)
                     .font(.caption)
-                    .foregroundColor(Color.white.opacity(0.9)) // White labels for readability on black
+                    .foregroundColor(Color.white.opacity(0.9))
             }
         }
     }
@@ -439,17 +509,14 @@ struct MusicSourceSelectorView: View {
     @ObservedObject private var theme = ThemeManager.shared
     
     var body: some View {
-        // Phase 54: Removed "Music Source" label, keep only selector pills
         HStack(spacing: 12) {
             ForEach(MusicSourceMode.allCases) { source in
                 Button {
                     selectedSource = source
                     HapticsService.shared.lightTap()
                     print("Branchr: Music source changed to \(source.title)")
-                    // Phase 57: Changes are synced via onChange in HomeView
                 } label: {
                     ZStack {
-                        // Background pill – glass for selected, solid dark for unselected
                         if selectedSource == source {
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
                                 .fill(.ultraThinMaterial)
@@ -462,30 +529,24 @@ struct MusicSourceSelectorView: View {
                                 .fill(theme.surfaceBackground)
                         }
                         
-                        // Centered badge image only
                         brandedLogo(for: source)
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 40) // was 32 – make badge bigger
+                            .frame(height: 40)
                             .padding(.horizontal, 12)
                     }
-                    .frame(maxWidth: .infinity, minHeight: 52) // pill height similar to old yellow pill
+                    .frame(maxWidth: .infinity, minHeight: 52)
                 }
                 .buttonStyle(.plain)
             }
         }
     }
     
-    // MARK: - Phase 60: Safe Branded Logo Helper (Full-Color Assets)
-    
-    /// Returns branded logo image if available, falls back to SF Symbol
     private func brandedLogo(for mode: MusicSourceMode) -> Image {
         if UIImage(named: mode.assetName) != nil {
-            // Use original rendering for full-color badge assets
             return Image(mode.assetName)
                 .renderingMode(.original)
         } else {
-            // Failsafe – fall back to SF Symbol in template mode so it tints correctly
             return Image(systemName: mode.systemIconName)
                 .renderingMode(.template)
         }
@@ -495,4 +556,3 @@ struct MusicSourceSelectorView: View {
 #Preview {
     HomeView()
 }
-
