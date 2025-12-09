@@ -24,8 +24,6 @@ struct HomeView: View {
     @ObservedObject private var userPreferences = UserPreferenceManager.shared
     @ObservedObject private var musicService = MusicService.shared
     
-    // Phase 25B: Animation State removed (replaced by logo in Phase 29)
-    
     // MARK: - Phase 28: SOS Alert State
     @State private var showSOSBanner = false
     
@@ -55,6 +53,7 @@ struct HomeView: View {
         let hasActiveRide = rideSession.rideState == .active || rideSession.rideState == .paused
         return hasActiveRide ? "Resume Ride Tracking" : "Start Ride Tracking"
     }
+    
     @State private var showRideOptions = false
     @State private var showRideSummary = false
     
@@ -65,7 +64,8 @@ struct HomeView: View {
         NavigationView {
             GeometryReader { geometry in
                 VStack(spacing: 12) {
-                    // Phase 28: SOS Alert Banner
+                    
+                    // MARK: - Phase 28: SOS Alert Banner
                     if let alert = fcmService.latestSOSAlert, showSOSBanner {
                         Button(action: {
                             showSOSBanner = false
@@ -97,8 +97,10 @@ struct HomeView: View {
                             }
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(Color.red)
-                            .cornerRadius(12)
+                            .background(
+                                Capsule()
+                                    .fill(Color.red.opacity(0.95))
+                            )
                             .shadow(color: .red.opacity(0.5), radius: 10, x: 0, y: 5)
                         }
                         .padding(.horizontal, 16)
@@ -116,7 +118,7 @@ struct HomeView: View {
                     Spacer()
                         .frame(height: 8)
                     
-                    // MARK: - Ride Control Panel
+                    // MARK: - Ride Control Panel (large glass card)
                     RideControlPanelView(
                         preferredMusicSource: $musicSourceMode,
                         connectionManager: connectionManager,
@@ -135,7 +137,7 @@ struct HomeView: View {
                         musicSync.setMusicSourceMode(newMode)
                     }
                     
-                    // MARK: - Audio Controls Row (outside card, between card and buttons)
+                    // MARK: - Audio Controls Row (Unmuted / DJ / Music On)
                     HStack(spacing: 16) {
                         AudioControlButton(
                             icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
@@ -165,14 +167,14 @@ struct HomeView: View {
                     .padding(.horizontal, 24)
                     .padding(.top, 8)
                     
-                    // MARK: - Main Actions
+                    // MARK: - Main Actions (glass pill buttons)
                     VStack(spacing: 14) {
-                        PrimaryButton(
-                            primaryRideActionTitle,
+                        // Start / Resume Ride Tracking
+                        GlassActionButton(
+                            title: primaryRideActionTitle,
                             systemImage: nil,
-                            isHero: true,
-                            isNeonHalo: true,
-                            disableOuterGlow: true
+                            isProminent: true,
+                            isActive: rideSession.rideState == .active
                         ) {
                             if rideSession.rideState == .idle || rideSession.rideState == .ended {
                                 RideSessionManager.shared.startSoloRide(musicSource: musicSourceMode)
@@ -184,21 +186,23 @@ struct HomeView: View {
                         .frame(height: 54)
                         .rainbowGlow(active: rideSession.rideState == .active)
                         
-                        PrimaryButton(
-                            connectionManager.state == .connected
-                                ? "Stop Connection"
-                                : connectionManager.state == .connecting
-                                  ? "Connecting..."
-                                  : "Start Connection",
+                        // Start / Stop Connection
+                        GlassActionButton(
+                            title: connectionManager.state == .connected
+                            ? "Stop Connection"
+                            : connectionManager.state == .connecting
+                            ? "Connecting..."
+                            : "Start Connection",
                             systemImage: nil,
-                            isHero: false,
-                            isNeonHalo: true
+                            isProminent: false,
+                            isActive: connectionManager.state == .connecting || connectionManager.state == .connected
                         ) {
                             connectionManager.toggleConnection()
                         }
                         .frame(height: 54)
                         .rainbowGlow(active: connectionManager.state == .connecting || connectionManager.state == .connected)
                         
+                        // Connected Riders list (unchanged logic / layout)
                         if !connectionManager.connectedPeers.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Connected Riders:")
@@ -221,11 +225,12 @@ struct HomeView: View {
                             .padding(.top, 8)
                         }
                         
-                        PrimaryButton(
-                            voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
+                        // Start / End Voice Chat
+                        GlassActionButton(
+                            title: voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
                             systemImage: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill",
-                            isHero: false,
-                            isNeonHalo: true
+                            isProminent: false,
+                            isActive: voiceService.isVoiceChatActive
                         ) {
                             if voiceService.isVoiceChatActive {
                                 voiceService.stopVoiceChat()
@@ -236,9 +241,12 @@ struct HomeView: View {
                         .frame(height: 54)
                         .rainbowGlow(active: voiceService.isVoiceChatActive)
                         
-                        SafetyButton(
-                            "Safety & SOS",
-                            systemImage: "exclamationmark.triangle.fill"
+                        // Safety & SOS
+                        GlassActionButton(
+                            title: "Safety & SOS",
+                            systemImage: "exclamationmark.triangle.fill",
+                            isProminent: false,
+                            isActive: false
                         ) {
                             showingSafetySettings = true
                         }
@@ -254,7 +262,18 @@ struct HomeView: View {
                 .padding(.bottom, 8)
                 .frame(maxWidth: .infinity, maxHeight: geometry.size.height)
             }
-            .background(theme.primaryBackground.ignoresSafeArea())
+            .background(
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        Color.black.opacity(0.95),
+                        Color.black.opacity(0.85)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            )
             .onAppear {
                 print("🏁 HomeView loaded - ready for Start Connection")
                 fcmService.startListeningForSOSAlerts()
@@ -307,7 +326,11 @@ struct HomeView: View {
             .presentationDetents([.medium, .large])
         }
         .sheet(isPresented: $showRideOptions) {
-            RideOptionsSheet(rideService: rideService, showSummary: $showRideSummary, dismiss: $showRideOptions)
+            RideOptionsSheet(
+                rideService: rideService,
+                showSummary: $showRideSummary,
+                dismiss: $showRideOptions
+            )
         }
         .fullScreenCover(isPresented: $showRideSummary) {
             Phase20RideSummaryView(rideService: rideService)
@@ -389,7 +412,7 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Audio Control Button
+// MARK: - Audio Control Button (glassy compact buttons)
 
 struct AudioControlButton: View {
     let icon: String
@@ -406,17 +429,14 @@ struct AudioControlButton: View {
                     .font(.system(size: 18, weight: .semibold))
                     .frame(width: 42, height: 42)
                     .background(
-                        Group {
-                            if isActive {
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(theme.brandYellow)
-                            } else {
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(.ultraThinMaterial)
-                            }
-                        }
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(.ultraThinMaterial)
                     )
-                    .foregroundColor(isActive ? .black : .white)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color.white.opacity(isActive ? 0.28 : 0.18), lineWidth: 1)
+                    )
+                    .foregroundColor(isActive ? theme.brandYellow : .white.opacity(0.9))
                 
                 Text(title)
                     .font(.caption.bold())
@@ -426,9 +446,14 @@ struct AudioControlButton: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color.black.opacity(isActive ? 0.85 : 0.65))
+                .ultraThinMaterial,
+                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.white.opacity(isActive ? 0.22 : 0.14), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 6)
         }
         .buttonStyle(.plain)
     }
@@ -459,54 +484,68 @@ struct ControlButton: View {
     }
 }
 
-// MARK: - Phase 51: Music Source Selector
+// MARK: - Glass Action Button (shared for big pill buttons)
 
-struct MusicSourceSelectorView: View {
-    @Binding var selectedSource: MusicSourceMode
+struct GlassActionButton: View {
+    let title: String
+    let systemImage: String?
+    let isProminent: Bool
+    let isActive: Bool
+    let action: () -> Void
+    
     @ObservedObject private var theme = ThemeManager.shared
     
     var body: some View {
-        HStack(spacing: 12) {
-            ForEach(MusicSourceMode.allCases) { source in
-                Button {
-                    selectedSource = source
-                    HapticsService.shared.lightTap()
-                    print("Branchr: Music source changed to \(source.title)")
-                } label: {
-                    ZStack {
-                        if selectedSource == source {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(.ultraThinMaterial)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .stroke(theme.brandYellow, lineWidth: 2)
-                                )
-                        } else {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(theme.surfaceBackground)
-                        }
-                        
-                        brandedLogo(for: source)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 40)
-                            .padding(.horizontal, 12)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 52)
+        let radius: CGFloat = isProminent ? 26 : 22
+        
+        Button(action: action) {
+            HStack(spacing: 10) {
+                if let systemImage = systemImage {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 18, weight: .semibold))
                 }
-                .buttonStyle(.plain)
+                
+                Text(title)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                
+                Spacer()
             }
+            .foregroundColor(.white)
+            .padding(.horizontal, 22)
+            .padding(.vertical, isProminent ? 14 : 12)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke(Color.white.opacity(isActive ? 0.35 : 0.18), lineWidth: 1)
+            )
+            .shadow(
+                color: Color.black.opacity(isProminent ? 0.45 : 0.30),
+                radius: isProminent ? 24 : 18,
+                x: 0,
+                y: isProminent ? 16 : 12
+            )
+            .overlay(
+                LinearGradient(
+                    colors: [
+                        theme.brandYellow.opacity(isActive ? 0.0 : 0.0),
+                        theme.brandYellow.opacity(isActive ? 0.7 : 0.0),
+                        theme.brandYellow.opacity(isActive ? 0.0 : 0.0)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(height: isActive ? 3 : 0)
+                .cornerRadius(999),
+                alignment: .bottom
+            )
         }
-    }
-    
-    private func brandedLogo(for mode: MusicSourceMode) -> Image {
-        if UIImage(named: mode.assetName) != nil {
-            return Image(mode.assetName)
-                .renderingMode(.original)
-        } else {
-            return Image(systemName: mode.systemIconName)
-                .renderingMode(.template)
-        }
+        .buttonStyle(.plain)
     }
 }
 

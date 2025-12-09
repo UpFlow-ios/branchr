@@ -7,12 +7,6 @@
 
 import SwiftUI
 
-/**
- * 🎯 Weekly Goal Card View
- *
- * Displays weekly distance goal progress and current streak information.
- * Shows progress bar, goal status, and streak days.
- */
 struct WeeklyGoalCardView: View {
     let totalThisWeekMiles: Double
     let goalMiles: Double
@@ -21,25 +15,20 @@ struct WeeklyGoalCardView: View {
     
     @ObservedObject private var theme = ThemeManager.shared
     
-    // Computed progress (0.0 to 1.0)
     private var progress: Double {
-        let safeGoal = max(goalMiles, 0.1) // Avoid division by zero
+        let safeGoal = max(goalMiles, 0.1)
         return min(totalThisWeekMiles / safeGoal, 1.0)
     }
     
-    // Progress percentage for display
     private var progressPercent: Int {
         Int(progress * 100)
     }
     
     var body: some View {
-        // Text colors optimized for glassy background over artwork
         let titleColor = Color.white
-        let primaryTextColor = Color.white.opacity(0.9)
         let secondaryTextColor = Color.white.opacity(0.8)
         
         VStack(alignment: .leading, spacing: 12) {
-            // Top row: Title + percent pill
             HStack {
                 Text("🎯 Weekly Goal")
                     .font(.subheadline.bold())
@@ -47,10 +36,9 @@ struct WeeklyGoalCardView: View {
                 
                 Spacer()
                 
-                // Percent pill capsule
                 Text("\(progressPercent)%")
                     .font(.caption.bold())
-                    .foregroundColor(primaryTextColor)
+                    .foregroundColor(.white.opacity(0.9))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(
@@ -59,17 +47,13 @@ struct WeeklyGoalCardView: View {
                     )
             }
             
-            // Progress bar with better contrast
             VStack(alignment: .leading, spacing: 8) {
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
-                        // Background track - more visible on artwork
-                        let trackColor = Color.white.opacity(0.18)
                         Capsule()
-                            .fill(trackColor)
+                            .fill(Color.white.opacity(0.18))
                             .frame(height: 12)
                         
-                        // Rainbow progress fill
                         Capsule()
                             .fill(theme.rideRainbowGradient)
                             .frame(width: geometry.size.width * CGFloat(progress), height: 12)
@@ -79,7 +63,6 @@ struct WeeklyGoalCardView: View {
                 .frame(height: 12)
             }
             
-            // Bottom row: Three segments
             HStack(spacing: 8) {
                 Text(String(format: "%.1f / %.0f mi", totalThisWeekMiles, goalMiles))
                     .font(.caption)

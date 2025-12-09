@@ -7,12 +7,6 @@
 
 import SwiftUI
 
-/**
- * 🎛️ Ride Control & Audio Panel
- *
- * Groups music artwork, connection status, weekly goal, and playback controls
- * into a single organized card for better visual hierarchy.
- */
 struct RideControlPanelView: View {
     // MARK: - Bindings & State
     @Binding var preferredMusicSource: MusicSourceMode
@@ -26,15 +20,12 @@ struct RideControlPanelView: View {
     let currentStreakDays: Int
     let bestStreakDays: Int
     
-    // Music Service for Now Playing
     @ObservedObject private var musicService = MusicService.shared
-    
     @ObservedObject private var theme = ThemeManager.shared
     
-    // Fixed card height - 260pt as specified
     private let cardHeight: CGFloat = 260
     
-    // MARK: - Computed Properties
+    // MARK: - Computed
     
     private var isSoloRide: Bool {
         rideService.rideState == .active || rideService.rideState == .paused
@@ -64,7 +55,7 @@ struct RideControlPanelView: View {
     
     var body: some View {
         ZStack {
-            // Background: Large artwork that fills the card
+            // Artwork / background
             if preferredMusicSource == .appleMusicSynced,
                let nowPlaying = musicService.nowPlaying,
                let artwork = nowPlaying.artwork {
@@ -75,7 +66,6 @@ struct RideControlPanelView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
             } else {
-                // Neutral gradient when no artwork
                 LinearGradient(
                     colors: [
                         theme.surfaceBackground,
@@ -86,7 +76,7 @@ struct RideControlPanelView: View {
                 )
             }
             
-            // Gradient overlay for text readability
+            // Glassy tint overlay
             LinearGradient(
                 colors: [Color.black.opacity(0.45), Color.black.opacity(0.15)],
                 startPoint: .top,
@@ -94,9 +84,8 @@ struct RideControlPanelView: View {
             )
             .blendMode(.multiply)
             
-            // Content overlaying the artwork
             VStack(spacing: 16) {
-                // TOP: Connection Status Pill - glassy iOS Control Center style
+                // TOP: Connection status pill
                 HStack {
                     Spacer()
                     
@@ -142,7 +131,6 @@ struct RideControlPanelView: View {
                 if preferredMusicSource == .appleMusicSynced,
                    let nowPlaying = musicService.nowPlaying {
                     VStack(spacing: 14) {
-                        // Playback controls - symmetrically spaced
                         HStack(spacing: 0) {
                             Spacer()
                             
@@ -190,7 +178,6 @@ struct RideControlPanelView: View {
                             Spacer()
                         }
                         
-                        // Track title and artist
                         VStack(spacing: 4) {
                             Text(nowPlaying.title)
                                 .font(.headline.bold())
@@ -208,7 +195,6 @@ struct RideControlPanelView: View {
                         .padding(.horizontal, 12)
                     }
                 } else if preferredMusicSource == .appleMusicSynced {
-                    // Placeholder when Apple Music selected but no track
                     VStack(spacing: 10) {
                         Image(systemName: "music.note")
                             .font(.system(size: 42))
@@ -223,7 +209,6 @@ struct RideControlPanelView: View {
                 
                 Spacer(minLength: 0)
                 
-                // BOTTOM: Weekly Goal only (audio controls moved outside)
                 WeeklyGoalCardView(
                     totalThisWeekMiles: totalThisWeekMiles,
                     goalMiles: goalMiles,
@@ -239,15 +224,15 @@ struct RideControlPanelView: View {
         .clipShape(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
         )
-        .background(
+        .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(theme.surfaceBackground)
-                .shadow(
-                    color: theme.isDarkMode ? .clear : Color.black.opacity(0.25),
-                    radius: theme.isDarkMode ? 0 : 20,
-                    x: 0,
-                    y: theme.isDarkMode ? 0 : 10
-                )
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+        )
+        .shadow(
+            color: Color.black.opacity(0.35),
+            radius: 30,
+            x: 0,
+            y: 20
         )
         .onAppear {
             if preferredMusicSource == .appleMusicSynced {
