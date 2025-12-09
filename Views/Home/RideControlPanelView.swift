@@ -106,7 +106,7 @@ struct RideControlPanelView: View {
                                 : .default,
                                 value: connectionManager.isConnected
                             )
-                        
+
                         Text(connectionStatusLabel)
                             .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundColor(.white)
@@ -114,12 +114,7 @@ struct RideControlPanelView: View {
                     }
                     .padding(.horizontal, 18)
                     .padding(.vertical, 7)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Capsule())
-                    .overlay(
-                        Capsule()
-                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                    )
+                    .branchrGlassPill()
                     
                     Spacer()
                 }
@@ -221,19 +216,7 @@ struct RideControlPanelView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: cardHeight)
-        .clipShape(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
-        )
-        .shadow(
-            color: Color.black.opacity(0.35),
-            radius: 30,
-            x: 0,
-            y: 20
-        )
+        .branchrGlassCard(cornerRadius: 24)
         .onAppear {
             if preferredMusicSource == .appleMusicSynced {
                 musicService.refreshNowPlayingFromNowPlayingInfoCenter()

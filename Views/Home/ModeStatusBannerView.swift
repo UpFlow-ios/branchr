@@ -18,8 +18,9 @@ struct ModeStatusBannerView: View {
                     .font(.subheadline.bold())
                     .foregroundColor(.white)
                     .padding(10)
-                    .background(modeManager.configuration.themeColor.opacity(0.8))
-                    .cornerRadius(12)
+                    .glassEffect(.regular, in: .roundedRectangle(radius: 12))
+                    .tint(modeManager.configuration.themeColor)
+                    .interactive(true)
                     .onTapGesture {
                         showSelector.toggle()
                     }
