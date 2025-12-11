@@ -142,12 +142,14 @@ Fix HomeView UI regressions and polish the liquid glass design while preserving 
 
 ## 📁 Files Modified
 
+### Core Service Updates
 1. ✅ `Services/MusicService.swift`
    - Added `lastArtworkImage` cached property
    - Updates cache whenever new artwork received
 
+### View Updates
 2. ✅ `Views/Home/HomeView.swift`
-   - Background uses cached artwork
+   - Background uses cached artwork via `AmbientBackground` component
    - Updated `GlassGridButton` with `isActive` parameter
    - Rainbow halo shows for active features
 
@@ -160,8 +162,21 @@ Fix HomeView UI regressions and polish the liquid glass design while preserving 
    - Shortened with compact layout
    - Single-line info row
 
-5. ✅ `branchr/Info.plist`
-   - Portrait-only orientation lock
+### New Glass Component System (Phase 76B)
+5. ✅ `Views/UIComponents/AmbientBackground.swift` — Live artwork background component
+6. ✅ `Views/UIComponents/GlassCard.swift` — Reusable glass container
+7. ✅ `Views/UIComponents/GlassButtonLarge.swift` — Primary action buttons
+8. ✅ `Views/UIComponents/GlassButtonSmall.swift` — Audio control tiles
+9. ✅ `Views/UIComponents/GlassSOSButton.swift` — Emergency button
+
+### Configuration
+10. ✅ `branchr/Info.plist`
+    - Portrait-only orientation lock
+
+### Additional Updates
+11. ✅ `App/BranchrAppRoot.swift` — Liquid glass tab bar
+12. ✅ `Utils/RainbowGlowModifier.swift` — Corner radius consistency
+13. ✅ `README.md` — Updated documentation
 
 ---
 
@@ -195,6 +210,50 @@ Fix HomeView UI regressions and polish the liquid glass design while preserving 
 - ✅ **Rainbow Halo:** Active states working correctly
 - ✅ **Weekly Goal:** Compact and clean
 - ✅ **Portrait Lock:** Rotation disabled
+
+---
+
+## 🎨 Reusable Glass Component System (Phase 76B)
+
+### New Components Created
+
+To ensure consistency and maintainability, Phase 76B introduced a reusable glass component library:
+
+#### **1. AmbientBackground**
+- Automatically blurs live Apple Music artwork
+- Smooth fallback to gradient when no music playing
+- Reusable across any view that needs ambient backgrounds
+
+#### **2. GlassCard**
+- Standard container for all glass surfaces
+- Consistent `.ultraThinMaterial` with 20pt corners
+- White stroke + drop shadow for depth
+- Simple `@ViewBuilder` API
+
+#### **3. GlassButtonLarge**
+- Primary action buttons (Ride, Connection, Voice)
+- Rainbow glow on press + active states
+- Haptic feedback integrated
+- Scales on press with spring animation
+
+#### **4. GlassButtonSmall**
+- Audio control tiles (Unmuted, DJ, Music)
+- Compact icon + label layout
+- Rainbow glow on interaction
+- Consistent glass styling
+
+#### **5. GlassSOSButton**
+- Dedicated emergency button component
+- Red accent with translucent glass
+- Enhanced visibility for safety
+- Rainbow glow when armed
+
+### Benefits
+- ✅ **Consistency**: All glass elements use same material & corner radius
+- ✅ **Maintainability**: Single source of truth for glass styling
+- ✅ **Future-proof**: Easy to update when Apple evolves materials
+- ✅ **Reusability**: Components can be used throughout app
+- ✅ **Performance**: Native SwiftUI, no custom blur wrappers
 
 ---
 
