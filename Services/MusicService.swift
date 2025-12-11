@@ -36,6 +36,9 @@ final class MusicService: ObservableObject {
     // Phase 63: Published Now Playing info with artwork
     @Published private(set) var nowPlaying: MusicServiceNowPlaying?
     
+    // Phase 76: Cached artwork that persists between track changes
+    @Published private(set) var lastArtworkImage: UIImage?
+    
     // Phase 61: Re-enabled MusicKit player (kept for future in-app playback)
     private var player = ApplicationMusicPlayer.shared
     
@@ -257,6 +260,10 @@ final class MusicService: ObservableObject {
             }
             
             nowPlaying = MusicServiceNowPlaying(title: title, artist: artist, artwork: artworkImage)
+            // Phase 76: Cache artwork so it persists between track changes
+            if let artworkImage = artworkImage {
+                lastArtworkImage = artworkImage
+            }
             // Phase 66: Update isPlaying state when refreshing now playing
             isPlaying = (systemPlayer.playbackState == .playing)
             print("Branchr MusicService: NowPlaying updated from MPNowPlayingInfoCenter: \(title) – \(artist)")
@@ -274,6 +281,10 @@ final class MusicService: ObservableObject {
             }
             
             nowPlaying = MusicServiceNowPlaying(title: title, artist: artist, artwork: artworkImage)
+            // Phase 76: Cache artwork so it persists between track changes
+            if let artworkImage = artworkImage {
+                lastArtworkImage = artworkImage
+            }
             // Phase 66: Update isPlaying state when refreshing now playing
             isPlaying = (systemPlayer.playbackState == .playing)
             print("Branchr MusicService: NowPlaying updated from systemPlayer: \(title) – \(artist)")
@@ -327,6 +338,10 @@ final class MusicService: ObservableObject {
         
         // Phase 63: Update published nowPlaying property
         nowPlaying = MusicServiceNowPlaying(title: title, artist: artist, artwork: artworkImage)
+        // Phase 76: Cache artwork so it persists between track changes
+        if let artworkImage = artworkImage {
+            lastArtworkImage = artworkImage
+        }
         
         // Phase 65: Update playing state from system player
         isPlaying = (systemPlayer.playbackState == .playing)

@@ -84,27 +84,38 @@ struct BranchrAppRoot: View {
         }
     }
     
-    // Phase 3B: Tab bar appearance update helper
+    // LIQUID GLASS Tab Bar with Native SwiftUI Materials
     private func updateTabBarAppearance() {
         let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-
-        // REMOVE DIVIDER LINE
+        
+        // ✨ LIQUID GLASS EFFECT using .ultraThinMaterial
+        appearance.configureWithDefaultBackground()
+        
+        // Apply frosted glass background effect
+        appearance.backgroundEffect = UIBlurEffect(style: theme.isDarkMode ? .systemUltraThinMaterialDark : .systemUltraThinMaterialLight)
+        
+        // Translucent background with subtle tint
+        if theme.isDarkMode {
+            appearance.backgroundColor = UIColor.black.withAlphaComponent(0.75)
+        } else {
+            appearance.backgroundColor = UIColor.white.withAlphaComponent(0.85)
+        }
+        
+        // Remove divider line for cleaner glass look
         appearance.shadowColor = .clear
         appearance.shadowImage = UIImage()
-        UITabBar.appearance().clipsToBounds = true
-
+        
+        // Icon and text colors with glass-appropriate styling
+        let yellow = UIColor(theme.brandYellow)
+        
         if theme.isDarkMode {
-            // Dark Mode: Black background with yellow icons
-            let yellow = UIColor(theme.brandYellow)
-            appearance.backgroundColor = .black
+            // Dark Mode: Yellow icons on dark glass
             appearance.stackedLayoutAppearance.selected.iconColor = yellow
             appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: yellow]
-            appearance.stackedLayoutAppearance.normal.iconColor = yellow.withAlphaComponent(0.4)
-            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: yellow.withAlphaComponent(0.4)]
+            appearance.stackedLayoutAppearance.normal.iconColor = UIColor.white.withAlphaComponent(0.5)
+            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.white.withAlphaComponent(0.5)]
         } else {
-            // Light Mode: Yellow background with black icons
-            appearance.backgroundColor = UIColor(theme.brandYellow)
+            // Light Mode: Black icons on light glass
             appearance.stackedLayoutAppearance.selected.iconColor = .black
             appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor.black]
             appearance.stackedLayoutAppearance.normal.iconColor = UIColor.black.withAlphaComponent(0.4)

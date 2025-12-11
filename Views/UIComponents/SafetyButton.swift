@@ -61,29 +61,14 @@ struct SafetyButton: View {
                         .transition(.opacity)
                 }
                 
-                // Liquid Glass button background
+                // Button background
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        LinearGradient(
-                            colors: [
-                                .white.opacity(0.20),
-                                .white.opacity(0.08),
-                                .clear
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .stroke(Color.white.opacity(0.18), lineWidth: 1)
-                    )
+                    .fill(theme.isDarkMode ? theme.branchrYellow : Color.black)
                     .shadow(
-                        color: Color.black.opacity(0.35),
-                        radius: 18,
+                        color: theme.glowColor.opacity(0.5),
+                        radius: 12,
                         x: 0,
-                        y: 12
+                        y: 6
                     )
                 
                 // Button content

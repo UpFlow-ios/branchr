@@ -63,29 +63,14 @@ struct PrimaryButton: View {
                         .animation(.easeOut(duration: 0.15), value: isPressed)
                 }
                 
-                // Liquid Glass button background
+                // Normal button background
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        LinearGradient(
-                            colors: [
-                                .white.opacity(0.20),
-                                .white.opacity(0.08),
-                                .clear
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .stroke(Color.white.opacity(0.18), lineWidth: 1)
-                    )
+                    .fill(theme.primaryButtonBackground)
                     .shadow(
-                        color: Color.black.opacity(0.35),
-                        radius: 18,
+                        color: disableOuterGlow ? .clear : theme.glowColor.opacity(isHero ? 0.8 : 0.4),
+                        radius: disableOuterGlow ? 0 : (isHero ? 18 : 10),
                         x: 0,
-                        y: 12
+                        y: disableOuterGlow ? 0 : (isHero ? 8 : 4)
                     )
                 
                 // Button content

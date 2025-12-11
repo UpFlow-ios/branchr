@@ -42,6 +42,9 @@ Built with SwiftUI and modern iOS frameworks, Branchr delivers seamless peer-to-
 | 🔊 **Voice Announcements** | Real-time distance, speed, and progress updates (customizable) |
 | 📳 **Haptic Feedback** | Tactile feedback for ride milestones and events |
 | 💾 **Auto-Save Rides** | Automatic ride saving with Firebase sync |
+| 🌈 **Rainbow Glow Effects** | Interactive buttons with animated rainbow halos on press |
+| 💎 **Liquid Glass UI** | Modern iOS 18+ design with frosted glass effects and premium materials |
+| 🎨 **Weekly Goal Tracking** | Beautiful progress cards with streak tracking and rainbow gradients |
 | 🌙 **Dark Mode** | Beautiful dark theme optimized for all lighting conditions |
 | 🔒 **Privacy First** | Granular permissions with local-first data processing |
 
@@ -93,15 +96,26 @@ branchr/
 │   └── ThemeManager.swift       # Unified design system
 ├── Views/
 │   ├── Home/                     # Main dashboard
+│   │   ├── HomeView.swift        # Main home screen with liquid glass UI
+│   │   ├── RideControlPanelView.swift # Music & ride control card
+│   │   └── WeeklyGoalCardView.swift   # Weekly goals with progress tracking
 │   ├── Ride/                     # Ride tracking interface
-│   │   ├── RideTrackingView.swift # Main ride tracking sheet
+│   │   ├── RideSheetView.swift   # Main ride tracking sheet
 │   │   └── RideMapViewRepresentable.swift # Custom map with black polyline
 │   ├── Calendar/                 # Ride history calendar view
+│   │   └── RideCalendarView.swift # Calendar with ride history
 │   ├── DJ/                       # Music controls and DJ mode
-│   └── Settings/                 # App configuration
+│   │   └── DJControlsView.swift  # DJ control panel
+│   ├── Settings/                 # App configuration
+│   ├── Profile/                  # User profile views
+│   └── Components/               # Reusable UI components
+│       └── RainbowPulseView.swift # Rainbow animation effects
 ├── Models/
 │   ├── RideModel.swift           # Ride data structures
 │   └── UserModel.swift           # User profile data
+├── Utils/
+│   ├── RainbowGlowModifier.swift # Rainbow glow animation effects
+│   └── HapticsService.swift     # Haptic feedback management
 ├── Resources/
 │   └── AuthKey_S8S2CSHCZ7.p8     # MusicKit private key (NOT COMMITTED)
 ├── backend/
@@ -272,6 +286,38 @@ service cloud.firestore {
 
 ---
 
+## 🎨 Design System
+
+### Liquid Glass Visual Language
+
+Branchr features a premium **Liquid Glass** design system inspired by iOS 18+ and modern Apple design:
+
+- **`.ultraThinMaterial` backgrounds** — Frosted glass effects throughout the app
+- **20pt corner radius** — Consistent rounded aesthetic on all UI elements
+- **Rainbow glow effects** — Animated multi-color halos on interactive buttons
+- **White active states** — Clean, premium look for active controls
+- **Blurred album backgrounds** — Dynamic backgrounds from currently playing music
+- **Premium shadows** — Multi-layer depth effects for cards and buttons
+- **Haptic feedback** — Tactile responses for all interactions
+
+### Color Palette
+
+- **Brand Yellow** (#FFD60A) — Primary accent color
+- **Black** — Base color for dark mode
+- **White** — Text and UI elements
+- **Rainbow Gradient** — Progress bars and special effects (red → orange → yellow → green → blue → purple → pink)
+- **Glass Tints** — Translucent overlays with 0.12-0.20 opacity
+
+### Typography
+
+- **System Font** (San Francisco) — Apple's native typeface
+- **Bold weights** for headings and emphasis
+- **Medium weights** for buttons and controls
+- **Regular/Light weights** for body text
+- **Rounded variant** for playful elements
+
+---
+
 ## 🗺️ Development Roadmap
 
 | Phase | Focus | Status |
@@ -285,16 +331,22 @@ service cloud.firestore {
 | **Phase 32** | Firebase ride sync & cloud storage | ✅ Complete |
 | **Phase 33** | UI polish & theme unification | ✅ Complete |
 | **Phase 34** | Ride tracking flow fixes & enhancements | ✅ Complete |
-| **Phase 5** | Analytics dashboard & ride history | 📋 Planned |
+| **Phase 61-70** | MusicKit integration, DJ controls, live music UI | ✅ Complete |
+| **Phase 71-75** | Layout polish, weekly goals, profile stats | ✅ Complete |
+| **Phase 76+** | Liquid Glass UI redesign & visual enhancements | ✅ Complete |
+| **Phase 6** | Analytics dashboard & advanced features | 📋 Planned |
 
-### Recent Updates (Phase 34)
+### Recent Updates (Phase 76+ - Liquid Glass Design)
+- ✅ **Liquid Glass UI** — Modern frosted glass effects with premium materials
+- ✅ **Rainbow Glow Buttons** — Animated multi-color halos on button press
+- ✅ **Enhanced Weekly Goals** — Large numbers, rainbow progress bars, streak tracking
+- ✅ **Full-Width Audio Controls** — Redesigned music/voice buttons with white active states
+- ✅ **Consistent 20pt Corners** — Unified rounded aesthetic throughout app
+- ✅ **Live Music Backgrounds** — Blurred album artwork behind HomeView
+- ✅ **Liquid Glass Tab Bar** — Translucent tab bar with blur effects
+- ✅ **Premium Interactions** — Haptic feedback and smooth animations
 - ✅ **Ride Persistence** — Rides automatically save and sync to Calendar
-- ✅ **Clean Map Polyline** — Black route lines with custom rendering
-- ✅ **Voice Announcements** — Distance, speed, and progress updates
 - ✅ **Voice Commands** — "Pause tracking", "Resume ride", "Stop ride", "Status update"
-- ✅ **Haptic Feedback** — Tactile feedback for milestones and events
-- ✅ **Dismissible Sheets** — Drag-to-dismiss ride tracking interface
-- ✅ **Auto-Save** — Rides save automatically when completed
 
 ### Future Enhancements
 - 📱 Apple Watch companion app
@@ -315,6 +367,7 @@ Branchr envisions a world where technology enhances, rather than distracts from,
 - **Privacy** — User data belongs to users
 - **Performance** — Smooth 60fps animations, low battery impact
 - **Reliability** — Works offline when possible, graceful degradation
+- **Design Excellence** — Premium liquid glass UI that rivals Apple's best apps
 
 ---
 
@@ -334,7 +387,11 @@ For questions or feedback, please contact the project maintainer.
 - `backend/README.md` — Backend server documentation
 
 ### Phase Documentation
-- `PHASE_34_RIDE_TRACKING_FIXES.md` — Latest ride tracking enhancements
+- `Docs/PHASE_75_PROFILE_STATS_AND_PRO_UI.md` — Profile enhancements & stats
+- `Docs/PHASE_74_RESUME_RIDE_WEEKLY_GOAL_AND_HUD_ALIGNMENT.md` — Weekly goals & ride resume
+- `Docs/PHASE_70_RIDE_VOICE_CHAT_AND_HUD_MUSIC_INTEGRATION.md` — Voice chat & music integration
+- `Docs/PHASE_61_LIVE_DJ_CONTROLS_MUSICKIT.md` — DJ controls & MusicKit implementation
+- `PHASE_34_RIDE_TRACKING_FIXES.md` — Ride tracking enhancements
   - ✅ Ride persistence & calendar integration
   - ✅ Clean black map polyline rendering
   - ✅ Voice announcements (distance, speed, progress)
@@ -342,6 +399,8 @@ For questions or feedback, please contact the project maintainer.
   - ✅ Haptic feedback for milestones
   - ✅ Dismissible ride tracking sheet
   - ✅ Auto-save ride feature
+- `Docs/RAINBOW_BUTTON_IMPLEMENTATION.md` — Rainbow glow effect implementation
+- `Docs/THEME_SYSTEM_BRAND_YELLOW.md` — Theme system & color palette
 
 ---
 
