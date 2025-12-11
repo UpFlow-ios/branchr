@@ -8,13 +8,16 @@
 import SwiftUI
 
 /**
- * 🎨 Ambient Background
+ * 🎨 Ambient Background (with Dynamic Tint)
  *
  * Uses live Apple Music artwork and blurs it into a premium ambient backdrop.
+ * Includes dynamic color tint that adapts to the artwork's dominant color.
  * Falls back to subtle gradient when no artwork is available.
  */
 struct AmbientBackground: View {
     let artwork: UIImage?
+    
+    @ObservedObject private var artworkTint = ArtworkTint.shared
     
     var body: some View {
         Group {
@@ -32,6 +35,10 @@ struct AmbientBackground: View {
                             startPoint: .top,
                             endPoint: .bottom
                         )
+                    )
+                    .overlay(
+                        artworkTint.dominantColor
+                            .blur(radius: 80)
                     )
             } else {
                 // Fallback gradient when no artwork

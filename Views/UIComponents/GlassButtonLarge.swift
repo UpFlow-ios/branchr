@@ -2,16 +2,16 @@
 //  GlassButtonLarge.swift
 //  branchr
 //
-//  Created for Phase 76 - Large Glass Action Buttons
+//  Created for Phase 76 - Large Glass Action Buttons (Black Glass)
 //
 
 import SwiftUI
 
 /**
- * 💎 Large Glass Button
+ * 💎 Large Glass Button (Black Glass Style)
  *
  * Used for primary actions: Start Ride, Connection, Voice Chat.
- * Features native .ultraThinMaterial with rainbow glow on press.
+ * Features black glass aesthetic with rainbow glow on press.
  */
 struct GlassButtonLarge: View {
     let title: String
@@ -44,15 +44,8 @@ struct GlassButtonLarge: View {
             .foregroundStyle(.white)
             .padding(.vertical, 16)
             .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.28), radius: 14, x: 0, y: 6)
+            .background(Color.black.opacity(0.35))
+            .liquidGlass(cornerRadius: 22) // iOS 26 Interactive Liquid Glass
         }
         .buttonStyle(.plain)
         .rainbowGlow(active: isActive || isPressed)

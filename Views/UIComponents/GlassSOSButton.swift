@@ -2,24 +2,26 @@
 //  GlassSOSButton.swift
 //  branchr
 //
-//  Created for Phase 76 - Glass SOS Emergency Button
+//  Created for Phase 76 - Glass SOS Emergency Button (Red Glass)
 //
 
 import SwiftUI
 
 /**
- * 🚨 Glass SOS Button
+ * 🚨 Glass SOS Button (Red Glass Style)
  *
  * Large, glowing red-glass emergency button.
  * Features red accent with translucent material for safety visibility.
  */
 struct GlassSOSButton: View {
+    let title: String
     let isActive: Bool
     let action: () -> Void
     
     @State private var isPressed = false
     
-    init(isActive: Bool = false, action: @escaping () -> Void) {
+    init(title: String = "SOS", isActive: Bool = false, action: @escaping () -> Void) {
+        self.title = title
         self.isActive = isActive
         self.action = action
     }
@@ -32,30 +34,17 @@ struct GlassSOSButton: View {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 18, weight: .bold))
-                Text("SOS")
+                Text(title)
                     .font(.system(size: 18, weight: .bold, design: .rounded))
             }
             .foregroundStyle(.white)
             .padding(.vertical, 16)
             .frame(maxWidth: .infinity)
-            .background(
-                ZStack {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                    
-                    LinearGradient(
-                        colors: [
-                            Color.red.opacity(0.35),
-                            Color.red.opacity(0.20)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                }
-            )
+            .background(Color.red.opacity(0.45))
+            .liquidGlass(cornerRadius: 22) // iOS 26 Interactive Liquid Glass
             .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(Color.red.opacity(0.50), lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color.red.opacity(0.45), lineWidth: 1.5)
             )
             .shadow(color: .red.opacity(0.35), radius: 16, x: 0, y: 6)
         }
