@@ -96,7 +96,7 @@ struct HomeView: View {
             }
             
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
+                VStack(spacing: 15) { // Reduced from 20 for compact layout
                     
                     // SOS Alert Banner (if active)
                     if let alert = fcmService.latestSOSAlert, showSOSBanner {
@@ -136,7 +136,7 @@ struct HomeView: View {
                             )
                             .shadow(color: .red.opacity(0.6), radius: 15, x: 0, y: 8)
                         }
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, 18)
                         .transition(.move(edge: .top).combined(with: .opacity))
                         .animation(.spring(response: 0.5, dampingFraction: 0.7), value: showSOSBanner)
                         .onAppear {
@@ -166,7 +166,7 @@ struct HomeView: View {
                     )
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 24)
-                    .padding(.top, 4)
+                    .padding(.top, 3)
                     .background(Color.clear)
                     
                     // AUDIO CONTROL ROW
@@ -197,12 +197,12 @@ struct HomeView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 24)
-                    .padding(.top, 4)
+                    .padding(.top, 3)
                     
                     // MAIN ACTIONS – hero + grid
                     LazyVGrid(
-                        columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: 2),
-                        spacing: 14
+                        columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2),
+                        spacing: 12
                     ) {
                         // 🍍 HERO: Start / Resume Ride – full width
                         GlassGridButton(
@@ -257,9 +257,9 @@ struct HomeView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 12)
                     
-                    Spacer(minLength: 32)
+                    Spacer(minLength: 24)
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, 20)
             }
         }
         .onAppear {
@@ -479,7 +479,7 @@ private struct GlassGridButton: View {
                     .lineLimit(1)
             }
             .foregroundColor(textColor)
-            .padding(.vertical, 14)
+            .padding(.vertical, 10)
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -488,9 +488,12 @@ private struct GlassGridButton: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(textColor.opacity(0.12), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.18), lineWidth: 1.2)
             )
-            .shadow(color: Color.black.opacity(0.25), radius: 12, x: 0, y: 8)
+            // Enhanced neon-style glow
+            .shadow(color: .black.opacity(0.30), radius: 14, x: 0, y: 6)
+            .shadow(color: .white.opacity(0.10), radius: 6, x: 0, y: 0)
+            .shadow(color: .blue.opacity(0.12), radius: 10, x: 0, y: 0)
         }
         .buttonStyle(.plain)
         .rainbowGlow(active: isActive || isPressed) // Phase 76: Show halo when active OR pressed

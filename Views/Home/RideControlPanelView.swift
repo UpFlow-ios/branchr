@@ -314,43 +314,46 @@ struct AudioControlButton: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(.ultraThinMaterial)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 .stroke(
-                                    Color.white.opacity(isActive ? 0.50 : 0.18),
+                                    Color.white.opacity(isActive ? 0.50 : 0.20),
                                     lineWidth: isActive ? 1.2 : 0.8
                                 )
                         )
-                        .frame(width: 48, height: 48)
+                        .frame(width: 38, height: 38)
                     
                     Image(systemName: icon)
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(isActive ? .white : .white.opacity(0.85))
                 }
                 
                 Text(title)
-                    .font(.caption.bold())
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundColor(.white.opacity(0.9))
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(.ultraThinMaterial)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.8)
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Color.white.opacity(0.12), lineWidth: 0.8)
                     )
             )
-            .shadow(color: Color.black.opacity(0.25), radius: 10, x: 0, y: 5)
+            // Enhanced neon-style glow
+            .shadow(color: .black.opacity(0.25), radius: 10, x: 0, y: 5)
+            .shadow(color: .white.opacity(0.10), radius: 6, x: 0, y: 0)
+            .shadow(color: .cyan.opacity(0.15), radius: 8, x: 0, y: 0)
         }
         .buttonStyle(.plain)
-        .rainbowGlow(active: isPressed)
-        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .rainbowGlow(active: isActive || isPressed)
+        .scaleEffect(isPressed ? 0.94 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)

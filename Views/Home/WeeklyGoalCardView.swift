@@ -37,21 +37,21 @@ struct WeeklyGoalCardView: View {
         let titleColor = Color.white
         let secondaryTextColor = Color.white.opacity(0.80)
         
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             // Top row: Title + percent pill
             HStack {
                 Text("🎯 Weekly Goal")
-                    .font(.subheadline.bold())
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundColor(titleColor)
                 
                 Spacer()
                 
                 // Percent pill capsule
                 Text("\(progressPercent)%")
-                    .font(.caption.bold())
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
                     .background(
                         Capsule()
                             .fill(Color.white.opacity(0.16))
@@ -64,38 +64,40 @@ struct WeeklyGoalCardView: View {
                     // Background track
                     Capsule()
                         .fill(Color.white.opacity(0.15))
-                        .frame(height: 8)
+                        .frame(height: 6)
                     
                     // Rainbow progress fill
                     Capsule()
                         .fill(theme.rideRainbowGradient)
-                        .frame(width: geometry.size.width * CGFloat(progress), height: 8)
+                        .frame(width: geometry.size.width * CGFloat(progress), height: 6)
                         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: progress)
                 }
             }
-            .frame(height: 8)
+            .frame(height: 6)
             
             // Single compact info row
             HStack(spacing: 0) {
                 Text(String(format: "%.1f / %.0f mi", totalThisWeekMiles, goalMiles))
-                    .font(.caption)
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundColor(secondaryTextColor)
                 
                 Spacer()
                 
                 Text("This week: " + String(format: "%.1f mi", totalThisWeekMiles))
-                    .font(.caption)
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundColor(secondaryTextColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 
                 Spacer()
                 
-                Text("🔥 Streak: \(currentStreakDays)  ·  Best: \(bestStreakDays) days")
-                    .font(.caption)
+                Text("🔥 \(currentStreakDays)  ·  Best: \(bestStreakDays)")
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundColor(secondaryTextColor)
             }
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
         // ✨ Enhanced glass background with depth
         .background(
             ZStack {
@@ -117,13 +119,11 @@ struct WeeklyGoalCardView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.white.opacity(0.20), lineWidth: 1)
+                .stroke(Color.white.opacity(0.25), lineWidth: 1.2)
         )
-        .shadow(
-            color: Color.black.opacity(0.40),
-            radius: 20,
-            x: 0,
-            y: 10
-        )
+        // Enhanced neon-style glow (multi-layer)
+        .shadow(color: .black.opacity(0.35), radius: 16, x: 0, y: 8)
+        .shadow(color: .white.opacity(0.12), radius: 6, x: 0, y: 0)
+        .shadow(color: .purple.opacity(0.15), radius: 10, x: 0, y: 0)
     }
 }

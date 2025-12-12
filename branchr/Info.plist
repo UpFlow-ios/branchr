@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_branchr-group._tcp</string>
+	</array>
 	<key>NSServices</key>
 	<array>
 		<dict/>
@@ -12,41 +16,6 @@
 		<string>remote-notification</string>
 		<string>fetch</string>
 		<string>bluetooth-peripheral</string>
-		<!-- TODO: Enable background location for full background ride tracking -->
-		<!-- <string>location</string> -->
-		<!-- Note: Currently disabled. To enable full background tracking:
-		     1. Uncomment the location entry above
-		     2. Update NSLocationAlwaysAndWhenInUseUsageDescription
-		     3. Test background location behavior thoroughly
-		     4. Ensure battery impact is acceptable -->
 	</array>
-	<!-- Phase 21C: MultipeerConnectivity Network Permissions -->
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Branchr uses your local network to connect with nearby riders for group rides.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_branchr-group._tcp</string>
-	</array>
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Branchr uses Bluetooth to connect and sync ride data with other riders.</string>
-	<!-- Phase 27: Safety & SOS Permissions -->
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Branchr needs your location to share it during emergencies.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Branchr uses your location to send SOS alerts.</string>
-        <key>NSContactsUsageDescription</key>
-        <string>Branchr may access contacts to send emergency messages.</string>
-        <!-- App Store Readiness: Audio & Media Permissions -->
-        <key>NSMicrophoneUsageDescription</key>
-        <string>Branchr uses your microphone for voice chat during group rides so you can communicate hands-free with other riders.</string>
-        <key>NSAppleMusicUsageDescription</key>
-        <string>Branchr syncs your Apple Music playback during rides so you and your riding partners can listen together.</string>
-        <key>NSPhotoLibraryUsageDescription</key>
-        <string>Branchr needs access to your photo library so you can set a profile picture.</string>
-        <!-- Phase 76: Lock iPhone to portrait-only mode -->
-        <key>UISupportedInterfaceOrientations</key>
-        <array>
-                <string>UIInterfaceOrientationPortrait</string>
-        </array>
 </dict>
 </plist>

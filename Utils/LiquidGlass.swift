@@ -41,7 +41,7 @@ struct LiquidGlass: ViewModifier {
                 y: tiltAmount.height / 6
             )
             .shadow(
-                color: .black.opacity(0.2),
+                color: .black.opacity(0.25),
                 radius: 20,
                 x: tiltAmount.width / 10,
                 y: tiltAmount.height / 10
@@ -51,8 +51,12 @@ struct LiquidGlass: ViewModifier {
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(Color.white.opacity(0.20), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.25), lineWidth: 1.2)
             )
+            // Enhanced neon-style glow (multi-layer shadows)
+            .shadow(color: .white.opacity(0.15), radius: 8, x: 0, y: 0)
+            .shadow(color: .cyan.opacity(0.20), radius: 12, x: 0, y: 0)
+            .shadow(color: .blue.opacity(0.10), radius: 16, x: 0, y: 0)
             .scaleEffect(isPressed ? 0.97 : 1.0)
             .animation(.spring(response: 0.35, dampingFraction: 0.7), value: isPressed)
             .gesture(
