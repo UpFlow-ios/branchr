@@ -18,6 +18,7 @@ import SwiftUI
 struct RideCalendarView: View {
     @StateObject private var rideDataManager = RideDataManager.shared
     @ObservedObject private var theme = ThemeManager.shared
+    @ObservedObject private var userPreferences = UserPreferenceManager.shared
     @Environment(\.colorScheme) private var colorScheme
     @State private var selectedDay: Date? = nil
     @State private var selectedSummary: DayRideSummary? = nil
@@ -28,6 +29,11 @@ struct RideCalendarView: View {
     @State private var refreshTrigger = UUID()
     @State private var showRideInsights = false // Phase 38: Ride Insights sheet
     @State private var showRideStats = false // Phase 49: Monthly Ride Stats
+    
+    // Weekly goal data
+    @State private var totalThisWeekMiles: Double = 0.0
+    @State private var currentStreakDays: Int = 0
+    @State private var bestStreakDays: Int = 0
     
     // Phase 47: Month navigation state
     @State private var displayedMonth: Date = {
@@ -122,6 +128,22 @@ struct RideCalendarView: View {
                 }
                 .padding(.horizontal, 16)
                 
+                // Weekly Goal Card
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("🎯 Weekly Goal")
+                        .font(.headline.bold())
+                        .foregroundColor(.white.opacity(0.9))
+                    
+                    WeeklyGoalCardView(
+                        totalThisWeekMiles: totalThisWeekMiles,
+                        goalMiles: userPreferences.weeklyDistanceGoalMiles,
+                        currentStreakDays: currentStreakDays,
+                        bestStreakDays: bestStreakDays
+                    )
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                
                 // Phase 46: Selected day ride list / summary
                 if let day = selectedDay, let summary = selectedSummary {
                     SelectedDayRideCard(day: day, summary: summary) { ride in
@@ -164,6 +186,7 @@ struct RideCalendarView: View {
             }
             .onAppear {
                 rideDataManager.rides = rideDataManager.loadRides()
+                updateWeeklyGoalData()
             }
             .sheet(isPresented: $showRideInsights) {
                 RideInsightsView()
@@ -198,6 +221,7 @@ struct RideCalendarView: View {
                 // Refresh rides when notification is received
                 // Phase 46C: Do NOT reset selectedDay/selectedSummary here - preserve user selection
                 rideDataManager.rides = rideDataManager.loadRides()
+                updateWeeklyGoalData()
                 refreshTrigger = UUID() // Force view refresh
                 // If a day is selected, refresh its summary but keep the selection
                 if let day = selectedDay {
@@ -254,6 +278,54 @@ struct RideCalendarView: View {
             selectedSummary = nil
             HapticsService.shared.lightTap()
         }
+    }
+    
+    // Weekly goal calculation
+    private func updateWeeklyGoalData() {
+        let rides = rideDataManager.rides
+        let now = Date()
+        let calendar = Calendar.current
+        
+        // Calculate this week's miles
+        guard let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start else {
+            totalThisWeekMiles = 0.0
+            return
+        }
+        
+        totalThisWeekMiles = rides
+            .filter { $0.date >= startOfWeek }
+            .reduce(0.0) { $0 + $1.distanceInMiles }
+        
+        // Calculate streaks
+        let sortedRides = rides.sorted { $0.date > $1.date }
+        var streak = 0
+        var bestStreak = 0
+        var currentDate = calendar.startOfDay(for: now)
+        
+        // Check if there's a ride today or yesterday (to maintain streak)
+        let hasRideToday = sortedRides.first(where: { calendar.isDateInToday($0.date) }) != nil
+        let hasRideYesterday = sortedRides.first(where: { calendar.isDateInYesterday($0.date) }) != nil
+        
+        if hasRideToday || hasRideYesterday {
+            streak = 1
+            currentDate = calendar.startOfDay(for: sortedRides.first?.date ?? now)
+            
+            // Count consecutive days
+            for ride in sortedRides {
+                let rideDay = calendar.startOfDay(for: ride.date)
+                let dayDiff = calendar.dateComponents([.day], from: rideDay, to: currentDate).day ?? 0
+                
+                if dayDiff == 1 {
+                    streak += 1
+                    currentDate = rideDay
+                } else if dayDiff > 1 {
+                    break
+                }
+            }
+        }
+        
+        currentStreakDays = streak
+        bestStreakDays = streak // For now, best streak is the current streak
     }
 }
 
