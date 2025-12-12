@@ -97,8 +97,8 @@ struct HomeView: View {
                 .edgesIgnoringSafeArea(.all)
             }
             
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .center, spacing: 24) { // Apple 24pt grid spacing
+            // Fixed VStack - No ScrollView
+            VStack(alignment: .center, spacing: 24) { // Apple 24pt grid spacing
                     
                     // SOS Alert Banner (if active)
                     if let alert = fcmService.latestSOSAlert, showSOSBanner {
@@ -164,8 +164,8 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 24)
                     
-                    // AUDIO CONTROL ROW - Enlarged 110x110
-                    HStack(spacing: 24) {
+                    // AUDIO CONTROL ROW - Apple Style 120x120
+                    HStack(spacing: 20) {
                         AudioControlButton(
                             icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
                             title: isVoiceMuted ? "Muted" : "Unmuted",
@@ -173,7 +173,7 @@ struct HomeView: View {
                         ) {
                             handleToggleMute()
                         }
-                        .frame(width: 110, height: 110)
+                        .frame(width: 120, height: 120)
                         
                         AudioControlButton(
                             icon: "music.quarternote.3",
@@ -182,7 +182,7 @@ struct HomeView: View {
                         ) {
                             handleDJControlsTap()
                         }
-                        .frame(width: 110, height: 110)
+                        .frame(width: 120, height: 120)
                         
                         AudioControlButton(
                             icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
@@ -191,31 +191,24 @@ struct HomeView: View {
                         ) {
                             handleToggleMusic()
                         }
-                        .frame(width: 110, height: 110)
+                        .frame(width: 120, height: 120)
                     }
-                    .frame(maxWidth: .infinity)
                     .padding(.horizontal, 24)
                     
-                    // MAIN ACTIONS – hero + grid
-                    LazyVGrid(
-                        columns: [
-                            GridItem(.flexible(), spacing: 16),
-                            GridItem(.flexible(), spacing: 16)
-                        ],
-                        spacing: 16
-                    ) {
-                        // 🍍 HERO: Start / Resume Ride – full width
+                    // MAIN ACTIONS – Stacked Vertically (Apple Style)
+                    VStack(spacing: 16) {
+                        // 🍍 Start / Resume Ride
                         GlassGridButton(
                             title: primaryRideActionTitle,
                             systemImage: nil,
-                            tint: Color.white.opacity(0.14),
+                            tint: Color.black.opacity(0.45),
                             textColor: .white,
                             isActive: rideSession.rideState == .active || rideSession.rideState == .paused
                         ) {
                             handlePrimaryRideTapped()
                         }
                         .frame(height: 70)
-                        .gridCellColumns(2)   // ⬅️ full-width hero button
+                        .frame(maxWidth: .infinity)
                         
                         // 🔌 Connection
                         GlassGridButton(
@@ -225,38 +218,40 @@ struct HomeView: View {
                               ? "Connecting..."
                               : "Start Connection",
                             systemImage: nil,
-                            tint: Color.white.opacity(0.14),
+                            tint: Color.black.opacity(0.45),
                             textColor: .white,
                             isActive: connectionManager.state == .connected
                         ) {
                             handleConnectionTapped()
                         }
                         .frame(height: 70)
+                        .frame(maxWidth: .infinity)
                         
                         // 🎙 Voice Chat
                         GlassGridButton(
                             title: voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
                             systemImage: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill",
-                            tint: Color.white.opacity(0.14),
+                            tint: Color.black.opacity(0.45),
                             textColor: .white,
                             isActive: voiceService.isVoiceChatActive
                         ) {
                             handleVoiceChatTapped()
                         }
                         .frame(height: 70)
+                        .frame(maxWidth: .infinity)
                         
-                        // 🚨 SOS – full width at the bottom, red accent
+                        // 🚨 SOS – Red accent
                         GlassGridButton(
                             title: "SOS",
                             systemImage: "exclamationmark.triangle.fill",
-                            tint: Color.red.opacity(0.28),
+                            tint: Color.red.opacity(0.45),
                             textColor: .white,
                             isActive: isSOSArmed
                         ) {
                             handleSOSTapped()
                         }
                         .frame(height: 70)
-                        .gridCellColumns(2)   // ⬅️ full-width safety strip
+                        .frame(maxWidth: .infinity)
                     }
                     .padding(.horizontal, 24)
                     .padding(.bottom, 24)
@@ -264,7 +259,7 @@ struct HomeView: View {
                     Spacer(minLength: 24)
                 }
                 .padding(.bottom, 24)
-            }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .onAppear {
             handleOnAppear()
@@ -487,25 +482,16 @@ private struct GlassGridButton: View {
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.black.opacity(0.55))
-                    .overlay(
+                    .fill(.ultraThinMaterial)
+                    .background(
                         RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .fill(.ultraThinMaterial)
+                            .fill(tint)
                     )
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(Color.white.opacity(0.18), lineWidth: 1.2)
-            )
-            // Enhanced neon-style glow
-            .shadow(color: .black.opacity(0.30), radius: 14, x: 0, y: 6)
-            .shadow(color: .white.opacity(0.10), radius: 6, x: 0, y: 0)
-            .shadow(color: .blue.opacity(0.12), radius: 10, x: 0, y: 0)
         }
         .buttonStyle(.plain)
-        .rainbowGlow(active: isActive || isPressed) // Phase 76: Show halo when active OR pressed
-        .scaleEffect(isPressed ? 0.97 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
+        .applePressable(isPressed) // Apple-style press animation
+        .animation(.spring(response: 0.35, dampingFraction: 0.72), value: isPressed)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
@@ -613,4 +599,5 @@ struct MusicSourceSelectorView: View {
 #Preview {
     HomeView()
 }
+
 

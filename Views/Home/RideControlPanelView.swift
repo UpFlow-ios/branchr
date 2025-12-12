@@ -293,58 +293,39 @@ struct AudioControlButton: View {
     let isActive: Bool
     let action: () -> Void
     
-    @ObservedObject private var theme = ThemeManager.shared
     @State private var isPressed = false
     
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(
-                                    Color.white.opacity(isActive ? 0.50 : 0.20),
-                                    lineWidth: isActive ? 1.2 : 0.8
-                                )
-                        )
-                        .frame(width: 38, height: 38)
-                    
-                    Image(systemName: icon)
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(isActive ? .white : .white.opacity(0.85))
-                }
+        Button(action: {
+            action()
+            HapticsService.shared.lightTap()
+        }) {
+            VStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 40, weight: .medium))
+                    .foregroundColor(.white)
                 
                 Text(title)
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundColor(.white.opacity(0.9))
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
                     .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(Color.white.opacity(0.12), lineWidth: 0.8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .fill(Color.black.opacity(0.35))
                     )
             )
-            // Enhanced neon-style glow
-            .shadow(color: .black.opacity(0.25), radius: 10, x: 0, y: 5)
-            .shadow(color: .white.opacity(0.10), radius: 6, x: 0, y: 0)
-            .shadow(color: .cyan.opacity(0.15), radius: 8, x: 0, y: 0)
         }
         .buttonStyle(.plain)
-        .rainbowGlow(active: isActive || isPressed)
-        .scaleEffect(isPressed ? 0.94 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
+        .applePressable(isPressed) // Apple-style press animation
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
                     if !isPressed {
                         isPressed = true
-                        HapticsService.shared.lightTap()
                     }
                 }
                 .onEnded { _ in
