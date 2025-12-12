@@ -64,43 +64,41 @@ struct HomeView: View {
     
     var body: some View {
         ZStack {
-            // MARK: - Liquid Glass Background (Phase 76: Live blurred artwork)
-            // Phase 76E Patch: GeometryReader prevents artwork overflow beyond screen bounds
-            GeometryReader { geo in
-                if let artwork = musicService.lastArtworkImage {
-                    Image(uiImage: artwork)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geo.size.width, height: geo.size.height) // Bound to device frame
-                        .clipped()                                             // Prevent overflow
-                        .blur(radius: 30)
-                        .overlay(
-                            LinearGradient(
-                                colors: [
-                                    Color.black.opacity(0.35),
-                                    Color.black.opacity(0.85)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
+            // MARK: - Full-Screen Blurred Artwork Background
+            // Sits behind all content, fills entire screen
+            if let artwork = musicService.lastArtworkImage {
+                Image(uiImage: artwork)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                    .clipped()
+                    .blur(radius: 30)
+                    .overlay(
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.35),
+                                Color.black.opacity(0.85)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
-                        .ignoresSafeArea()
-                } else {
-                    LinearGradient(
-                        colors: [
-                            Color.black,
-                            Color.black.opacity(0.85),
-                            Color.black.opacity(0.9)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
                     )
-                    .ignoresSafeArea()
-                }
+                    .edgesIgnoringSafeArea(.all)
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        Color.black.opacity(0.85),
+                        Color.black.opacity(0.9)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .edgesIgnoringSafeArea(.all)
             }
             
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 15) { // Reduced from 20 for compact layout
+                VStack(alignment: .center, spacing: 24) { // Apple 24pt grid spacing
                     
                     // SOS Alert Banner (if active)
                     if let alert = fcmService.latestSOSAlert, showSOSBanner {
@@ -140,7 +138,7 @@ struct HomeView: View {
                             )
                             .shadow(color: .red.opacity(0.6), radius: 15, x: 0, y: 8)
                         }
-                        .padding(.horizontal, 18)
+                        .padding(.horizontal, 24)
                         .transition(.move(edge: .top).combined(with: .opacity))
                         .animation(.spring(response: 0.5, dampingFraction: 0.7), value: showSOSBanner)
                         .onAppear {
@@ -151,11 +149,6 @@ struct HomeView: View {
                             }
                         }
                     }
-                    
-                    // TOP MODE / STATUS BANNER
-                    ModeStatusBannerView()
-                        .padding(.top, 8)
-                        .padding(.horizontal, 20)
                     
                     // MAIN MUSIC / RIDE CARD
                     RideControlPanelView(
@@ -170,11 +163,9 @@ struct HomeView: View {
                     )
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 24)
-                    .padding(.top, 3)
-                    .background(Color.clear)
                     
-                    // AUDIO CONTROL ROW
-                    HStack(spacing: 16) {
+                    // AUDIO CONTROL ROW - Enlarged 110x110
+                    HStack(spacing: 24) {
                         AudioControlButton(
                             icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
                             title: isVoiceMuted ? "Muted" : "Unmuted",
@@ -182,6 +173,7 @@ struct HomeView: View {
                         ) {
                             handleToggleMute()
                         }
+                        .frame(width: 110, height: 110)
                         
                         AudioControlButton(
                             icon: "music.quarternote.3",
@@ -190,6 +182,7 @@ struct HomeView: View {
                         ) {
                             handleDJControlsTap()
                         }
+                        .frame(width: 110, height: 110)
                         
                         AudioControlButton(
                             icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
@@ -198,15 +191,18 @@ struct HomeView: View {
                         ) {
                             handleToggleMusic()
                         }
+                        .frame(width: 110, height: 110)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 24)
-                    .padding(.top, 3)
                     
                     // MAIN ACTIONS – hero + grid
                     LazyVGrid(
-                        columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2),
-                        spacing: 12
+                        columns: [
+                            GridItem(.flexible(), spacing: 16),
+                            GridItem(.flexible(), spacing: 16)
+                        ],
+                        spacing: 16
                     ) {
                         // 🍍 HERO: Start / Resume Ride – full width
                         GlassGridButton(
@@ -218,6 +214,7 @@ struct HomeView: View {
                         ) {
                             handlePrimaryRideTapped()
                         }
+                        .frame(height: 70)
                         .gridCellColumns(2)   // ⬅️ full-width hero button
                         
                         // 🔌 Connection
@@ -234,6 +231,7 @@ struct HomeView: View {
                         ) {
                             handleConnectionTapped()
                         }
+                        .frame(height: 70)
                         
                         // 🎙 Voice Chat
                         GlassGridButton(
@@ -245,6 +243,7 @@ struct HomeView: View {
                         ) {
                             handleVoiceChatTapped()
                         }
+                        .frame(height: 70)
                         
                         // 🚨 SOS – full width at the bottom, red accent
                         GlassGridButton(
@@ -256,14 +255,15 @@ struct HomeView: View {
                         ) {
                             handleSOSTapped()
                         }
+                        .frame(height: 70)
                         .gridCellColumns(2)   // ⬅️ full-width safety strip
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 24)
                     
                     Spacer(minLength: 24)
                 }
-                .padding(.bottom, 20)
+                .padding(.bottom, 24)
             }
         }
         .onAppear {
@@ -487,8 +487,11 @@ private struct GlassGridButton: View {
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .background(tint)
+                    .fill(Color.black.opacity(0.55))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                    )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)

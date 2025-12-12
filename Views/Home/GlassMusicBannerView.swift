@@ -23,64 +23,41 @@ struct GlassMusicBannerView: View {
     let onForward: () -> Void
     
     var body: some View {
-        VStack(spacing: 10) {
-            // Centered title + artist
-            VStack(spacing: 3) {
-                Text(title.isEmpty ? "No Song Playing" : title)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                
-                Text(artist.isEmpty ? "Play music to see controls" : artist)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white.opacity(0.85))
-                    .lineLimit(1)
-            }
-            
-            // Centered playback controls
-            HStack(spacing: 24) {
+        // CENTERED MUSIC CONTROLS INSIDE ARTWORK - Floating white icons
+        VStack {
+            Spacer()
+            HStack(spacing: 50) {
                 Button(action: onBack) {
                     Image(systemName: "backward.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 38, weight: .semibold))
                         .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.3), radius: 6, x: 0, y: 3)
+                        .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
+                        .contentShape(Rectangle())   // keeps tap area large
+                        .frame(width: 70, height: 70) // invisible hit box
                 }
                 
                 Button(action: onPlayPause) {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(size: 44, weight: .heavy))
                         .foregroundColor(.white)
-                        .frame(width: 42, height: 42)
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(Color.white.opacity(0.35), lineWidth: 1)
-                        )
-                        .shadow(color: .white.opacity(0.25), radius: 8, x: 0, y: 0)
-                        .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
+                        .shadow(color: .black.opacity(0.45), radius: 8, y: 4)
+                        .contentShape(Rectangle())
+                        .frame(width: 80, height: 80)
                 }
                 
                 Button(action: onForward) {
                     Image(systemName: "forward.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 38, weight: .semibold))
                         .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.3), radius: 6, x: 0, y: 3)
+                        .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
+                        .contentShape(Rectangle())
+                        .frame(width: 70, height: 70)
                 }
             }
+            .padding(.bottom, 40)
+            Spacer()
         }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 16)
-        .frame(maxWidth: .infinity)
-        .frame(height: 126) // Reduced by 30% for compact layout
-        .liquidGlass(cornerRadius: 24) // Premium Interactive Liquid Glass
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

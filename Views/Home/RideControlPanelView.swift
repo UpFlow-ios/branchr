@@ -64,14 +64,6 @@ struct RideControlPanelView: View {
             // Main content
             VStack(spacing: 16) {
                 
-                // TOP: Connection Status pill (glass)
-                HStack {
-                    Spacer()
-                    connectionStatusPill
-                    Spacer()
-                }
-                .padding(.top, 4)
-                
                 // MIDDLE: Album artwork + playback controls + track info
                 // Phase 76: Always show card when in Apple Music mode, use cached artwork
                 if preferredMusicSource == .appleMusicSynced {
@@ -229,14 +221,6 @@ struct RideControlPanelView: View {
                     .frame(maxWidth: .infinity)
                     .aspectRatio(1, contentMode: .fit)
                 }
-                
-                // BOTTOM: Weekly Goal – glass like the status pill
-                WeeklyGoalCardView(
-                    totalThisWeekMiles: totalThisWeekMiles,
-                    goalMiles: goalMiles,
-                    currentStreakDays: currentStreakDays,
-                    bestStreakDays: bestStreakDays
-                )
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
