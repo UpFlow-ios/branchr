@@ -65,34 +65,38 @@ struct HomeView: View {
     var body: some View {
         ZStack {
             // MARK: - Liquid Glass Background (Phase 76: Live blurred artwork)
-            if let artwork = musicService.lastArtworkImage {
-                Image(uiImage: artwork)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .blur(radius: 30)
-                    .overlay(
-                        LinearGradient(
-                            colors: [
-                                Color.black.opacity(0.4),
-                                Color.black.opacity(0.8)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
+            // Phase 76E Patch: GeometryReader prevents artwork overflow beyond screen bounds
+            GeometryReader { geo in
+                if let artwork = musicService.lastArtworkImage {
+                    Image(uiImage: artwork)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geo.size.width, height: geo.size.height) // Bound to device frame
+                        .clipped()                                             // Prevent overflow
+                        .blur(radius: 30)
+                        .overlay(
+                            LinearGradient(
+                                colors: [
+                                    Color.black.opacity(0.35),
+                                    Color.black.opacity(0.85)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
+                        .ignoresSafeArea()
+                } else {
+                    LinearGradient(
+                        colors: [
+                            Color.black,
+                            Color.black.opacity(0.85),
+                            Color.black.opacity(0.9)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
                     .ignoresSafeArea()
-            } else {
-                LinearGradient(
-                    colors: [
-                        Color.black,
-                        Color.black.opacity(0.85),
-                        Color.black.opacity(0.9)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                }
             }
             
             ScrollView(showsIndicators: false) {
