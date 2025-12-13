@@ -64,38 +64,9 @@ struct HomeView: View {
     
     var body: some View {
         ZStack {
-            // MARK: - Full-Screen Blurred Artwork Background
-            // Sits behind all content, fills entire screen
-            if let artwork = musicService.lastArtworkImage {
-                Image(uiImage: artwork)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
-                    .clipped()
-                    .blur(radius: 30)
-                    .overlay(
-                        LinearGradient(
-                            colors: [
-                                Color.black.opacity(0.35),
-                                Color.black.opacity(0.85)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .edgesIgnoringSafeArea(.all)
-            } else {
-                LinearGradient(
-                    colors: [
-                        Color.black,
-                        Color.black.opacity(0.85),
-                        Color.black.opacity(0.9)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .edgesIgnoringSafeArea(.all)
-            }
+            // MARK: - Pure Black Background
+            Color.black
+                .ignoresSafeArea()
             
             // Fixed VStack - No ScrollView
             VStack(alignment: .center, spacing: 24) { // Apple 24pt grid spacing
@@ -164,7 +135,7 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 24)
                     
-                    // AUDIO CONTROL ROW - Final Polish (90×90, 22pt radius)
+                    // AUDIO CONTROL ROW - 80×80, 20pt radius
                     HStack(spacing: 18) {
                         AudioControlButton(
                             icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
@@ -173,7 +144,7 @@ struct HomeView: View {
                         ) {
                             handleToggleMute()
                         }
-                        .frame(width: 90, height: 90)
+                        .frame(width: 80, height: 80)
                         
                         AudioControlButton(
                             icon: "music.quarternote.3",
@@ -182,7 +153,7 @@ struct HomeView: View {
                         ) {
                             handleDJControlsTap()
                         }
-                        .frame(width: 90, height: 90)
+                        .frame(width: 80, height: 80)
                         
                         AudioControlButton(
                             icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
@@ -191,11 +162,11 @@ struct HomeView: View {
                         ) {
                             handleToggleMusic()
                         }
-                        .frame(width: 90, height: 90)
+                        .frame(width: 80, height: 80)
                     }
                     .padding(.horizontal, 24)
                     
-                    // MAIN ACTIONS – Final Design (Matches Mockup)
+                    // MAIN ACTIONS – Final Rebuild (20pt spacing, press-only rainbow)
                     VStack(spacing: 20) {
                         // 🍍 Start Ride (NO glow)
                         StyleAButton(
@@ -206,7 +177,7 @@ struct HomeView: View {
                             handlePrimaryRideTapped()
                         }
                         
-                        // 🔌 Connection (VIVID rainbow glow - like mockup)
+                        // 🔌 Connection (Rainbow glow on press)
                         StyleAButton(
                             title: connectionManager.state == .connected
                             ? "Stop Connection"
@@ -218,15 +189,17 @@ struct HomeView: View {
                         ) {
                             handleConnectionTapped()
                         }
+                        .neonHalo(cornerRadius: 20)
                         
-                        // 🎙 Voice Chat (NO glow - matches mockup)
+                        // 🎙 Voice Chat (Rainbow glow on press)
                         StyleAButton(
                             title: voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
                             icon: nil,
-                            showRainbowGlow: false
+                            showRainbowGlow: true
                         ) {
                             handleVoiceChatTapped()
                         }
+                        .neonHalo(cornerRadius: 20)
                         
                         // 🚨 SOS (Solid red, NO glow)
                         StyleAButton(
@@ -245,6 +218,8 @@ struct HomeView: View {
                 }
                 .padding(.bottom, 24)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .scaleEffect(0.90)
+                .offset(y: 20)
         }
         .onAppear {
             handleOnAppear()
@@ -439,7 +414,7 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Style A Button (Final Design - Matches Mockup Exactly)
+// MARK: - Style A Button (Final Rebuild - Black Glass, Press-Only Rainbow)
 private struct StyleAButton: View {
     let title: String
     let icon: String?
@@ -467,20 +442,22 @@ private struct StyleAButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 70)
             .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(
-                        isRed
-                        ? Color.red.opacity(0.75)
-                        : Color.black.opacity(0.35)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(.ultraThinMaterial.opacity(0.3))
-                    )
+                Group {
+                    if isRed {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(Color(red: 0.6, green: 0.1, blue: 0.1))
+                    } else {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .fill(Color.black.opacity(0.25))
+                            )
+                    }
+                }
             )
         }
         .buttonStyle(.plain)
-        .neonHalo(enabled: showRainbowGlow, cornerRadius: 18)
         .applePressable(isPressed)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)

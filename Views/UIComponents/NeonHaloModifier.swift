@@ -2,50 +2,50 @@
 //  NeonHaloModifier.swift
 //  branchr
 //
-//  Vivid neon rainbow halo for premium buttons (like the mockup)
+//  Sharp, bright rainbow halo - appears on press only
 //
 
 import SwiftUI
 
 struct NeonHaloModifier: ViewModifier {
-    let isEnabled: Bool
+    @State private var isGlowing = false
     let cornerRadius: CGFloat
     
     func body(content: Content) -> some View {
         content
             .overlay(
                 Group {
-                    if isEnabled {
-                        // Vivid rainbow border like the mockup
+                    if isGlowing {
+                        // Sharp, vivid rainbow border
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .strokeBorder(
                                 AngularGradient(
                                     gradient: Gradient(colors: [
-                                        .green, .cyan, .blue, .purple, .pink, .red, .orange, .yellow, .green
+                                        .red, .orange, .yellow, .green, .cyan, .blue, .purple, .red
                                     ]),
-                                    center: .center,
-                                    startAngle: .degrees(0),
-                                    endAngle: .degrees(360)
+                                    center: .center
                                 ),
                                 lineWidth: 3.0
                             )
-                            .blur(radius: 2)
-                            .brightness(0.2)
-                            // Multiple shadow layers for intense glow
-                            .shadow(color: .green.opacity(0.6), radius: 12, x: 0, y: 0)
-                            .shadow(color: .cyan.opacity(0.6), radius: 12, x: 0, y: 0)
-                            .shadow(color: .orange.opacity(0.6), radius: 12, x: 0, y: 0)
-                            .shadow(color: .pink.opacity(0.6), radius: 12, x: 0, y: 0)
+                            .shadow(color: Color.red.opacity(0.8), radius: 6)
+                            .shadow(color: Color.purple.opacity(0.8), radius: 12)
+                            .shadow(color: Color.blue.opacity(0.8), radius: 18)
+                            .shadow(color: Color.green.opacity(0.8), radius: 24)
                             .allowsHitTesting(false)
                     }
                 }
             )
+            .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    isGlowing = pressing
+                }
+            }) {}
     }
 }
 
 extension View {
-    func neonHalo(enabled: Bool, cornerRadius: CGFloat = 18) -> some View {
-        self.modifier(NeonHaloModifier(isEnabled: enabled, cornerRadius: cornerRadius))
+    func neonHalo(cornerRadius: CGFloat = 20) -> some View {
+        self.modifier(NeonHaloModifier(cornerRadius: cornerRadius))
     }
 }
 

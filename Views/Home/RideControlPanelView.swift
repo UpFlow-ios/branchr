@@ -70,15 +70,14 @@ struct RideControlPanelView: View {
                     if let artwork = musicService.lastArtworkImage {
                         // Full card with artwork and track info
                         ZStack(alignment: .bottom) {
-                            // 🔳 Large artwork - fills container (matches mockup)
+                            // 🔳 Large artwork - fills container edge-to-edge
                             Image(uiImage: artwork)
                                 .resizable()
                                 .scaledToFill()
                                 .frame(maxWidth: .infinity)
-                                .frame(height: 380) // Large size like mockup
+                                .frame(height: 380) // Large size
                                 .clipped()
                                 .cornerRadius(24)
-                                .shadow(color: Color.black.opacity(0.4), radius: 16, x: 0, y: 8)
                             
                             // Gradient at the bottom for readability
                             LinearGradient(
@@ -218,21 +217,10 @@ struct RideControlPanelView: View {
         .clipShape(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
         )
-        // Outer card glass + subtle stroke + shadow
+        // Black card background (no blur, no shadows)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .background(theme.surfaceBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                )
-                .shadow(
-                    color: Color.black.opacity(theme.isDarkMode ? 0.55 : 0.35),
-                    radius: 22,
-                    x: 0,
-                    y: 14
-                )
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color.black)
         )
         .onAppear {
             // Refresh now playing when view appears
@@ -301,10 +289,10 @@ struct AudioControlButton: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(.ultraThinMaterial)
-                    .background(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
                             .fill(Color.black.opacity(0.25))
                     )
             )

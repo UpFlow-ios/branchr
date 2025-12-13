@@ -64,13 +64,14 @@ struct LiquidGlassTabBar: View {
         .frame(height: 82)
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 40, style: .continuous)
+            RoundedRectangle(cornerRadius: 34, style: .continuous)
                 .fill(.ultraThinMaterial)
-                .background(
-                    RoundedRectangle(cornerRadius: 40, style: .continuous)
+                .blur(radius: 20)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 34, style: .continuous)
                         .fill(Color.black.opacity(0.15))
                 )
-                .shadow(color: .black.opacity(0.4), radius: 20, x: 0, y: -2)
+                .shadow(color: Color.white.opacity(0.1), radius: 30)
         )
     }
 }
@@ -87,23 +88,16 @@ struct TabBarButton: View {
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 24, weight: .medium))
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.55))
+                    .foregroundColor(.white)
                     .scaleEffect(isCenter && isSelected ? 1.08 : 1.0)
-                    .overlay(
-                        Group {
-                            if isCenter && isSelected {
-                                // Subtle neon blue highlight for center tab
-                                Circle()
-                                    .fill(Color.cyan.opacity(0.25))
-                                    .blur(radius: 12)
-                                    .scaleEffect(1.3)
-                            }
-                        }
+                    .shadow(
+                        color: isCenter && isSelected ? Color.blue.opacity(0.7) : .clear,
+                        radius: 25
                     )
                 
                 Text(title)
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.55))
+                    .foregroundColor(.white.opacity(0.8))
             }
             .frame(maxWidth: .infinity)
         }
