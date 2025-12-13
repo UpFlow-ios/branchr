@@ -164,8 +164,8 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 24)
                     
-                    // AUDIO CONTROL ROW - Apple Style 120x120
-                    HStack(spacing: 20) {
+                    // AUDIO CONTROL ROW - Final Polish (90×90, 22pt radius)
+                    HStack(spacing: 18) {
                         AudioControlButton(
                             icon: isVoiceMuted ? "mic.slash.fill" : "mic.fill",
                             title: isVoiceMuted ? "Muted" : "Unmuted",
@@ -173,7 +173,7 @@ struct HomeView: View {
                         ) {
                             handleToggleMute()
                         }
-                        .frame(width: 120, height: 120)
+                        .frame(width: 90, height: 90)
                         
                         AudioControlButton(
                             icon: "music.quarternote.3",
@@ -182,7 +182,7 @@ struct HomeView: View {
                         ) {
                             handleDJControlsTap()
                         }
-                        .frame(width: 120, height: 120)
+                        .frame(width: 90, height: 90)
                         
                         AudioControlButton(
                             icon: isMusicMuted ? "speaker.slash.fill" : "music.note",
@@ -191,67 +191,52 @@ struct HomeView: View {
                         ) {
                             handleToggleMusic()
                         }
-                        .frame(width: 120, height: 120)
+                        .frame(width: 90, height: 90)
                     }
                     .padding(.horizontal, 24)
                     
-                    // MAIN ACTIONS – Stacked Vertically (Apple Style)
-                    VStack(spacing: 16) {
-                        // 🍍 Start / Resume Ride
-                        GlassGridButton(
+                    // MAIN ACTIONS – Final Design (Matches Mockup)
+                    VStack(spacing: 20) {
+                        // 🍍 Start Ride (NO glow)
+                        StyleAButton(
                             title: primaryRideActionTitle,
-                            systemImage: nil,
-                            tint: Color.black.opacity(0.45),
-                            textColor: .white,
-                            isActive: rideSession.rideState == .active || rideSession.rideState == .paused
+                            icon: nil,
+                            showRainbowGlow: false
                         ) {
                             handlePrimaryRideTapped()
                         }
-                        .frame(height: 70)
-                        .frame(maxWidth: .infinity)
                         
-                        // 🔌 Connection
-                        GlassGridButton(
+                        // 🔌 Connection (VIVID rainbow glow - like mockup)
+                        StyleAButton(
                             title: connectionManager.state == .connected
                             ? "Stop Connection"
                             : connectionManager.state == .connecting
                               ? "Connecting..."
-                              : "Start Connection",
-                            systemImage: nil,
-                            tint: Color.black.opacity(0.45),
-                            textColor: .white,
-                            isActive: connectionManager.state == .connected
+                              : "Connection",
+                            icon: nil,
+                            showRainbowGlow: true
                         ) {
                             handleConnectionTapped()
                         }
-                        .frame(height: 70)
-                        .frame(maxWidth: .infinity)
                         
-                        // 🎙 Voice Chat
-                        GlassGridButton(
+                        // 🎙 Voice Chat (NO glow - matches mockup)
+                        StyleAButton(
                             title: voiceService.isVoiceChatActive ? "End Voice Chat" : "Start Voice Chat",
-                            systemImage: voiceService.isVoiceChatActive ? "mic.slash.fill" : "mic.fill",
-                            tint: Color.black.opacity(0.45),
-                            textColor: .white,
-                            isActive: voiceService.isVoiceChatActive
+                            icon: nil,
+                            showRainbowGlow: false
                         ) {
                             handleVoiceChatTapped()
                         }
-                        .frame(height: 70)
-                        .frame(maxWidth: .infinity)
                         
-                        // 🚨 SOS – Red accent
-                        GlassGridButton(
+                        // 🚨 SOS (Solid red, NO glow)
+                        StyleAButton(
                             title: "SOS",
-                            systemImage: "exclamationmark.triangle.fill",
-                            tint: Color.red.opacity(0.45),
-                            textColor: .white,
-                            isActive: isSOSArmed
+                            icon: "exclamationmark.triangle.fill",
+                            showRainbowGlow: false,
+                            isRed: true
                         ) {
                             handleSOSTapped()
                         }
-                        .frame(height: 70)
-                        .frame(maxWidth: .infinity)
                     }
                     .padding(.horizontal, 24)
                     .padding(.bottom, 24)
@@ -451,6 +436,63 @@ struct HomeView: View {
             // Resume ride (should be handled by modal, but fallback)
             rideService.resumeRide()
         }
+    }
+}
+
+// MARK: - Style A Button (Final Design - Matches Mockup Exactly)
+private struct StyleAButton: View {
+    let title: String
+    let icon: String?
+    let showRainbowGlow: Bool
+    var isRed: Bool = false
+    let action: () -> Void
+    
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: {
+            action()
+            HapticsService.shared.mediumTap()
+        }) {
+            HStack(spacing: 10) {
+                if let icon = icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 20, weight: .bold))
+                }
+                Text(title)
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .lineLimit(1)
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 70)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(
+                        isRed
+                        ? Color.red.opacity(0.75)
+                        : Color.black.opacity(0.35)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(.ultraThinMaterial.opacity(0.3))
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .neonHalo(enabled: showRainbowGlow, cornerRadius: 18)
+        .applePressable(isPressed)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if !isPressed {
+                        isPressed = true
+                    }
+                }
+                .onEnded { _ in
+                    isPressed = false
+                }
+        )
     }
 }
 

@@ -84,49 +84,42 @@ struct BranchrAppRoot: View {
         }
     }
     
-    // LIQUID GLASS Tab Bar with Native SwiftUI Materials
+    // FINAL LIQUID GLASS Tab Bar - WWDC Style
     private func updateTabBarAppearance() {
         let appearance = UITabBarAppearance()
         
-        // ✨ LIQUID GLASS EFFECT using .ultraThinMaterial
+        // ✨ LIQUID GLASS EFFECT - Ultra-thin material with depth
         appearance.configureWithDefaultBackground()
+        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
         
-        // Apply frosted glass background effect
-        appearance.backgroundEffect = UIBlurEffect(style: theme.isDarkMode ? .systemUltraThinMaterialDark : .systemUltraThinMaterialLight)
+        // Subtle dark tint for depth
+        appearance.backgroundColor = UIColor.black.withAlphaComponent(0.25)
         
-        // Translucent background with subtle tint
-        if theme.isDarkMode {
-            appearance.backgroundColor = UIColor.black.withAlphaComponent(0.75)
-        } else {
-            appearance.backgroundColor = UIColor.white.withAlphaComponent(0.85)
-        }
+        // Top inner shadow for depth (using shadow image)
+        appearance.shadowColor = UIColor.black.withAlphaComponent(0.15)
         
-        // Remove divider line for cleaner glass look
-        appearance.shadowColor = .clear
-        appearance.shadowImage = UIImage()
+        // Selected state: White 100% + soft glow
+        appearance.stackedLayoutAppearance.selected.iconColor = .white
+        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
+            .foregroundColor: UIColor.white,
+            .font: UIFont.systemFont(ofSize: 11, weight: .semibold)
+        ]
         
-        // Icon and text colors with glass-appropriate styling
-        let yellow = UIColor(theme.brandYellow)
-        
-        if theme.isDarkMode {
-            // Dark Mode: Yellow icons on dark glass
-            appearance.stackedLayoutAppearance.selected.iconColor = yellow
-            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: yellow]
-            appearance.stackedLayoutAppearance.normal.iconColor = UIColor.white.withAlphaComponent(0.5)
-            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.white.withAlphaComponent(0.5)]
-        } else {
-            // Light Mode: Black icons on light glass
-            appearance.stackedLayoutAppearance.selected.iconColor = .black
-            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor.black]
-            appearance.stackedLayoutAppearance.normal.iconColor = UIColor.black.withAlphaComponent(0.4)
-            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.black.withAlphaComponent(0.4)]
-        }
+        // Unselected state: White 55%
+        appearance.stackedLayoutAppearance.normal.iconColor = UIColor.white.withAlphaComponent(0.55)
+        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+            .foregroundColor: UIColor.white.withAlphaComponent(0.55),
+            .font: UIFont.systemFont(ofSize: 11, weight: .medium)
+        ]
 
         // Apply to global appearance
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
         
-        // Also apply directly to any existing tab bars in the window hierarchy
+        // Set tab bar height via frame (94pt)
+        UITabBar.appearance().frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 94)
+        
+        // Apply directly to existing tab bars
         DispatchQueue.main.async {
             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
                 windowScene.windows.forEach { window in

@@ -70,14 +70,15 @@ struct RideControlPanelView: View {
                     if let artwork = musicService.lastArtworkImage {
                         // Full card with artwork and track info
                         ZStack(alignment: .bottom) {
-                            // 🔳 Big, clean square artwork – shows the full album without cropping weirdly
+                            // 🔳 Large artwork - fills container (matches mockup)
                             Image(uiImage: artwork)
                                 .resizable()
-                                .aspectRatio(1, contentMode: .fit)
+                                .scaledToFill()
                                 .frame(maxWidth: .infinity)
+                                .frame(height: 380) // Large size like mockup
                                 .clipped()
-                                .cornerRadius(20)
-                                .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 8)
+                                .cornerRadius(24)
+                                .shadow(color: Color.black.opacity(0.4), radius: 16, x: 0, y: 8)
                             
                             // Gradient at the bottom for readability
                             LinearGradient(
@@ -90,20 +91,18 @@ struct RideControlPanelView: View {
                             .allowsHitTesting(false)
                             
                             VStack(spacing: 10) {
-                                // Glass playback controls like Control Center
-                                HStack(spacing: 22) {
+                                // Floating white playback controls - 60pt spacing (matches mockup)
+                                HStack(spacing: 60) {
                                     // Previous
                                     Button(action: {
                                         HapticsService.shared.lightTap()
                                         musicService.skipToPreviousTrack()
                                     }) {
                                         Image(systemName: "backward.fill")
-                                            .font(.system(size: 18, weight: .semibold))
+                                            .font(.system(size: 38, weight: .semibold))
                                             .foregroundColor(.white)
-                                            .frame(width: 40, height: 40)
-                                            .background(.ultraThinMaterial)
-                                            .clipShape(Circle())
-                                            .shadow(color: .black.opacity(0.4), radius: 6, x: 0, y: 3)
+                                            .frame(width: 70, height: 70)
+                                            .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 4)
                                     }
                                     
                                     // Play / Pause
@@ -112,17 +111,10 @@ struct RideControlPanelView: View {
                                         musicService.togglePlayPause()
                                     }) {
                                         Image(systemName: musicService.isPlaying ? "pause.fill" : "play.fill")
-                                            .font(.system(size: 24, weight: .bold))
+                                            .font(.system(size: 44, weight: .heavy))
                                             .foregroundColor(.white)
-                                            .frame(width: 56, height: 56)
-                                            .background(.ultraThinMaterial)
-                                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                                    .stroke(Color.white.opacity(0.50), lineWidth: 1.2)
-                                            )
-                                            .shadow(color: .white.opacity(0.25), radius: 8, x: 0, y: 0)
-                                            .shadow(color: .black.opacity(0.55), radius: 12, x: 0, y: 6)
+                                            .frame(width: 80, height: 80)
+                                            .shadow(color: .black.opacity(0.6), radius: 10, x: 0, y: 5)
                                     }
                                     
                                     // Next
@@ -131,12 +123,10 @@ struct RideControlPanelView: View {
                                         musicService.skipToNextTrack()
                                     }) {
                                         Image(systemName: "forward.fill")
-                                            .font(.system(size: 18, weight: .semibold))
+                                            .font(.system(size: 38, weight: .semibold))
                                             .foregroundColor(.white)
-                                            .frame(width: 40, height: 40)
-                                            .background(.ultraThinMaterial)
-                                            .clipShape(Circle())
-                                            .shadow(color: .black.opacity(0.4), radius: 6, x: 0, y: 3)
+                                            .frame(width: 70, height: 70)
+                                            .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 4)
                                     }
                                 }
                                 .frame(maxWidth: .infinity)
@@ -300,22 +290,22 @@ struct AudioControlButton: View {
             action()
             HapticsService.shared.lightTap()
         }) {
-            VStack(spacing: 12) {
+            VStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 40, weight: .medium))
+                    .font(.system(size: 26, weight: .medium))
                     .foregroundColor(.white)
                 
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundColor(.white.opacity(0.9))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(.ultraThinMaterial)
                     .background(
-                        RoundedRectangle(cornerRadius: 28, style: .continuous)
-                            .fill(Color.black.opacity(0.35))
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .fill(Color.black.opacity(0.25))
                     )
             )
         }
