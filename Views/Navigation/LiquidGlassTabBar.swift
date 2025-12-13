@@ -65,11 +65,11 @@ struct LiquidGlassTabBar: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 34, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .blur(radius: 20)
+                .fill(Color.black) // True black (#000)
                 .overlay(
                     RoundedRectangle(cornerRadius: 34, style: .continuous)
-                        .fill(Color.black.opacity(0.15))
+                        .fill(.ultraThinMaterial)
+                        .blur(radius: 20)
                 )
                 .shadow(color: Color.white.opacity(0.1), radius: 30)
         )
